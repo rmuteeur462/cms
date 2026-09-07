@@ -27,7 +27,9 @@ INSTALLED_APPS = [
     'dal_select2',
     'import_export',
     'Dashboard',
+    'corsheaders',
     'rest_framework',
+    'rest_framework_simplejwt',
     'api',
 
 ]
@@ -44,6 +46,7 @@ X_FRAME_OPTIONS = "SAMEORIGIN"
 SILENCED_SYSTEM_CHECKS = ["security.W019"]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware', 
     'Dashboard.middleware.UserActivityTrackingMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -55,6 +58,31 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'Dashboard.middleware.UserActivityLoggerMiddleware',
 ]
+
+# CORS configuration for Mobile and Web development
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
+# Django REST Framework configuration
+from datetime import timedelta
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+}
+
+# SimpleJWT configuration
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=14),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': False,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
 
 ROOT_URLCONF = 'wssp.urls'
 
