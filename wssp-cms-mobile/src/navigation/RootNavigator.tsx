@@ -4,7 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../store/AuthContext';
 import { LoginScreen } from '../screens/auth/LoginScreen';
-import { HomeScreen } from '../screens/main/HomeScreen';
+import { MainTabsNavigator } from './MainTabsNavigator';
 import { Colors, Typography, Spacing } from '../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -30,7 +30,7 @@ export const RootNavigator: React.FC = () => {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {token && user ? (
-          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="Main" component={MainTabsNavigator} />
         ) : (
           <Stack.Screen name="Login" component={LoginScreen} />
         )}
