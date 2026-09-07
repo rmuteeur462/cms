@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Vehicle Attendance Management System
+{% endblock %}
+
+{% block content %}
+    <div id="loader" class="loader" style="display: none;"></div>  <!-- Page Loader -->
+    <div class="container-fluid">
+        <h1 class="h3 mb-4 text-gray-800" style="font-weight: bold; font-size: 1.5rem; text-align: center;">
+            Vehicles Daily Status 
+        </h1>
+
+        <!-- Display error or success messages -->
+        {% if messages %}
+            <div class="alert alert-dismissible fade show" role="alert">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Filter Form -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+            </div>
+            <div class="card-body">
+                <form method="GET" class="row mb-3">
+                    <div class="form-group col-md-4">
+                        <label for="date">Select Date:</label>
+                        <input type="date" name="date" class="form-control" value="{{ date|date:'Y-m-d' }}" required>
+                    </div>
+
+                    <div class="form-group col-md-4">
+                        <label for="location">Location:</label>
+                        <select name="location" id="locationFilter" class="form-control">
+                            <option value="">All Locations</option>
+                            {% for location in locations %}
+                                <option value="{{ location.location_name }}" {% if location.location_name == location_filter %}selected{% endif %}>
+                                    {{ location.location_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group col-md-4">
+                        <label for="vehicle_type">Vehicle Type:</label>
+                        <select name="vehicle_type" id="vehicleTypeFilter" class="form-control">
+                            <option value="">All Vehicle Types</option>
+                            {% for vehicle_type in vehicle_types %}
+                                <option value="{{ vehicle_type }}" {% if vehicle_type == vehicle_type_filter %}selected{% endif %}>
+                                    {{ vehicle_type }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-12 text-right">
+                        <button type="submit" class="btn btn-primary">Filter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Attendance Table -->
+        <!-- Attendance Table -->
+<form method="POST" onsubmit="showLoader()"> <!-- Added onsubmit attribute -->
+    {% csrf_token %}
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Vehicle Records</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="dataTable" class="table table-bordered table-hover shadow-sm bg-white">
+                    <thead class="bg-primary text-white">
+                        <tr>
+                            <th>Sr. No</th>
+                            <th>Vehicle ID</th>
+                            <th style="min-width: 170px;">Vehicle Name</th>
+                            <th>Location</th>
+                            <th style="min-width: 170px;">Vehicle Type</th>
+                            <th style="color: rgb(0, 0, 0);">Functional</th>
+                            <th style="color: rgb(0, 0, 0);">Parked</th>
+                            <th style="color: rgb(0, 0, 0); min-width: 150px;">Field Operation</th>
+                            <th style="color: rgb(255, 0, 0); min-width: 150px;">Non-Functional</th>
+                            <th style="color: rgb(255, 0, 0); min-width: 150px;">Minor Repair</th>
+                            <th style="color: rgb(255, 0, 0); min-width: 150px;">Major Repair</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for attendance in attendance_data %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ attendance.vehicle_id }}</td>
+                                <td>{{ attendance.vehicle_name }}</td>
+                                <td>{{ attendance.location }}</td>
+                                <td>{{ attendance.vehicle_type }}</td>
+                                <td>
+                                    <input type="radio" name="status_{{ attendance.vehicle_id }}" value="functional" class="status-functional"
+                                           {% if attendance.functional %}checked{% endif %} data-vehicle="{{ attendance.vehicle_id }}">
+                                </td>
+                                <td>
+                                    <input type="radio" name="functional_options_{{ attendance.vehicle_id }}" value="parked" class="parked" 
+                                           {% if attendance.parked %}checked{% endif %} {% if not attendance.functional %}disabled{% endif %}>
+                                    <label for="parked_{{ attendance.vehicle_id }}"></label>
+                                </td>
+                                <td>
+                                    <input type="radio" name="functional_options_{{ attendance.vehicle_id }}" value="field_operation" class="field-operation"
+                                           {% if attendance.field_operation %}checked{% endif %} {% if not attendance.functional %}disabled{% endif %}>
+                                    <label for="field_operation_{{ attendance.vehicle_id }}"></label>
+                                </td>
+                                <td>
+                                    <input type="radio" name="status_{{ attendance.vehicle_id }}" value="non_functional" class="status-non-functional"
+                                           {% if attendance.non_functional %}checked{% endif %} data-vehicle="{{ attendance.vehicle_id }}">
+                                </td>
+                                <td>
+                                    <input type="radio" name="repair_options_{{ attendance.vehicle_id }}" value="minor_repair" class="minor-repair"
+                                           {% if attendance.minor_repair %}checked{% endif %} {% if not attendance.non_functional %}disabled{% endif %}>
+                                    <label for="minor_repair_{{ attendance.vehicle_id }}"></label>
+                                </td>
+                                <td>
+                                    <input type="radio" name="repair_options_{{ attendance.vehicle_id }}" value="major_repair" class="major-repair"
+                                           {% if attendance.major_repair %}checked{% endif %} {% if not attendance.non_functional %}disabled{% endif %}>
+                                    <label for="major_repair_{{ attendance.vehicle_id }}"></label>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save Button -->
+    <div class="text-right mb-3">
+        <button type="submit" class="btn btn-success">Save</button>
+    </div>
+</form>
+
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        $(document).ready(function() {
+            // Handle changes when Functional or Non-Functional is selected
+            $('input[name^="status_"]').on('change', function() {
+                var vehicleId = $(this).data('vehicle');
+                var functional = $(this).val() === 'functional';
+                
+                // Enable or disable the Parked/Field Operation fields for functional vehicles
+                $('input[name="functional_options_' + vehicleId + '"]').prop('disabled', !functional);
+                
+                // Enable or disable the Repair options for non-functional vehicles
+                $('input[name="repair_options_' + vehicleId + '"]').prop('disabled', functional);
+                
+                // Clear the non-applicable fields when functional status changes
+                if (functional) {
+                    // Deselect repairs and ensure only Parked or Field Operation can be selected
+                    $('input[name="repair_options_' + vehicleId + '"]').prop('checked', false);
+                    $('input[name="functional_options_' + vehicleId + '"]').prop('checked', false);
+                    $('input[name="functional_options_' + vehicleId + '"][value="parked"]').prop('checked', true); // Auto-select Parked
+                } else {
+                    // Deselect Parked/Field Operation and ensure only Repair options can be selected
+                    $('input[name="functional_options_' + vehicleId + '"]').prop('checked', false);
+                    $('input[name="repair_options_' + vehicleId + '"][value="major_repair"]').prop('checked', true); // Auto-select Major Repair
+                }
+            });
+            
+            // Automatically trigger change for all vehicles on page load to set the correct state
+            $('input[name^="status_"]:checked').trigger('change');
+
+            // Ensure mutual exclusivity between Parked and Field Operation (for Functional vehicles)
+            $('input[name^="parked_"], input[name^="field_operation_"]').on('change', function() {
+                var vehicleId = $(this).attr('name').split('_')[1];
+        
+                // Only one between Parked and Field Operation should be selected
+                if ($(this).hasClass('parked') && $(this).is(':checked')) {
+                    $('input[name="field_operation_' + vehicleId + '"]').prop('checked', false);
+                } else if ($(this).hasClass('field-operation') && $(this).is(':checked')) {
+                    $('input[name="parked_' + vehicleId + '"]').prop('checked', false);
+                }
+            });
+        
+            // Ensure mutual exclusivity between Minor Repair and Major Repair (for Non-Functional vehicles)
+            $('input[name^="minor_repair_"], input[name^="major_repair_"]').on('change', function() {
+                var vehicleId = $(this).attr('name').split('_')[1];
+        
+                // Only one between Minor Repair and Major Repair should be selected
+                if ($(this).hasClass('minor-repair') && $(this).is(':checked')) {
+                    $('input[name="major_repair_' + vehicleId + '"]').prop('checked', false);
+                } else if ($(this).hasClass('major-repair') && $(this).is(':checked')) {
+                    $('input[name="minor_repair_' + vehicleId + '"]').prop('checked', false);
+                }
+            });
+        
+            // Automatically trigger change for all vehicles on page load to set the correct state
+            $('input[name^="status_"]:checked').trigger('change');
+        });
+    </script>
+
+<script src="{% static 'path/to/jquery.js' %}"></script>
+<script src="{% static 'path/to/jquery.dataTables.js' %}"></script>
+<script>
+    $(document).ready(function() {
+        $('#dataTable').DataTable({
+            "paging": true,
+            "pageLength": 100,
+            "searching": true,
+            "ordering": true,
+            "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
+        });
+    });
+
+    function showLoader() {
+        document.getElementById("loader").style.display = "flex";
+    }
+</script>
+<style>
+    .functional { background-color: #d4edda; }
+    .non_functional { background-color: #f8d7da; }
+    
+    .loader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+    }
+    .loader::after {
+        content: '';
+        border: 8px solid #f3f3f3;
+        border-top: 8px solid #3498db;
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+{% endblock %}

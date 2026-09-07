@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="container mt-5">
+
+    <div class="card shadow-sm p-5 text-center">
+
+        <h2 class="text-danger mb-3">
+            ✅ This Evaluation is Completed
+        </h2>
+
+        <p class="lead">
+            You cannot update this record because the status is marked as <strong>Completed</strong>.
+        </p>
+
+        <div class="mt-4">
+            <a href="{% url 'visit_evaluation_list' %}" class="btn btn-primary">
+                🔙 Back to List
+            </a>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

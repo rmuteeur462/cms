@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="filters-card">
+    <form method="get" class="row g-4 align-items-end">
+        <div class="col-md-3">
+            <label for="from_date" class="form-label">
+                <i class="bi bi-calendar-range me-2"></i>From Date
+            </label>
+            <input type="date" id="from_date" name="from_date" class="form-control" value="{{ from_date }}">
+        </div>
+        <div class="col-md-3">
+            <label for="to_date" class="form-label">
+                <i class="bi bi-calendar-check me-2"></i>To Date
+            </label>
+            <input type="date" id="to_date" name="to_date" class="form-control" value="{{ to_date }}">
+        </div>
+        <div class="col-md-3">
+            <label for="location" class="form-label">
+                <i class="bi bi-geo-alt me-2"></i>Location
+            </label>
+            <select id="location" name="location" class="form-select">
+                <option value="">-- All Locations --</option>
+                {% for loc in locations %}
+                    <option value="{{ loc.id }}" {% if selected_location == loc.id|stringformat:"s" %}selected{% endif %}>
+                        {{ loc.location_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-modern bg-success w-100">
+                <i class="bi bi-funnel me-2"></i>Apply Filters
+            </button>
+        </div>
+    </form>
+</div>
+
+<div class="container mt-4">
+    <h3>Pending Complaints</h3>
+
+    <div class="table-responsive"> 
+        <table class="table table-bordered table-striped table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>S.No</th>  <!-- Serial Number Column -->
+                    <th>ID</th>
+                    <th>Complaint Type</th>
+                    <th>Detail</th>
+                    <th>Location</th>
+                    <th>UC</th>
+                    <th>Date</th>
+                    <th>Applicant</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in complaints %}
+                <tr>
+                    <td>{{ forloop.counter }}</td> <!-- Serial Number -->
+                    <td>{{ c.id }}</td>
+                    <td>{{ c.complaint_type }}</td>
+                    <td class="text-truncate" style="max-width: 200px;">{{ c.complaint_detail }}</td>
+                    <td>{{ c.location }}</td>
+                    <td>{{ c.uc }}</td>
+                    <td>{{ c.date }}</td>
+                    <td>{{ c.first_name }} {{ c.last_name }}</td>
+                    <td>
+                        {% if c.status == 'pending' %}
+                            <span class="badge bg-warning text-dark">Pending</span>
+                        {% else %}
+                            <span class="badge bg-success">Resolved</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center">No pending complaints</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+</div>
+{% endblock %}

@@ -1,0 +1,256 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load street_extras %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3 class="mb-4 text-primary fw-bold">
+        🏙️ Street Details — {{ street.street_name }}
+      </h3>
+      
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+          <div class="row g-4">
+      
+            <!-- Left Column -->
+            <div class="col-md-6">
+                <h4 class="text-secondary mb-3 border-bottom pb-2 fw-bold">📍 Basic Information</h4>
+                <ul class="list-unstyled mb-0" style="font-size: 1.1rem; line-height: 1.8;">
+                  <li class="mb-2"><strong>Zone:</strong> <span class="text-dark">{{ street.location.location_name }}</span></li>
+                  <li class="mb-2"><strong>Uc:</strong> <span class="text-dark">{{ street.uc_name.uc_name  }}</span></li>
+                  <li class="mb-2"><strong>Nc:</strong> <span class="text-dark">{{ street.nc_name.nc_name }}</span></li>
+                  <li class="mb-2"><strong>Street Name:</strong> <span class="text-dark">{{ street.street_name}}</span></li>
+
+                  <li class="mb-2"><strong>No. of Houses:</strong> <span class="text-dark">{{ street.no_of_houses }}</span></li>
+                  <li class="mb-2"><strong>No. of Shops:</strong> <span class="text-dark">{{ street.no_of_shops }}</span></li>
+                  <li class="mb-2"><strong>Total Lenght in KM:</strong> <span class="text-dark">{{ street.total_length_km }}</span></li>
+
+                </ul>
+              </div>
+              
+            
+            
+
+              <div class="col-md-6">
+                <!-- 🧹 Sweeping Schedule -->
+                <h5 class="mt-3">🧹 Sweeping Schedule</h5>
+                <table class="table table-bordered table-sm align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Day</th>
+                            <th>Time Slots</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for day in street.DAYS_OF_WEEK %}
+                            {% with day_key=day.0 %}
+                                {% with slots=street|get_sweeping_slots:day_key %}
+                                    {% if slots %}
+                                        <tr>
+                                            <td>{{ day.1 }}</td>
+                                            <td>
+                                                {% for slot in slots %}
+                                                    <div>
+                                                        {% if slot == "6_7" %}6:00 AM - 7:00 AM{% endif %}
+                                                        {% if slot == "7_8" %}7:00 AM - 8:00 AM{% endif %}
+                                                        {% if slot == "8_9" %}8:00 AM - 9:00 AM{% endif %}
+                                                        {% if slot == "9_10" %}9:00 AM - 10:00 AM{% endif %}
+                                                        {% if slot == "10_11" %}10:00 AM - 11:00 AM{% endif %}
+                                                        {% if slot == "11_12" %}11:00 AM - 12:00 PM{% endif %}
+                                                        {% if slot == "12_1" %}12:00 PM - 1:00 PM{% endif %}
+                                                    </div>
+                                                {% endfor %}
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endwith %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            
+                <!-- 🚛 Solid Waste Collection -->
+                <h5 class="mt-4">🚛 Solid Waste Collection</h5>
+                <table class="table table-bordered table-sm align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Day</th>
+                            <th>Time Slots</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for day in street.DAYS_OF_WEEK %}
+                            {% with day_key=day.0 %}
+                                {% with slots=street|get_solid_waste_slots:day_key %}
+                                    {% if slots %}
+                                        <tr>
+                                            <td>{{ day.1 }}</td>
+                                            <td>
+                                                {% for slot in slots %}
+                                                    <div>
+                                                        {% if slot == "6_7" %}6:00 AM - 7:00 AM{% endif %}
+                                                        {% if slot == "7_8" %}7:00 AM - 8:00 AM{% endif %}
+                                                        {% if slot == "8_9" %}8:00 AM - 9:00 AM{% endif %}
+                                                        {% if slot == "9_10" %}9:00 AM - 10:00 AM{% endif %}
+                                                        {% if slot == "10_11" %}10:00 AM - 11:00 AM{% endif %}
+                                                        {% if slot == "11_12" %}11:00 AM - 12:00 PM{% endif %}
+                                                        {% if slot == "12_1" %}12:00 PM - 1:00 PM{% endif %}
+                                                    </div>
+                                                {% endfor %}
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endwith %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+              
+          
+        
+    </div>
+
+    <!-- Assigned Resources -->
+    <hr>
+    <h5>👷 Assigned Employees</h5>
+    <ul>
+        {% for emp in street.assign_employee.all %}
+            <li>{{ emp.name }} ({{ emp.designation }})</li>
+        {% empty %}
+            <li>No employees assigned.</li>
+        {% endfor %}
+    </ul>
+
+    <h5>🚚 Assigned Vehicles</h5>
+    <ul>
+        {% for vehicle in street.assign_vehicle.all %}
+            <li>{{ vehicle.vehicle_id }} ({{ vehicle.vehicle_type }})</li>
+        {% empty %}
+            <li>No vehicles assigned.</li>
+        {% endfor %}
+    </ul>
+
+    <!-- Map -->
+    <hr>
+    <div class="d-flex justify-content-between align-items-center">
+        <h5>🗺️ Street Location Map</h5>
+        <button id="fullscreen-btn" class="btn btn-outline-primary btn-sm">⛶ Fullscreen</button>
+    </div>
+
+    <div id="map-container" style="position: relative; width: 100%; height: 500px; border-radius: 10px; margin-top: 10px;">
+        <div id="map" style="width: 100%; height: 100%;"></div>
+        <!-- Exit button INSIDE fullscreen -->
+        <button id="exit-fullscreen-btn" 
+                class="btn btn-danger btn-sm" 
+                style="position: absolute; top: 10px; right: 10px; display: none; z-index: 9999;">
+            ❎ Exit Fullscreen
+        </button>
+    </div>
+
+    <p id="no-data-message" class="text-center text-muted mt-2" style="display: none;">
+        ⚠️ No coordinates available for this street.
+    </p>
+</div>
+
+<!-- OpenLayers -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v7.3.0/ol.css">
+<script src="https://cdn.jsdelivr.net/npm/ol@v7.3.0/dist/ol.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const coordinates = {{ coordinates|default:"[]"|safe }};
+    const streetName = "{{ street.street_name|escapejs }}";
+    let center = [71.5249, 34.0150];
+
+    const map = new ol.Map({
+        target: 'map',
+        layers: [new ol.layer.Tile({ source: new ol.source.OSM() })],
+        view: new ol.View({
+            center: ol.proj.fromLonLat(center),
+            zoom: 14,
+        }),
+    });
+
+    if (coordinates.length > 0) {
+        const lineCoords = coordinates.map(c => ol.proj.fromLonLat(c));
+
+        // 🔹 Main Line Feature
+        const lineFeature = new ol.Feature({ geometry: new ol.geom.LineString(lineCoords) });
+        lineFeature.setStyle(new ol.style.Style({
+            stroke: new ol.style.Stroke({ color: '#007bff', width: 4 })
+        }));
+
+        // 🔹 Start and End Points
+        const startFeature = new ol.Feature({ geometry: new ol.geom.Point(lineCoords[0]) });
+        const endFeature = new ol.Feature({ geometry: new ol.geom.Point(lineCoords[lineCoords.length - 1]) });
+
+        startFeature.setStyle(new ol.style.Style({
+            image: new ol.style.Circle({
+                radius: 6, fill: new ol.style.Fill({ color: 'green' }),
+                stroke: new ol.style.Stroke({ color: '#fff', width: 2 }),
+            }),
+        }));
+
+        endFeature.setStyle(new ol.style.Style({
+            image: new ol.style.Circle({
+                radius: 6, fill: new ol.style.Fill({ color: 'red' }),
+                stroke: new ol.style.Stroke({ color: '#fff', width: 2 }),
+            }),
+        }));
+
+        // 🔹 Center Label (Street Name)
+        const middleIndex = Math.floor(lineCoords.length / 2);
+        const middleCoord = lineCoords[middleIndex];
+        const labelFeature = new ol.Feature({ geometry: new ol.geom.Point(middleCoord) });
+
+        labelFeature.setStyle(new ol.style.Style({
+            text: new ol.style.Text({
+                text: streetName,
+                font: 'bold 14px Arial',
+                fill: new ol.style.Fill({ color: '#000' }),
+                stroke: new ol.style.Stroke({ color: '#fff', width: 3 }),
+                offsetY: -10,
+                backgroundFill: new ol.style.Fill({ color: 'rgba(255,255,255,0.7)' }),
+                padding: [3, 5, 3, 5],
+            }),
+        }));
+
+        const vectorLayer = new ol.layer.Vector({
+            source: new ol.source.Vector({
+                features: [lineFeature, startFeature, endFeature, labelFeature],
+            }),
+        });
+
+        map.addLayer(vectorLayer);
+        map.getView().fit(vectorLayer.getSource().getExtent(), { padding: [50, 50, 50, 50], maxZoom: 17 });
+    } else {
+        document.getElementById('no-data-message').style.display = 'block';
+    }
+
+    // 🔹 Fullscreen Controls
+    const mapContainer = document.getElementById('map-container');
+    const enterBtn = document.getElementById('fullscreen-btn');
+    const exitBtn = document.getElementById('exit-fullscreen-btn');
+
+    enterBtn.addEventListener('click', () => {
+        if (!document.fullscreenElement) mapContainer.requestFullscreen();
+    });
+    exitBtn.addEventListener('click', () => {
+        if (document.fullscreenElement) document.exitFullscreen();
+    });
+
+    document.addEventListener('fullscreenchange', () => {
+        if (document.fullscreenElement) {
+            exitBtn.style.display = 'block';
+            enterBtn.style.display = 'none';
+        } else {
+            exitBtn.style.display = 'none';
+            enterBtn.style.display = 'inline-block';
+        }
+        setTimeout(() => map.updateSize(), 300);
+    });
+});
+</script>
+{% endblock %}

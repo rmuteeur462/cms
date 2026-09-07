@@ -1,0 +1,491 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="container-fluid px-4 py-5">
+  <!-- Header Section -->
+  <div class="row mb-5">
+    <div class="col-12">
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+        <div class="header-content">
+          <h1 class="display-6 fw-bold text-dark mb-2">{{ scheme.name }}</h1>
+          <p class="text-muted fs-5 mb-0">Scheme Code: <span class="fw-semibold text-primary">{{ scheme.code }}</span></p>
+        </div>
+        <div class="header-actions">
+          <a href="{% url 'adp_scheme_list' %}" class="btn btn-outline-primary btn-lg px-4 rounded-pill">
+            <i class="bi bi-arrow-left me-2"></i>Back to Schemes
+          </a>
+        </div>
+      </div>
+      <hr class="border-2 opacity-25 mt-4">
+    </div>
+  </div>
+
+  <!-- Key Metrics Overview -->
+  <div class="row g-4 mb-5 d-flex align-items-stretch">
+    <div class="col-lg-3 col-md-6 d-flex">
+      <div class="metric-card bg-gradient-primary-1 flex-fill">
+        <div class="metric-icon">
+          <i class="bi bi-currency-dollar"></i>
+        </div>
+        <div class="metric-content">
+          <h3 class="metric-value">{{ scheme.aa_cost }}M</h3>
+          <p class="metric-label">Administrative Approval</p>
+        </div>
+      </div>
+    </div>
+  
+    <div class="col-lg-3 col-md-6 d-flex">
+      <div class="metric-card bg-gradient-success-1 flex-fill">
+        <div class="metric-icon">
+          <i class="bi bi-graph-up-arrow"></i>
+        </div>
+        <div class="metric-content">
+          <h3 class="metric-value">{{ scheme.release }}M</h3>
+          <p class="metric-label">Release Amount</p>
+        </div>
+      </div>
+    </div>
+  
+    <div class="col-lg-3 col-md-6 d-flex">
+      <div class="metric-card bg-gradient-warning-1 flex-fill">
+        <div class="metric-icon">
+          <i class="bi bi-wallet2"></i>
+        </div>
+        <div class="metric-content">
+          <h3 class="metric-value">{{ scheme.exp }}M</h3>
+          <p class="metric-label">Total Expenditure</p>
+        </div>
+      </div>
+    </div>
+  
+    <div class="col-lg-3 col-md-6 d-flex">
+      <div class="metric-card bg-gradient-info-1 flex-fill">
+        <div class="metric-icon">
+          <i class="bi bi-calendar-range"></i>
+        </div>
+        <div class="metric-content">
+          <h3 class="metric-value">{{ scheme.start_date|date:"M Y" }}</h3>
+          <p class="metric-label">Start Date</p>
+          <h3 class="metric-value">{{ scheme.end_date|date:"M Y" }}</h3>
+          <p class="metric-label">End Date</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+
+  <!-- Detailed Information Cards -->
+  <div class="row g-4">
+    <!-- Financial Progress -->
+    <div class="col-xl-4 col-lg-6">
+      <div class="info-card h-100">
+        <div class="card-header-custom bg-primary">
+          <div class="d-flex align-items-center">
+            <div class="icon-wrapper bg-white bg-opacity-20 rounded-circle me-3">
+              <i class="bi bi-graph-up text-white fs-4"></i>
+            </div>
+            <div>
+              <h5 class="card-title-custom mb-0">Financial Progress</h5>
+              <small class="text-white-75">Track monetary advancements</small>
+            </div>
+          </div>
+        </div>
+        <div class="card-body-custom">
+          {% if scheme.financial_progress.all %}
+            <div class="progress-timeline">
+              {% for progress in scheme.financial_progress.all %}
+              <div class="timeline-item">
+                <div class="timeline-marker bg-primary"></div>
+                <div class="timeline-content">
+                  <div class="timeline-date">{{ progress.date|date:"M Y" }}</div>
+                  <div class="timeline-text">{{ progress.progress }}</div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="empty-state">
+              <i class="bi bi-inbox text-muted fs-1 mb-3"></i>
+              <p class="text-muted mb-0">No financial progress data available</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Physical Progress -->
+    <div class="col-xl-4 col-lg-6">
+      <div class="info-card h-100">
+        <div class="card-header-custom bg-success">
+          <div class="d-flex align-items-center">
+            <div class="icon-wrapper bg-white bg-opacity-20 rounded-circle me-3">
+              <i class="bi bi-hammer text-white fs-4"></i>
+            </div>
+            <div>
+              <h5 class="card-title-custom mb-0">Physical Progress</h5>
+              <small class="text-white-75">Construction & development status</small>
+            </div>
+          </div>
+        </div>
+        <div class="card-body-custom">
+          {% if scheme.physical_progress.all %}
+            <div class="progress-timeline">
+              {% for progress in scheme.physical_progress.all %}
+              <div class="timeline-item">
+                <div class="timeline-marker bg-success"></div>
+                <div class="timeline-content">
+                  <div class="timeline-date">{{ progress.date|date:"M Y" }}</div>
+                  <div class="timeline-text">{{ progress.progress }}</div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="empty-state">
+              <i class="bi bi-tools text-muted fs-1 mb-3"></i>
+              <p class="text-muted mb-0">No physical progress data available</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Scheme Status -->
+    <div class="col-xl-4 col-lg-6">
+      <div class="info-card h-100">
+        <div class="card-header-custom bg-warning">
+          <div class="d-flex align-items-center">
+            <div class="icon-wrapper bg-white bg-opacity-20 rounded-circle me-3">
+              <i class="bi bi-flag text-white fs-4"></i>
+            </div>
+            <div>
+              <h5 class="card-title-custom mb-0">Scheme Status</h5>
+              <small class="text-white-75">Current project status</small>
+            </div>
+          </div>
+        </div>
+        <div class="card-body-custom">
+          {% if scheme.scheme_status.all %}
+            <div class="progress-timeline">
+              {% for status in scheme.scheme_status.all %}
+              <div class="timeline-item">
+                <div class="timeline-marker bg-warning"></div>
+                <div class="timeline-content">
+                  <div class="timeline-date">{{ status.date|date:"M Y" }}</div>
+                  <div class="timeline-text">{{ status.status }}</div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="empty-state">
+              <i class="bi bi-clipboard-x text-muted fs-1 mb-3"></i>
+              <p class="text-muted mb-0">No status records available</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* Global Styles */
+.container-fluid {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Header Styling */
+.header-content h1 {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Metric Cards */
+.metric-card {
+  background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-primary) 100%);
+  border-radius: 20px;
+  padding: 2rem;
+  color: white;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.metric-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20px;
+  width: 100px;
+  height: 100px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 50%;
+  transform: scale(0);
+  transition: transform 0.6s ease;
+}
+
+.metric-card:hover::before {
+  transform: scale(2);
+}
+
+.metric-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.bg-gradient-primary-1 {
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c17b 100%);
+  color: #fff;
+}
+
+.bg-gradient-success-1 {
+  background: linear-gradient(135deg, #43cea2 0%, #185a9d 100%);
+  color: #fff;
+}
+
+.bg-gradient-warning-1 {
+  background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
+  color: #fff;
+}
+
+.bg-gradient-info-1 {
+  background: linear-gradient(135deg, #36d1dc 0%, #5b86e5 100%);
+  color: #fff;
+}
+
+.metric-icon {
+  font-size: 2.5rem;
+  opacity: 0.9;
+  min-width: 70px;
+}
+
+.metric-value {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.1;
+}
+
+.metric-label {
+  font-size: 0.95rem;
+  margin: 0;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+/* Information Cards */
+.info-card {
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+.info-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+}
+
+.card-header-custom {
+  padding: 2rem 2rem 1.5rem;
+  border: none;
+  color: white;
+  position: relative;
+}
+
+.card-header-custom::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: rgba(255,255,255,0.2);
+}
+
+.icon-wrapper {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.card-title-custom {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: white;
+}
+
+.text-white-75 {
+  color: rgba(255,255,255,0.75) !important;
+}
+
+.card-body-custom {
+  padding: 2rem;
+  min-height: 250px;
+}
+
+/* Timeline Styling */
+.progress-timeline {
+  position: relative;
+}
+
+.timeline-item {
+  display: flex;
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.timeline-item:last-child {
+  margin-bottom: 0;
+}
+
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 24px;
+  bottom: -12px;
+  width: 2px;
+  background: linear-gradient(to bottom, #e9ecef, transparent);
+}
+
+.timeline-item:last-child::before {
+  display: none;
+}
+
+.timeline-marker {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-right: 1rem;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 0 0 4px rgba(255,255,255,1), 0 0 0 6px rgba(0,0,0,0.1);
+}
+
+.timeline-content {
+  flex: 1;
+  padding-top: 2px;
+}
+
+.timeline-date {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.25rem;
+}
+
+.timeline-text {
+  color: #495057;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: #6c757d;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container-fluid {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .metric-card {
+    padding: 1.5rem;
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+  
+  .metric-value {
+    font-size: 1.8rem;
+  }
+  
+  .card-header-custom {
+    padding: 1.5rem 1.5rem 1rem;
+  }
+  
+  .card-body-custom {
+    padding: 1.5rem;
+  }
+  
+  .header-content h1 {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .metric-card {
+    padding: 1rem;
+  }
+  
+  .card-header-custom {
+    padding: 1rem;
+  }
+  
+  .card-body-custom {
+    padding: 1rem;
+  }
+  
+  .icon-wrapper {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* Animation Classes */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.info-card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.metric-card:nth-child(1) { animation-delay: 0.1s; }
+.metric-card:nth-child(2) { animation-delay: 0.2s; }
+.metric-card:nth-child(3) { animation-delay: 0.3s; }
+.metric-card:nth-child(4) { animation-delay: 0.4s; }
+
+/* Print Styles */
+@media print {
+  .info-card {
+    box-shadow: none;
+    border: 1px solid #dee2e6;
+  }
+  
+  .metric-card {
+    background: #f8f9fa !important;
+    color: #212529 !important;
+  }
+}
+</style>
+{% endblock %}

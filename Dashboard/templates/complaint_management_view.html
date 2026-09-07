@@ -1,0 +1,612 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    View Complaint
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800" style="font-weight: bold; font-size: 1.5rem; text-align: center;">
+    Complaint View {{ report_date }}
+    </h1>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET">
+                <div class="form-row">
+    
+                    <!-- From Date -->
+                    <div class="form-group col-md-2">
+                        <label for="from_date">From</label>
+                        <input type="date" class="form-control" name="from_date" 
+                               value="{{ request.GET.from_date }}">
+                    </div>
+    
+                    <!-- To Date -->
+                    <div class="form-group col-md-2">
+                        <label for="to_date">To</label>
+                        <input type="date" class="form-control" name="to_date" 
+                               value="{{ request.GET.to_date }}">
+                    </div>
+    
+                    <!-- Complaint ID -->
+                    <div class="form-group col-md-2">
+                        <label for="complaint_id">Complaint ID</label>
+                        <input type="text" class="form-control" name="complaint_id"
+                               value="{{ request.GET.complaint_id }}">
+                    </div>
+    
+                    <!-- Phone -->
+                    <div class="form-group col-md-2">
+                        <label for="cell_number">Cell No</label>
+                        <input type="text" class="form-control" name="cell_number"
+                               value="{{ request.GET.cell_number }}">
+                    </div>
+    
+                    <!-- PCP No -->
+                    <div class="form-group col-md-2">
+                        <label for="pcp_no">PCP No</label>
+                        <input type="text" class="form-control" name="pcp_no"
+                               value="{{ request.GET.pcp_no }}">
+                    </div>
+    
+                    <!-- EAK No -->
+                    <div class="form-group col-md-2">
+                        <label for="eak_no">EAK No</label>
+                        <input type="text" class="form-control" name="eak_no"
+                               value="{{ request.GET.eak_no }}">
+                    </div>
+    
+                    <!-- Status -->
+                    <div class="form-group col-md-2">
+                        <label for="status">Status</label>
+                        <select class="form-control" name="status">
+                            <option value="">All</option>
+                            <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
+                            <option value="resolved" {% if request.GET.status == 'resolved' %}selected{% endif %}>Resolved</option>
+                        </select>
+                    </div>
+    
+                    <!-- Submit -->
+                    <div class="form-group col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">Filter</button>
+                    </div>
+    
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    
+    
+
+   
+
+
+
+
+<!-- Bootstrap Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <h2 class="mt-4">Complaint Records</h2>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped table-sm" id="dataTable" width="100%" cellspacing="0">
+          <thead class="thead-primary text-center">
+            <tr>
+            <th>Complaint ID</th> 
+              <th>Location</th>
+              <th>UC</th>
+              <th>Source</th>
+              <th>Type</th>
+              <th>Details</th>
+              <th>Complaint Cell No</th>
+              <th>Status</th>
+              <th>Applicant Info</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for complaint in complaint_data %}
+            <tr>
+              <td class="text-center">{{ complaint.id }}</td> 
+              <td class="text-center">{{ complaint.location }}</td>
+              <td class="text-center">{{ complaint.uc }}</td>
+              <td class="text-center">{{ complaint.complaint_source }}</td>
+              <td class="text-center">{{ complaint.complaint_type }}</td>
+              <td class="text-center">{{ complaint.complaint_detail }}</td>
+              <td class="text-center">{{ complaint.cell_number }}</td>
+              <td class="text-center" id="status-{{ complaint.id }}">
+                {% if complaint.status == 'resolved' %}
+                <span class="badge bg-success">Resolved</span>
+                {% else %}
+                <span class="badge bg-warning text-dark">Pending</span>
+                <form method="POST" action="" style="display: inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="complaint_id" value="{{ complaint.id }}">
+                  <button type="submit" name="resolve_complaint" class="btn btn-success btn-sm mt-1">Resolve</button>
+                </form>
+                {% endif %}
+              </td>
+              <td class="text-center">
+                <button class="btn btn-info btn-sm" data-bs-toggle="modal"
+                  data-bs-target="#applicantModal-{{ complaint.id }}">Applicant Info</button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  {% for complaint in complaint_data %}
+  <div class="modal fade" id="applicantModal-{{ complaint.id }}" tabindex="-1" aria-labelledby="modalLabel-{{ complaint.id }}"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalLabel-{{ complaint.id }}">Applicant Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <table class="table table-bordered">
+            <tr><th>First Name</th><td>{{ complaint.first_name|default:"N/A" }}</td></tr>
+            <tr><th>Last Name</th><td>{{ complaint.last_name|default:"N/A" }}</td></tr>
+            <tr><th>CNIC</th><td>{{ complaint.cnic|default:"N/A" }}</td></tr>
+            <tr><th>Cell Number</th><td>{{ complaint.cell_number|default:"N/A" }}</td></tr>
+            <tr><th>Phone Number</th><td>{{ complaint.phone_number|default:"N/A" }}</td></tr>
+            <tr><th>Area</th><td>{{ complaint.area|default:"N/A" }}</td></tr>
+            <tr><th>Address</th><td>{{ complaint.address|default:"N/A" }}</td></tr>
+            <tr><th>Gender</th><td>{{ complaint.gender|title|default:"N/A" }}</td></tr>
+            <tr><th>Consumer Type</th><td>{{ complaint.consumer_type|title|default:"N/A" }}</td></tr>
+          </table>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %} -->
+  
+
+  <div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h2 class="mt-4">Complaint Records</h2>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped table-sm" id="dataTable" width="100%" cellspacing="0">
+                <thead class="thead-primary text-center">
+                    <tr>
+                        <th>S.No</th>
+                        <th>Complaint ID</th>
+                        <th>Status</th> 
+                        <th>First Name</th>
+                        <th>Source</th>
+                        <th>Category</th>
+                        <th>Sub Category</th>
+                        <th>Location</th>
+                        <th>UC</th>
+                        <th>Cell#</th>
+                        <th>Details</th>
+                        <th>Date</th>
+                        <th>Action</th> 
+                        <th>History</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for complaint in complaint_data %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ complaint.id }}</td>
+                
+                        <td class="text-center">
+                            {% if complaint.status == 'resolved' %}
+                                <span class="badge bg-success">Resolved</span>
+                            {% else %}
+                                <span class="badge bg-danger text-light">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ complaint.first_name|default:"N/A" }}</td>
+                        <td>{{ complaint.complaint_source|default:"N/A" }}</td>
+                        <td>{{ complaint.complaint_type|default:"N/A" }}</td>
+                        <td>{{ complaint.SubType|default:"N/A" }}</td>
+                        <td>{{ complaint.location|default:"N/A" }}</td>
+                        <td>{{ complaint.uc|default:"N/A" }}</td>
+                        <td>{{ complaint.cell_number|default:"N/A" }}</td>
+                        <td>{{ complaint.complaint_detail|default:"N/A" }}</td>
+                        <td>{{ complaint.date|date:"Y-m-d" }}</td>
+                        <td class="text-center">
+                            {% if complaint.status != 'resolved' %}
+                                <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#resolveModal{{ complaint.id }}">
+                                    Resolve
+                                </button>
+                        
+                                <!-- Resolve Modal -->
+                                <div class="modal fade" id="resolveModal{{ complaint.id }}" tabindex="-1" aria-labelledby="resolveModalLabel{{ complaint.id }}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="resolveModalLabel{{ complaint.id }}">Resolve Complaint #{{ complaint.id }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <form method="POST" enctype="multipart/form-data">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="complaint_id" value="{{ complaint.id }}">
+                                            
+                                                    <!-- 🔹 Description -->
+                                                    <div class="mb-3">
+                                                        {{ resolution_form.description.label_tag }}
+                                                        {{ resolution_form.description }}
+                                                    </div>
+                                            
+                                                    <!-- 🔹 After Image -->
+                                                    <div class="mb-3">
+                                                        {{ resolution_form.after_image.label_tag }}
+                                                        {{ resolution_form.after_image }}
+                                                    </div>
+                                            
+                                                    <!-- 🔹 Customer Satisfaction -->
+                                                    <div class="mb-3">
+                                                        {{ resolution_form.customer_satisfaction.label_tag }}
+                                                        {{ resolution_form.customer_satisfaction }}
+                                                    </div>
+                                            
+                                                    <!-- 🔹 Submit Button -->
+                                                    <div class="mt-3 text-end">
+                                                        <button type="submit" name="save_resolution" class="btn btn-primary">
+                                                            💾 Save & Resolve
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                            
+                                        </div>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        
+
+                        <!-- ✅ History Button + Modal -->
+                        <td class="text-center">
+                            <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#historyModal{{ complaint.id }}">
+                                History
+                            </button>
+
+                            <div class="modal fade" id="historyModal{{ complaint.id }}" tabindex="-1" aria-labelledby="historyModalLabel{{ complaint.id }}" aria-hidden="true">
+                                <div class="modal-dialog modal-xl">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="historyModalLabel{{ complaint.id }}">Complaint History #{{ complaint.id }}</h5>
+                                            
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+
+                                            {% if complaint.time_to_resolve %}
+                                            <p><strong>Time to Resolve:</strong> {{ complaint.time_to_resolve }}</p>
+                                        {% endif %}
+                                        
+                            
+                                          <!-- Applicant Info -->
+                                        <h6 class="fw-bold">Applicant Information</h6>
+                                        <table class="table table-sm table-bordered mb-3">
+                                            {% if complaint.first_name or complaint.last_name %}
+                                            <tr><th>Name</th><td>{{ complaint.first_name }} {{ complaint.last_name }}</td></tr>
+                                            {% endif %}
+
+                                            {% if complaint.bill_number %}
+                                            <tr><th>Bill No</th><td>{{ complaint.bill_number }}</td></tr>
+                                            {% endif %}
+
+                                            {% if complaint.cnic %}
+                                            <tr><th>CNIC</th><td>{{ complaint.cnic }}</td></tr>
+                                            {% endif %}
+
+                                            {% if complaint.gender %}
+                                            <tr><th>Gender</th><td>{{ complaint.gender }}</td></tr>
+                                            {% endif %}
+
+                                            {% if complaint.consumer_type %}
+                                            <tr><th>Consumer Type</th><td>{{ complaint.consumer_type }}</td></tr>
+                                            {% endif %}
+
+                                            {% if complaint.cell_number %}
+                                            <tr><th>Cell No</th><td>{{ complaint.cell_number }}</td></tr>
+                                            {% endif %}
+
+                                            {% if complaint.phone_number %}
+                                            <tr><th>Phone No</th><td>{{ complaint.phone_number }}</td></tr>
+                                            {% endif %}
+
+                                            {% if complaint.area %}
+                                            <tr><th>Area</th><td>{{ complaint.area }}</td></tr>
+                                            {% endif %}
+
+                                            {% if complaint.address %}
+                                            <tr><th>Address</th><td>{{ complaint.address }}</td></tr>
+                                            {% endif %}
+
+                                            {% if complaint.tehsil %}
+                                            <tr><th>Tehsil</th><td>{{ complaint.tehsil }}</td></tr>
+                                            {% endif %}
+                                        </table>
+
+                                        <!-- Complaint Info -->
+                                        <h6 class="fw-bold">Complaint Details</h6>
+                                        <table class="table table-sm table-bordered mb-3">
+                                            {% if complaint.location %}
+                                            <tr><th>Location</th><td>{{ complaint.location }}</td></tr>
+                                            {% endif %}
+
+                                            {% if complaint.uc %}
+                                            <tr><th>UC</th><td>{{ complaint.uc }}</td></tr>
+                                            {% endif %}
+
+                                            {% if complaint.title %}
+                                            <tr><th>Title</th><td>{{ complaint.title }}</td></tr>
+                                            {% endif %}
+
+                                            {% if complaint.complaint_source %}
+                                            <tr><th>Source</th><td>{{ complaint.complaint_source }}</td></tr>
+                                            {% endif %}
+
+                                            {% if complaint.Pcp_compalin_no %}
+                                            <tr><th>PCP No</th><td>{{ complaint.Pcp_compalin_no }}</td></tr>
+                                            {% endif %}
+
+                                            {% if complaint.Eak_compalin_no %}
+                                            <tr><th>EAK No</th><td>{{ complaint.Eak_compalin_no }}</td></tr>
+                                            {% endif %}
+
+                                            {% if complaint.complaint_type %}
+                                            <tr><th>Category</th><td>{{ complaint.complaint_type }}</td></tr>
+                                            {% endif %}
+
+                                            {% if complaint.SubType %}
+                                            <tr><th>Sub Category</th><td>{{ complaint.SubType }}</td></tr>
+                                            {% endif %}
+
+                                            {% if complaint.type %}
+                                            <tr><th>Type</th><td>{{ complaint.type }}</td></tr>
+                                            {% endif %}
+
+                                            {% if complaint.complaint_detail %}
+                                            <tr><th>Details</th><td>{{ complaint.complaint_detail }}</td></tr>
+                                            {% endif %}
+
+                                            {% if complaint.status %}
+<tr>
+    <th>Status</th>
+    <td>
+        {% if complaint.status == "resolved" %}
+            <span class="badge bg-success">Resolved</span>
+        {% elif complaint.status == "pending" %}
+            <span class="badge bg-danger">Pending</span>
+        {% else %}
+            <span class="badge bg-secondary">{{ complaint.status }}</span>
+        {% endif %}
+    </td>
+</tr>
+{% endif %}
+
+
+                                            {% if complaint.before_image %}
+<tr>
+    <th>Before Image</th>
+    <td>
+        <img src="{{ complaint.before_image.url }}" alt="Before Image" class="img-fluid rounded" style="max-height:200px;">
+    </td>
+</tr>
+{% endif %}
+
+
+                                            {% if complaint.date %}
+                                            <tr><th>Date</th><td>{{ complaint.date|date:"Y-m-d" }}</td></tr>
+                                            {% endif %}
+
+                                            {% if complaint.created_at %}
+                                            <tr><th>Created</th><td>{{ complaint.created_at|date:"Y-m-d H:i" }}</td></tr>
+                                            {% endif %}
+
+                                            {% if complaint.updated_at %}
+                                            <tr><th>Updated</th><td>{{ complaint.updated_at|date:"Y-m-d H:i" }}</td></tr>
+                                            {% endif %}
+                                        </table>
+
+
+                                        <!-- Resolution Info -->
+                                        {% if complaint.resolution_description or complaint.after_image or complaint.resolution_customer_satisfaction %}
+                                        <h6 class="fw-bold">Resolution Details</h6>
+                                        <table class="table table-sm table-bordered mb-3 align-middle">
+                                            {% if complaint.resolution_description %}
+                                            <tr>
+                                                <th style="width: 25%;">Resolution Description</th>
+                                                <td>{{ complaint.resolution_description }}</td>
+                                            </tr>
+                                            {% endif %}
+                                    
+                                            {% if complaint.after_image %}
+                                            <tr>
+                                                <th>After Image</th>
+                                                <td>
+                                                    <img src="{{ complaint.after_image.url }}" alt="After Image" class="img-fluid rounded" style="max-height:200px;">
+                                                </td>
+                                            </tr>
+                                            {% endif %}
+                                    
+                                            {% if complaint.resolution_customer_satisfaction %}
+                                            <tr>
+                                                <th>Customer Satisfaction</th>
+                                                <td>
+                                                    {% if complaint.resolution_customer_satisfaction == "yes" %}
+                                                        <span class="badge bg-success">Yes</span>
+                                                    {% elif complaint.resolution_customer_satisfaction == "no" %}
+                                                        <span class="badge bg-danger">No</span>
+                                                    {% elif complaint.resolution_customer_satisfaction == "call_no_response" %}
+                                                        <span class="badge bg-secondary">Call No Response</span>    
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">N/A</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endif %}
+                                        </table>
+                                    {% endif %}
+                                    
+
+                                            <!-- History Logs -->
+                                            <h6 class="fw-bold">Action History</h6>
+                                            <table class="table table-sm table-bordered">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Action</th>
+                                                        <th>Performed By</th>
+                                                        <th>User Name</th>
+                                                        <th>Date & Time</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for log in complaint.logs %}
+                                                        {% if log.user %}
+                                                        <tr>
+                                                            <td>{{ log.get_action_display }}</td>
+                                                            <td>{{ log.user.get_full_name|default:log.user.username }}</td>
+                                                            <td>{{ log.user.username }}</td>
+                                                            <td>{{ log.timestamp|date:"Y-m-d H:i" }}</td>
+                                                        </tr>
+                                                        {% endif %}
+                                                    {% empty %}
+                                                    <tr>
+                                                        <td colspan="4" class="text-center">No history available</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                            
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const complaintTypeSelect = document.getElementById("id_complaint_type");
+        const subTypeSelect = document.getElementById("id_SubType");
+    
+        complaintTypeSelect.addEventListener("change", function() {
+            const complaintTypeId = this.value;
+            const url = "{% url 'ajax_load_subtypes' %}?complaint_type=" + complaintTypeId;
+    
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    subTypeSelect.innerHTML = "";  // Clear old options
+                    if (data.length === 0) {
+                        const option = document.createElement("option");
+                        option.text = "No subtypes available";
+                        subTypeSelect.appendChild(option);
+                    } else {
+                        data.forEach(function(item) {
+                            const option = document.createElement("option");
+                            option.value = item.id;
+                            option.text = item.type_name;
+                            subTypeSelect.appendChild(option);
+                        });
+                    }
+                });
+        });
+    });
+    </script>
+    
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const complaintSourceField = document.querySelector('#id_complaint_source');
+        const pcpField = document.querySelector('#id_Pcp_compalin_no').closest('.form-group');
+        const eakField = document.querySelector('#id_Eak_compalin_no').closest('.form-group');
+
+        function toggleComplaintFields() {
+            const selectedValue = complaintSourceField.value;
+
+            // Show/hide based on selected source
+            if (selectedValue === "2") {  // PCP
+                pcpField.style.display = 'block';
+                eakField.style.display = 'none';
+            } else if (selectedValue === "5") {  // EAP
+                eakField.style.display = 'block';
+                pcpField.style.display = 'none';
+            } else {
+                pcpField.style.display = 'none';
+                eakField.style.display = 'none';
+            }
+        }
+
+        // Initial check on page load
+        toggleComplaintFields();
+
+        // Listen for changes
+        complaintSourceField.addEventListener('change', toggleComplaintFields);
+    });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const locationField = document.querySelector('#id_location');
+        const ucField = document.querySelector('#id_uc');
+
+        // Use the URL template tag to generate the URL and assign it to a JavaScript variable
+        const dropucUrl = "{% url 'dropuc' %}";  // This will generate the URL as a string
+
+        locationField.addEventListener('change', function () {
+            const locationId = this.value;
+
+            if (locationId) {
+                // Use the dropucUrl variable in your fetch call
+                fetch(`${dropucUrl}?location_id=${locationId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Clear existing options
+                        ucField.innerHTML = '<option value="">Select UC</option>';
+
+                        // Populate new options
+                        data.forEach(uc => {
+                            const option = document.createElement('option');
+                            option.value = uc.id;
+                            option.textContent = uc.uc_name;
+                            ucField.appendChild(option);
+                        });
+                    })
+                    .catch(error => console.error('Error fetching UCs:', error));
+            } else {
+                ucField.innerHTML = '<option value="">Select UC</option>';
+            }
+        });
+    });
+</script>
+
+
+
+{% endblock %}

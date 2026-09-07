@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    Revenue Management Report
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Title -->
+    <h1 class="h3 mb-4 text-gray-800" style="font-weight: bold; font-size: 1.5rem; text-align: center;">
+        Revenue Management Report - {{ report_date|date:"Y-m-d" }}
+    </h1>
+
+    <!-- Filter Form -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="form-inline mb-3">
+                <div class="form-group mr-3">
+                    <label for="date" class="mr-2">Select Date:</label>
+                    <input type="date" class="form-control" name="date" value="{{ report_date|date:'Y-m-d' }}" required>
+                </div>
+                <button type="submit" class="btn btn-primary mb-2">Filter</button>
+            </form>
+        </div>
+    </div>
+
+
+
+    <!-- Add New Revenue Button -->
+    <button type="button" class="btn btn-primary mb-4" data-toggle="modal" data-target="#addRevenueModal">
+        Add New Revenue
+    </button>
+
+    <!-- Add Revenue Modal -->
+<!-- Add Revenue Modal -->
+<div class="modal fade" id="addRevenueModal" tabindex="-1" role="dialog" aria-labelledby="addRevenueModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addRevenueModalLabel">Add New Revenue</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" id="revenueForm">
+                    {% csrf_token %}
+
+                    <div class="form-group">
+                        <label for="id_date">Date:</label>
+                        <input type="date" name="date" class="form-control" id="id_date" value="{{ report_date|date:'Y-m-d' }}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="id_location">Location:</label>
+                        {{ form.location }}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="id_recovery_day_water_supply">Today's Recovery of (Water Supply):</label>
+                        {{ form.recovery_day_water_supply }}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="id_recovery_day_solid_waste_management">Today's Recovery of (Solid Waste Management):</label>
+                        {{ form.recovery_day_solid_waste_management }}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="id_recovery_of_day">Today's Total Recovery:</label>
+                        {{ form.recovery_of_day }}
+                    </div>
+                    
+                    <!-- Bill Paid fields -->
+                    <div class="form-group">
+                        <label for="id_bill_paid_day_water_supply">Today's No Of Bill Paid (Water Supply):</label>
+                        {{ form.bill_paid_day_water_supply }}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="id_bill_paid_day_solid_waste_management">Today's No Of Bill Paid (Solid Waste Management):</label>
+                        {{ form.bill_paid_day_solid_waste_management }}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="id_number_of_bills_paid">Today's Total No Of Bill Paid:</label>
+                        {{ form.number_of_bills_paid }}
+                    </div>
+                    
+                    
+                    <div class="form-group">
+                        <label for="id_billed_amount_total">Total Revenue Amount of Day:</label>
+                        {{ form.billed_amount_total }}
+                    </div>
+                    
+                    
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Add Revenue</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+       <!-- Revenue Records Table -->
+       <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h2 class="mt-4">Revenue Records</h2>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="bg-primary text-white">
+                        <tr>
+                            <th>Location</th>
+                            <th>Today's Recovery (Water Supply)</th>
+                            <th>Today's Recovery (Solid Waste Management)</th>
+                            <th>Today's Total Recovery</th>
+                            <th>Today's No Of Bill Paid (Water Supply)</th>
+                            <th>Today's No Of Bill Paid (Solid Waste Management)</th>
+                            <th>Today's Total No Of Bill Paid</th>
+                            <th>Total Revenue Amount of Day</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for revenue in revenue_data %}
+                            <tr>
+                                <td>{{ revenue.location }}</td>
+                                <td>{{ revenue.recovery_day_water_supply }}</td>
+                                <td>{{ revenue.recovery_day_solid_waste_management }}</td>
+                                <td>{{ revenue.recovery_of_day }}</td>
+                                <td>{{ revenue.bill_paid_day_water_supply }}</td>
+                                <td>{{ revenue.bill_paid_day_solid_waste_management }}</td>
+                                <td>{{ revenue.number_of_bills_paid }}</td>
+                                <td>{{ revenue.billed_amount_total }}</td>
+                                <td>
+                                    <button 
+                                        class="btn btn-warning btn-sm"
+                                        data-toggle="modal"
+                                        data-target="#updateRevenueModal-{{ revenue.id }}"
+                                    >
+                                        Update
+                                    </button>
+                                </td>
+                            </tr>
+
+                            <!-- Update Revenue Modal -->
+                            <!-- Update Revenue Modal -->
+<div 
+class="modal fade" 
+id="updateRevenueModal-{{ revenue.id }}" 
+tabindex="-1" 
+role="dialog" 
+aria-labelledby="updateRevenueModalLabel-{{ revenue.id }}" 
+aria-hidden="true"
+>
+<div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="updateRevenueModalLabel-{{ revenue.id }}">Update Revenue</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form method="POST" action="{% url 'update_revenue' revenue.id %}">
+                {% csrf_token %}
+
+
+                <div class="form-group">
+                    <label for="id_location">Location:</label>
+                    <input type="text" name="location" class="form-control" id="id_location" value="{{ revenue.location }}" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label for="id_recovery_day_water_supply">Today's Recovery (Water Supply):</label>
+                    <input type="number" step="0.01" name="recovery_day_water_supply" class="form-control" id="id_recovery_day_water_supply" value="{{ revenue.recovery_day_water_supply }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="id_recovery_day_solid_waste_management">Today's Recovery (Solid Waste Management):</label>
+                    <input type="number" step="0.01" name="recovery_day_solid_waste_management" class="form-control" id="id_recovery_day_solid_waste_management" value="{{ revenue.recovery_day_solid_waste_management }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="id_recovery_of_day">Today's Total Recovery:</label>
+                    <input type="number" step="0.01" name="recovery_of_day" class="form-control" id="id_recovery_of_day" value="{{ revenue.recovery_of_day }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="id_bill_paid_day_water_supply">Today's No Of Bill Paid (Water Supply):</label>
+                    <input type="number" name="bill_paid_day_water_supply" class="form-control" id="id_bill_paid_day_water_supply" value="{{ revenue.bill_paid_day_water_supply }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="id_bill_paid_day_solid_waste_management">Today's No Of Bill Paid (Solid Waste Management):</label>
+                    <input type="number" name="bill_paid_day_solid_waste_management" class="form-control" id="id_bill_paid_day_solid_waste_management" value="{{ revenue.bill_paid_day_solid_waste_management }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="id_number_of_bills_paid">Today's Total No Of Bill Paid:</label>
+                    <input type="number" name="number_of_bills_paid" class="form-control" id="id_number_of_bills_paid" value="{{ revenue.number_of_bills_paid }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="id_billed_amount_total">Total Revenue Amount of Day:</label>
+                    <input type="number" step="0.01" name="billed_amount_total" class="form-control" id="id_billed_amount_total" value="{{ revenue.billed_amount_total }}">
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Update Revenue</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</div>
+
+                        {% empty %}
+                            <tr>
+                                <td colspan="9" class="text-center">No revenue records found for {{ report_date }}.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+    // Function to handle the sum update for a specific modal
+    function attachAutoSumHandlers(modal) {
+        // Select input fields relative to the modal
+        const recoveryWaterSupply = modal.querySelector('[name="recovery_day_water_supply"]');
+        const recoverySolidWaste = modal.querySelector('[name="recovery_day_solid_waste_management"]');
+        const totalRecovery = modal.querySelector('[name="recovery_of_day"]');
+
+        const billPaidWaterSupply = modal.querySelector('[name="bill_paid_day_water_supply"]');
+        const billPaidSolidWaste = modal.querySelector('[name="bill_paid_day_solid_waste_management"]');
+        const totalBillsPaid = modal.querySelector('[name="number_of_bills_paid"]');
+
+        // Function to update sums when inputs change
+        function updateSums() {
+            const recoveryWater = parseFloat(recoveryWaterSupply.value) || 0;
+            const recoveryWaste = parseFloat(recoverySolidWaste.value) || 0;
+            const billsWater = parseInt(billPaidWaterSupply.value) || 0;
+            const billsWaste = parseInt(billPaidSolidWaste.value) || 0;
+
+            totalRecovery.value = (recoveryWater + recoveryWaste).toFixed(2);
+            totalBillsPaid.value = billsWater + billsWaste;
+        }
+
+        // Attach event listeners to the input fields
+        recoveryWaterSupply.addEventListener('input', updateSums);
+        recoverySolidWaste.addEventListener('input', updateSums);
+        billPaidWaterSupply.addEventListener('input', updateSums);
+        billPaidSolidWaste.addEventListener('input', updateSums);
+    }
+
+    // Attach handlers for the Add Revenue modal
+    const addRevenueModal = document.getElementById('addRevenueModal');
+    if (addRevenueModal) {
+        attachAutoSumHandlers(addRevenueModal);
+    }
+
+    // Attach handlers for each Update Revenue modal
+    const updateModals = document.querySelectorAll('.modal[id^="updateRevenueModal-"]');
+    updateModals.forEach((modal) => {
+        attachAutoSumHandlers(modal);
+    });
+});
+
+</script>
+
+{% endblock %}

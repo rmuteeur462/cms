@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Daily Post Status
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <h1 class="h3 mb-4 text-gray-800 text-center font-weight-bold" style="font-size: 1.5rem;">
+        Media Department Daily Progress
+    </h1>
+
+    <!-- Filter Card -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+        </div>
+        <form method="GET" class="mb-4">
+            <div class="form-row p-3">
+                <div class="col">
+                    <label for="attendance_date">Post Date:</label>
+                    <input type="date" name="attendance_date" id="attendance_date" class="form-control" value="{{ attendance_date|date:'Y-m-d' }}">
+                </div>
+                <div class="col">
+                    <label for="post_type">Post Type:</label>
+                    <select name="post_type" id="post_type" class="form-control">
+                        <option value="all" {% if post_type_id == "all" %}selected{% endif %}>All</option>
+                        {% for post_type in post_types %}
+                            <option value="{{ post_type.id }}" {% if post_type.id|stringformat:"s" == post_type_id %}selected{% endif %}>
+                                {{ post_type.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col align-self-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Add Attendance Button -->
+    <button type="button" class="btn btn-primary mb-4" data-toggle="modal" data-target="#addAttendanceModal">
+        <i class="fas fa-plus-circle"></i> Add New
+    </button>
+
+    <!-- Add Attendance Modal -->
+    <div class="modal fade" id="addAttendanceModal" tabindex="-1" role="dialog" aria-labelledby="addAttendanceModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addAttendanceModalLabel">Add Post</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" enctype="multipart/form-data" id="attendanceForm">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="id_post_type">Post Type:</label>
+                            {{ form.post_type }}
+                        </div>
+                        <div class="form-group">
+                            <label for="id_post_detail">Post Detail:</label>
+                            {{ form.post_detail }}
+                        </div>
+                        <div class="form-group">
+                            <label for="id_no_of_post">Number of Posts:</label>
+                            {{ form.no_of_post }}
+                        </div>
+                        <div class="form-group">
+                            <label for="id_resource_link">Resource Link:</label>
+                            {{ form.resource_link }}
+                        </div>
+                        <div class="form-group">
+                            <label for="id_post_date">Post Date:</label>
+                            {{ form.post_date }}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Add Post</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Records Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h2 class="mt-4">Media Records</h2>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover shadow-sm bg-white">
+                    <thead class="bg-primary text-white">
+                        <tr>
+                            <th>Sr. No</th>
+                            <th>Post Type</th>
+                            <th>Number of Posts</th>
+                            <th>Media Platform</th>
+                            <th>Resource Link</th>
+                            <th>Post Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for attendance in post_attendances %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ attendance.post_type }}</td>
+                                <td>{{ attendance.no_of_post }}</td>
+                                <td>
+                                    {% if attendance.post_detail %}
+                                        {{ attendance.post_detail.media_channel }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if attendance.resource_link %}
+                                        <a href="{{ attendance.resource_link }}" target="_blank">{{ attendance.resource_link }}</a>
+                                    {% else %}
+                                        No link provided
+                                    {% endif %}
+                                </td>
+                                <td>{{ attendance.post_date }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">No records found.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#id_post_type').change(function() {
+            var postTypeId = $(this).val();
+            var postDetailSelect = $('#id_post_detail');
+
+            postDetailSelect.empty();
+            postDetailSelect.append('<option value="">Select a Post Detail</option>');
+
+            if (postTypeId) {
+                $.ajax({
+                    url: '{% url "get_post_details" %}',
+                    data: { post_type: postTypeId },
+                    success: function(data) {
+                        $.each(data.post_details, function(key, value) {
+                            postDetailSelect.append('<option value="' + key + '">' + value + '</option>');
+                        });
+                    }
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}

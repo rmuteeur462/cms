@@ -1,0 +1,380 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}TubeWell Map{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <div class="d-flex flex-column justify-content-center align-items-center gap-4">
+        <div class="header-content">
+            <h1 class="display-5 fw-bold mb-2">
+                <span class="text-dark">WSSP All Tubewells</span>
+              </h1>
+        </div>
+    </div>
+    <h5 class="text-center mb-3">Total TubeWells: <strong>{{ total_tubewells }}</strong></h5>
+
+
+    <form method="get" class="mb-3">
+        <div class="row g-2">
+            <div class="col-md">
+                <input type="text" class="form-control" name="tubewell_id" placeholder="Search by TubeWell ID" value="{{ request.GET.tubewell_id }}">
+            </div>
+            <div class="col-md">
+                <select class="form-select" name="scada">
+                    <option value="">All SCADA</option>
+                    <option value="Yes" {% if request.GET.scada == "Yes" %}selected{% endif %}>Yes</option>
+                    <option value="No" {% if request.GET.scada == "No" %}selected{% endif %}>No</option>
+                </select>
+            </div>
+            <div class="col-md">
+                <select class="form-select" name="flow_meter">
+                    <option value="">All Flow Meter</option>
+                    <option value="Yes" {% if request.GET.flow_meter == "Yes" %}selected{% endif %}>Yes</option>
+                    <option value="No" {% if request.GET.flow_meter == "No" %}selected{% endif %}>No</option>
+                </select>
+            </div>
+            <div class="col-md">
+                <select class="form-select" name="location_id" id="locationSelect">
+                    <option value="">All Locations</option>
+                    {% for location in locations %}
+                        <option value="{{ location.id }}" {% if request.GET.location_id == location.id|stringformat:"s" %}selected{% endif %}>{{ location.location_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md">
+                <select class="form-select" name="uc_id" id="ucSelect">
+                    <option value="">All UCs</option>
+                    {% for uc in ucs %}
+                        <option value="{{ uc.id }}" data-location="{{ uc.location_id }}" {% if request.GET.uc_id == uc.id|stringformat:"s" %}selected{% endif %}>{{ uc.uc_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md">
+                <input type="date" class="form-control" name="attendance_date" value="{{ request.GET.attendance_date }}">
+
+            </div>
+
+            <div class="col-md-auto">
+                <button class="btn btn-primary w-100" type="submit">Search</button>
+            </div>
+        </div>
+    </form>
+
+    <div id="map" style="width: 100%; height: 800px;"></div>
+    <div class="mt-3">
+        <h5>Status Legend:</h5>
+        <ul class="list-unstyled d-flex flex-wrap gap-3">
+            <li><span class="legend-color" style="background-color: #FFFF00;"></span> Operational</li>
+            <li><span class="legend-color" style="background-color: #008000;"></span> Non-Operational</li>
+            <li><span class="legend-color" style="background-color: #FF0000;"></span> Non-Functional</li>
+            <li><span class="legend-color" style="background-color: #0000FF;"></span> No Data Enter</li>
+        </ul>
+    </div>
+    
+</div>
+<h3>All Zones</h3>
+<div id="kmz-checkboxes">
+    {% for kmz in kmz_files %}
+        {% if kmz.kml_file %}
+            <div>
+                <input type="checkbox" id="kmz_{{ forloop.counter }}" data-kml-url="{{ kmz.kml_file.url }}">
+                <label for="kmz_{{ forloop.counter }}">{{ kmz.file.name }}</label>
+            </div>
+        {% endif %}
+    {% empty %}
+        <p>No KMZ files uploaded yet.</p>
+    {% endfor %}
+</div>
+
+
+
+{% endblock %}
+
+{% block scripts %}
+<!-- OpenLayers -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v10.2.1/ol.css">
+<script src="https://cdn.jsdelivr.net/npm/ol@v10.2.1/dist/ol.js"></script>
+
+
+
+<style>
+    .ol-popup {
+    background-color: white;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    min-width: 250px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    font-family: Arial, sans-serif;
+}
+
+    .ol-popup .close-btn {
+        float: right;
+        margin-left: 10px;
+        cursor: pointer;
+        font-weight: bold;
+        color: #888;
+    }
+
+    .ol-popup table td {
+    padding: 4px 8px;
+    border-bottom: 1px solid #eee;
+}
+    .legend-color {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+    border-radius: 4px;
+    border: 1px solid #444;
+    vertical-align: middle;
+}
+
+</style>
+<script>
+    const kmlLayers = [];
+    const featureColors = {};
+
+    function getRandomColor() {
+        const r = Math.floor(Math.random() * 200);
+        const g = Math.floor(Math.random() * 200);
+        const b = Math.floor(Math.random() * 200);
+        return `rgba(${r}, ${g}, ${b}, 0.3)`;
+    }
+
+    function createLabelStyle(feature) {
+        const id = feature.getId() || feature.get('name') || Math.random().toString();
+        if (!featureColors[id]) {
+            featureColors[id] = getRandomColor();
+        }
+
+        return new ol.style.Style({
+            stroke: new ol.style.Stroke({ color: 'blue', width: 2 }),
+            fill: new ol.style.Fill({ color: featureColors[id] }),
+            text: new ol.style.Text({
+                text: feature.get('name') || '',
+                font: '14px Calibri,sans-serif',
+                fill: new ol.style.Fill({ color: '#fff' }),
+                backgroundFill: new ol.style.Fill({ color: '#000' }),
+                padding: [2, 4, 2, 4],
+                placement: 'point',
+                overflow: true
+            })
+        });
+    }
+
+    document.querySelectorAll('#kmz-checkboxes input[type="checkbox"]').forEach(function (checkbox) {
+        checkbox.addEventListener('change', function () {
+            const kmlUrl = this.getAttribute('data-kml-url');
+
+            if (this.checked) {
+                const vectorSource = new ol.source.Vector({
+                    url: kmlUrl,
+                    format: new ol.format.KML({ extractStyles: false })
+                });
+
+                const vectorLayer = new ol.layer.Vector({
+                    source: vectorSource,
+                    style: createLabelStyle,
+                    opacity: 1
+                });
+
+                map.addLayer(vectorLayer);
+                kmlLayers.push({ checkbox: this, layer: vectorLayer });
+            } else {
+                const entry = kmlLayers.find(item => item.checkbox === this);
+                if (entry) {
+                    map.removeLayer(entry.layer);
+                    kmlLayers.splice(kmlLayers.indexOf(entry), 1);
+                }
+            }
+        });
+    });
+
+    // Auto-select and load the first checkbox
+    window.addEventListener('DOMContentLoaded', function () {
+        const firstCheckbox = document.querySelector('#kmz-checkboxes input[type="checkbox"]');
+        if (firstCheckbox) {
+            firstCheckbox.checked = true;
+            firstCheckbox.dispatchEvent(new Event('change'));
+        }
+    });
+</script>
+
+<script>
+    // Filter UCs
+    document.addEventListener('DOMContentLoaded', function () {
+        const locationSelect = document.getElementById('locationSelect');
+        const ucSelect = document.getElementById('ucSelect');
+
+        function filterUCs() {
+            const selectedLocation = locationSelect.value;
+            for (let option of ucSelect.options) {
+                if (!option.value) continue;
+                option.style.display = option.dataset.location === selectedLocation || !selectedLocation ? 'block' : 'none';
+            }
+        }
+
+        locationSelect.addEventListener('change', filterUCs);
+        filterUCs();
+    });
+
+    var tubewells = [
+    {% for t in tubewells %}
+        {
+            id: "{{ t.tubewell_id }}",
+            name: "{{ t.tubewell_name|escapejs }}",
+            location: "{{ t.location.location_name|escapejs }}",
+            uc: "{{ t.uc.uc_name|escapejs }}",
+            latitude: {{ t.latitude|default:0 }},
+            longitude: {{ t.longitude|default:0 }},
+            scada: "{{ t.scada }}",
+            flow_meter: "{{ t.flow_meter }}",
+            discharge: "{{ t.average_discharge }}",
+            connections: "{{ t.tubewell_no_connection }}",
+            attendance_date: "{{ t.latest_date }}",
+            // run_hour: "{{ t.latest_run_hour }}",
+            // electricity: "{{ t.latest_electricity }}",
+            // water: "{{ t.latest_water }}",
+            // remarks: "{{ t.latest_remarks|escapejs }}",
+            status: `{% if t.latest_functional %}Operational{% elif t.latest_non_functional %}Non-Functional{% elif t.latest_non_operational %}Non-Operational{% else %}No Data Enter{% endif %}`,
+
+            // ✅ List of all depth records
+            depth_history: [
+                {% for d in t.depth_history %}
+                    {
+                        depth: "{{ d.depth }}",
+                        date: "{{ d.date }}"
+                    },
+                {% endfor %}
+            ]
+        },
+    {% endfor %}
+];
+
+    var map = new ol.Map({
+        target: 'map',
+        layers: [new ol.layer.Tile({ source: new ol.source.OSM() })],
+        view: new ol.View({
+            center: ol.proj.fromLonLat([71.5249, 34.0151]),
+            zoom: 12
+        })
+    });
+
+    var vectorSource = new ol.source.Vector();
+
+    tubewells.forEach(function(tw) {
+        if (tw.latitude && tw.longitude) {
+            var point = new ol.Feature({
+                geometry: new ol.geom.Point(ol.proj.fromLonLat([tw.longitude, tw.latitude])),
+                attributes: tw
+            });
+
+            let color = '#0000FF';
+            if (tw.status === "Operational") color = '#FFFF00';
+            else if (tw.status === "Non-Operational") color = '#008000';
+            else if (tw.status === "Non-Functional") color = '#FF0000';
+
+            point.setStyle(new ol.style.Style({
+                image: new ol.style.Circle({
+                    radius: 7,
+                    fill: new ol.style.Fill({ color: color }),
+                    stroke: new ol.style.Stroke({ color: '#000', width: 2 })
+                })
+            }));
+
+            vectorSource.addFeature(point);
+        }
+    });
+
+    var vectorLayer = new ol.layer.Vector({ source: vectorSource });
+    map.addLayer(vectorLayer);
+
+    // Popup logic
+    var container = document.createElement('div');
+    container.className = 'ol-popup';
+    document.body.appendChild(container);
+
+    var popup = new ol.Overlay({
+        element: container,
+        positioning: 'bottom-center',
+        stopEvent: false,
+        offset: [0, -15]
+    });
+    map.addOverlay(popup);
+
+    function hidePopup() {
+        popup.setPosition(undefined);
+        container.style.display = 'none';
+    }
+
+    map.on('click', function (evt) {
+        hidePopup();
+
+        map.forEachFeatureAtPixel(evt.pixel, function (feature) {
+            const attrs = feature.get('attributes');
+
+            // ✅ Only show popup for tube well features
+            if (!attrs) return;
+
+            const content = `
+    <div>
+        <span class="close-btn" onclick="hidePopup()">×</span>
+        <strong><u>Tube Well Details</u></strong>
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+            <tr><td><strong>ID</strong></td><td>${attrs.id}</td></tr>
+            <tr><td><strong>Name</strong></td><td>${attrs.name}</td></tr>
+            <tr><td><strong>Location</strong></td><td>${attrs.location}</td></tr>
+            <tr><td><strong>UC</strong></td><td>${attrs.uc}</td></tr>
+            <tr><td><strong>SCADA</strong></td><td>${attrs.scada}</td></tr>
+            <tr><td><strong>Flow Meter</strong></td><td>${attrs.flow_meter}</td></tr>
+            <tr><td><strong>Connections</strong></td><td>${attrs.connections}</td></tr>
+            <tr><td><strong>Discharge</strong></td><td>${attrs.discharge}</td></tr>
+            <tr><td><strong>Date</strong></td><td>${attrs.attendance_date || "N/A"}</td></tr>
+            <tr><td><strong>Status</strong></td><td>${attrs.status}</td></tr>
+          
+     
+                ${attrs.depth_history && attrs.depth_history.length > 0 ? `
+                    <tr>
+  <td colspan="2" style="text-align: center; background-color: #28a745; color: white; font-weight: bold;">
+    Water Depth History
+  </td>
+</tr>
+        ${
+            attrs.depth_history.map((item, index) => 
+                `<tr><td>${index + 1}) ${item.date}</td><td>${item.depth} (ft)</td></tr>`
+            ).join('')
+        }
+    ` : ""}
+
+        </table>
+    </div>
+`;
+
+
+            container.innerHTML = content;
+            popup.setPosition(evt.coordinate);
+            container.style.display = 'block';
+        });
+    });
+
+    map.on('pointermove', function (evt) {
+        map.getTargetElement().style.cursor = map.hasFeatureAtPixel(evt.pixel) ? 'pointer' : '';
+    });
+
+
+    window.hidePopup = hidePopup;
+ 
+</script>
+
+{% endblock %}
+
+
+
+<!-- 
+  <tr><td><strong>Run Hour</strong></td><td>${attrs.run_hour || "N/A"}</td></tr>
+            <tr><td><strong>Electricity</strong></td><td>${attrs.electricity || "N/A"}</td></tr>
+            <tr><td><strong>Water Produced</strong></td><td>${attrs.water || "N/A"}</td></tr>
+            <tr><td><strong>Remarks</strong></td><td>${attrs.remarks || "None"}</td></tr> -->

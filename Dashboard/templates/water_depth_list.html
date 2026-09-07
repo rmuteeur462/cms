@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}TubeWell Water Depth Records{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'css/custom.css' %}">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+<style>
+    .form-label { font-weight: 600; }
+
+    .select2-container--default .select2-selection--single {
+        height: 48px;
+        padding: 8px 12px;
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+
+    .select2-container {
+        width: 100% !important;
+    }
+
+    .card-header {
+        font-size: 1.1rem;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <h2 class="text-center mb-4 fw-bold">TubeWell Water Depth Records</h2>
+
+    <!-- FILTER SECTION -->
+    <form method="get" class="row g-3 justify-content-center mb-4">
+
+   
+
+        <!-- Dropdown -->
+        <div class="col-md-4">
+            <label class="form-label">Select TubeWell</label>
+            <select name="tubewell_id" id="tubewell" class="form-select select2" onchange="this.form.submit()">
+                <option value="">All TubeWells</option>
+                {% for t in all_tubewells %}
+                    <option value="{{ t.id }}"
+                        {% if request.GET.tubewell_id == t.id|stringformat:"s" %}selected{% endif %}>
+                        {{ t.tubewell_name }} ({{ t.tubewell_id }})
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+      
+    </form>
+
+    <!-- CHART -->
+    {% if chart_data %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white text-center">
+            Water Depth Chart - {{ selected_tubewell.tubewell_name }}
+        </div>
+
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <canvas id="depthLineChart" height="250"></canvas>
+                </div>
+                <div class="col-md-6">
+                    <canvas id="depthBarChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+
+
+
+
+
+    <!-- TABLE -->
+<div class="table-responsive">
+
+    {% if selected_tubewell %}
+    
+        <!-- HISTORY TABLE -->
+        <h5 class="mt-3 fw-bold">
+            History Table: {{ selected_tubewell.tubewell_name }}
+        </h5>
+    
+        <table class="table table-bordered table-striped">
+            <thead class="bg-dark text-white">
+                <tr>
+                    <th>#</th>
+                    <th>Depth (m)</th>
+                    <th>Measurement Date</th>
+                </tr>
+            </thead>
+    
+            <tbody>
+                {% for h in history %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ h.water_table_depth|default:"N/A" }}</td>
+                    <td>{{ h.water_table_measurment_date|default:"N/A" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="text-center">No history found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    
+    {% else %}
+    
+        <!-- ALL TUBEWELLS TABLE -->
+        <table class="table table-bordered table-striped table-hover">
+            <thead class="bg-primary text-white">
+                <tr>
+                    <th>#</th>
+                    <th>TubeWell Name</th>
+                    <th>TubeWell ID</th>
+                    <th>Zone</th>
+                    <th>UC</th>
+                    <th>Latest Depth (m)</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+    
+            <tbody>
+                {% for t in tubewells %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ t.tubewell_name }}</td>
+                    <td>{{ t.tubewell_id }}</td>
+                    <td>{{ t.location }}</td>
+                    <td>{{ t.uc }}</td>
+    
+                    <td>
+                        {{ t.latest_depth_value|default:"N/A" }}
+                    </td>
+    
+                    <td>
+                        {{ t.latest_depth_date|default:"N/A" }}
+                    </td>
+    
+                    <td>
+                        <a class="btn btn-sm btn-primary"
+                           href="?tubewell_id={{ t.id }}">
+                            View History
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    
+    {% endif %}
+    
+    </div>
+
+
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+$(document).ready(function () {
+    $('#tubewell').select2({
+        placeholder: "Select TubeWell",
+        allowClear: true
+    });
+});
+</script>
+
+{% if chart_data %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const labels = {{ chart_data.labels|safe }};
+const values = {{ chart_data.values|safe }};
+
+// LINE CHART
+new Chart(document.getElementById('depthLineChart'), {
+    type: 'line',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Depth',
+            data: values,
+            borderColor: '#007bff',
+            backgroundColor: 'rgba(0,123,255,0.2)',
+            fill: true,
+            tension: 0.3
+        }]
+    }
+});
+
+// BAR CHART
+new Chart(document.getElementById('depthBarChart'), {
+    type: 'bar',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Depth',
+            data: values,
+            backgroundColor: 'rgba(255,99,132,0.6)'
+        }]
+    }
+});
+</script>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h3>{{ view.object.pk|yesno:"Edit Street,Add Street" }}</h3>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <!-- 🏙️ Basic Information -->
+        <h5 class="mt-3 mb-3">🏙️ Basic Information</h5>
+        <div class="row">
+            <div class="col-md-6 mb-3">{{ form.street_name.label_tag }} {{ form.street_name }}</div>
+            <div class="col-md-6 mb-3">{{ form.location.label_tag }} {{ form.location }}</div>
+            <div class="col-md-6 mb-3">{{ form.uc_name.label_tag }} {{ form.uc_name }}</div>
+            <div class="col-md-6 mb-3">{{ form.nc_name.label_tag }} {{ form.nc_name }}</div>
+        </div>
+
+        <!-- 📍 Coordinates -->
+        <h5 class="mt-4 mb-3">📍 Coordinates</h5>
+        <div class="row">
+            <div class="col-md-4 mb-3">{{ form.start_latitude.label_tag }} {{ form.start_latitude }}</div>
+            <div class="col-md-4 mb-3">{{ form.mid_latitude.label_tag }} {{ form.mid_latitude }}</div>
+            <div class="col-md-4 mb-3">{{ form.end_latitude.label_tag }} {{ form.end_latitude }}</div>
+
+            <div class="col-md-4 mb-3">{{ form.start_longitude.label_tag }} {{ form.start_longitude }}</div>
+            <div class="col-md-4 mb-3">{{ form.mid_longitude.label_tag }} {{ form.mid_longitude }}</div>
+            <div class="col-md-4 mb-3">{{ form.end_longitude.label_tag }} {{ form.end_longitude }}</div>
+        </div>
+
+        <!-- 🏠 Street Details -->
+        <h5 class="mt-4 mb-3">🏠 Street Details</h5>
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                {{ form.no_of_houses.label_tag }}
+                {{ form.no_of_houses }}
+            </div>
+        
+            <div class="col-md-4 mb-3">
+                {{ form.no_of_shops.label_tag }}
+                {{ form.no_of_shops }}
+            </div>
+        
+            <div class="col-md-4 mb-3">
+                {{ form.total_length_km.label_tag }}
+                {{ form.total_length_km }}
+            </div>
+        </div>
+        
+
+        <!-- 🧹 Sweeping Schedule -->
+        <h5 class="mt-4 mb-3">🧹 Sweeping Schedule</h5>
+        <div class="row">
+            <div class="col-md-6 mb-3">{{ form.sweeping_days.label_tag }} {{ form.sweeping_days }}</div>
+        </div>
+
+        <!-- 🧹 Per-day Sweeping Time Slots -->
+        <h6 class="mt-3">🗓️ Sweeping Time Slots by Day</h6>
+        <div class="row">
+            <div class="col-md-4 mb-3 day-slot monday-sweeping"><strong>Monday:</strong> <div class="border rounded p-2">{{ form.monday_sweeping_time_slots }}</div></div>
+            <div class="col-md-4 mb-3 day-slot tuesday-sweeping"><strong>Tuesday:</strong> <div class="border rounded p-2">{{ form.tuesday_sweeping_time_slots }}</div></div>
+            <div class="col-md-4 mb-3 day-slot wednesday-sweeping"><strong>Wednesday:</strong> <div class="border rounded p-2">{{ form.wednesday_sweeping_time_slots }}</div></div>
+            <div class="col-md-4 mb-3 day-slot thursday-sweeping"><strong>Thursday:</strong> <div class="border rounded p-2">{{ form.thursday_sweeping_time_slots }}</div></div>
+            <div class="col-md-4 mb-3 day-slot friday-sweeping"><strong>Friday:</strong> <div class="border rounded p-2">{{ form.friday_sweeping_time_slots }}</div></div>
+            <div class="col-md-4 mb-3 day-slot saturday-sweeping"><strong>Saturday:</strong> <div class="border rounded p-2">{{ form.saturday_sweeping_time_slots }}</div></div>
+            <div class="col-md-4 mb-3 day-slot sunday-sweeping"><strong>Sunday:</strong> <div class="border rounded p-2">{{ form.sunday_sweeping_time_slots }}</div></div>
+        </div>
+
+        <!-- 🚛 Solid Waste Collection Schedule -->
+        <h5 class="mt-4 mb-3">🚛 Solid Waste Collection Schedule</h5>
+        <div class="row">
+            <div class="col-md-6 mb-3">{{ form.solid_waste_days.label_tag }} {{ form.solid_waste_days }}</div>
+        </div>
+
+        <!-- 🚛 Per-day Solid Waste Time Slots -->
+        <h6 class="mt-3">🗓️ Solid Waste Time Slots by Day</h6>
+        <div class="row">
+            <div class="col-md-4 mb-3 day-slot monday-solid"><strong>Monday:</strong> <div class="border rounded p-2">{{ form.monday_solid_waste_time_slots }}</div></div>
+            <div class="col-md-4 mb-3 day-slot tuesday-solid"><strong>Tuesday:</strong> <div class="border rounded p-2">{{ form.tuesday_solid_waste_time_slots }}</div></div>
+            <div class="col-md-4 mb-3 day-slot wednesday-solid"><strong>Wednesday:</strong> <div class="border rounded p-2">{{ form.wednesday_solid_waste_time_slots }}</div></div>
+            <div class="col-md-4 mb-3 day-slot thursday-solid"><strong>Thursday:</strong> <div class="border rounded p-2">{{ form.thursday_solid_waste_time_slots }}</div></div>
+            <div class="col-md-4 mb-3 day-slot friday-solid"><strong>Friday:</strong> <div class="border rounded p-2">{{ form.friday_solid_waste_time_slots }}</div></div>
+            <div class="col-md-4 mb-3 day-slot saturday-solid"><strong>Saturday:</strong> <div class="border rounded p-2">{{ form.saturday_solid_waste_time_slots }}</div></div>
+            <div class="col-md-4 mb-3 day-slot sunday-solid"><strong>Sunday:</strong> <div class="border rounded p-2">{{ form.sunday_solid_waste_time_slots }}</div></div>
+        </div>
+
+        <!-- 👷 Assigned Employees -->
+        <h5 class="mt-4 mb-3">👷 Assigned Employees</h5>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                {{ form.assign_employee.label_tag }}
+                <input type="text" id="searchEmployees" class="form-control mb-2" placeholder="Search employees...">
+                <div class="border rounded p-2" id="employeeBox">
+                    {{ form.assign_employee }}
+                </div>
+            </div>
+
+            <!-- 🚛 Assigned Vehicles -->
+            <div class="col-md-6 mb-3">
+                {{ form.assign_vehicle.label_tag }}
+                <input type="text" id="searchVehicles" class="form-control mb-2" placeholder="Search vehicles...">
+                <div class="border rounded p-2" id="vehicleBox">
+                    {{ form.assign_vehicle }}
+                </div>
+            </div>
+        </div>
+
+        <!-- 💾 Buttons -->
+        <div class="mt-4">
+            <button type="submit" class="btn btn-success">💾 Save</button>
+            <a href="{% url 'street_list' %}" class="btn btn-secondary">↩️ Cancel</a>
+        </div>
+    </form>
+</div>
+
+<!-- 🔍 Search Filter Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Employee & Vehicle Search ---
+    function setupSearch(inputId, containerId) {
+        const input = document.getElementById(inputId);
+        const container = document.getElementById(containerId);
+        if (!input || !container) return;
+
+        input.addEventListener('keyup', function() {
+            const filter = input.value.toLowerCase();
+            container.querySelectorAll('label').forEach(label => {
+                const text = label.textContent.toLowerCase();
+                label.style.display = text.includes(filter) ? '' : 'none';
+            });
+        });
+    }
+    setupSearch('searchEmployees', 'employeeBox');
+    setupSearch('searchVehicles', 'vehicleBox');
+
+    // --- Show/Hide Time Slots based on selected days ---
+    function setupDaySlots(selectId, prefix) {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+
+        function updateSlots() {
+            // Hide all first
+            document.querySelectorAll(`.day-slot[class*="${prefix}"]`).forEach(div => div.style.display = 'none');
+
+            const selected = Array.from(select.selectedOptions).map(opt => opt.value);
+            selected.forEach(day => {
+                const el = document.querySelector(`.${day.toLowerCase()}-${prefix}`);
+                if (el) el.style.display = 'block';
+            });
+        }
+
+        // Initial run
+        updateSlots();
+        // On change
+        select.addEventListener('change', updateSlots);
+    }
+
+    setupDaySlots('id_sweeping_days', 'sweeping');
+    setupDaySlots('id_solid_waste_days', 'solid');
+});
+</script>
+
+<!-- 💅 Styling -->
+<style>
+    #employeeBox, #vehicleBox {
+        max-height: 250px;
+        overflow-y: auto;
+        background-color: #f8f9fa;
+        padding: 10px;
+    }
+    #employeeBox label, #vehicleBox label {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 14px;
+    }
+    h5, h6 { color: #333; }
+    /* Hide all day slots by default, JS will show selected ones */
+    .day-slot { display: none; }
+</style>
+{% endblock %}

@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+
+<style>
+    .container {
+        margin-top: 20px;
+    }
+    h2, h3 {
+        color: #4e73df;
+        font-weight: bold;
+    }
+    .btn-primary {
+        background-color: #4e73df;
+        border: none;
+    }
+    .btn-primary:hover {
+        background-color: #2e59d9;
+    }
+    .card {
+        border: 1px solid #e3e6f0;
+        border-radius: 10px;
+    }
+    .card-header {
+        background-color: #f8f9fc;
+        border-bottom: 1px solid #e3e6f0;
+        color: #4e73df;
+        font-size: 1rem;
+        font-weight: bold;
+    }
+    .table {
+        color: #5a5c69;
+        font-size: 0.9rem;
+    }
+    .table thead th {
+        background-color: #4e73df;
+        color: #fff;
+        text-align: center;
+        border: 2px solid #4e73df;
+    }
+    .table tbody td {
+        text-align: center;
+        border: 2px solid #e3e6f0;
+    }
+    .table tbody tr:nth-child(even) {
+        background-color: #f8f9fc;
+    }
+    .table tbody tr:nth-child(odd) {
+        background-color: #e9ecef;
+    }
+    .table tbody tr:hover {
+        background-color: #d1d3e2;
+    }
+</style>
+
+{% block content %}
+<div class="container">
+    <h2>Sanitation Summary for {{ report_date }}</h2>
+
+    <!-- Date Filter -->
+    <form method="get" class="mb-4">
+        <input type="date" name="date" value="{{ report_date }}" class="form-control d-inline w-auto" />
+        <button type="submit" class="btn btn-primary">Filter</button>
+    </form>
+
+
+    <!-- Data Table -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Sanitation Summary</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th style="min-width: 50px;">Sr. No</th>
+                        <th style="min-width: 120px;">Location</th>
+                        <th style="min-width: 170px;">Primary Waste Collection</th>
+                        <th style="min-width: 170px;">Waste Locally Dumped</th>
+                        <th style="min-width: 170px;">Waste Dumped at LFS </th>
+                        <th style="min-width: 100px;">LFS Trips</th>
+                        <th style="min-width: 140px;">Local Dumping Trips</th>
+                        <th style="min-width: 150px;">Door to Door Collection</th>
+                        <th style="min-width: 150px;">Replacement of Manhole Covers</th>
+                        <th style="min-width: 180px;">Cleaning De-siltation of Manhole</th>
+                        <th style="min-width: 200px;">Cleaning De-siltation of Drain Sewers (Km)</th>
+                        <th style="min-width: 140px;">Fumigation Sprays</th>
+                        <th style="min-width: 100px;">IR Spray</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in location_data %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ entry.location.location_name }}</td>
+                        <td>{{ entry.primary_waste_collection }}</td>
+                        <td>{{ entry.waste_locally_dumped }}</td>
+                        <td>{{ entry.waste_dumped_at_lfs }}</td>
+                        <td>{{ entry.lfs_trips }}</td>
+                        <td>{{ entry.local_dumping_trips }}</td>
+                        <td>{{ entry.door_to_door_collection }}</td>
+                        <td>{{ entry.replacement_of_manhole_covers }}</td>
+                        <td>{{ entry.cleaning_de_siltation_of_manhole }}</td>
+                        <td>{{ entry.cleaning_de_siltation_of_drain_sewers }}</td>
+                        <td>{{ entry.fumigation_sprays }}</td>
+                        <td>{{ entry.ir_spray }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td></td>
+                        <td><strong>Total</strong></td>
+                        <td><strong>{{ totals.primary_waste_collection }}</strong></td>
+                        <td><strong>{{ totals.waste_locally_dumped }}</strong></td>
+                        <td><strong>{{ totals.waste_dumped_at_lfs }}</strong></td>
+                        <td><strong>{{ totals.lfs_trips }}</strong></td>
+                        <td><strong>{{ totals.local_dumping_trips }}</strong></td>
+                        <td><strong>{{ totals.door_to_door_collection }}</strong></td>
+                        <td><strong>{{ totals.replacement_of_manhole_covers }}</strong></td>
+                        <td><strong>{{ totals.cleaning_de_siltation_of_manhole }}</strong></td>
+                        <td><strong>{{ totals.cleaning_de_siltation_of_drain_sewars }}</strong></td>
+                        <td><strong>{{ totals.fumigation_sprays }}</strong></td>
+                        <td><strong>{{ totals.ir_spray }}</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+    <!-- Overall Bin Summary -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Bin Summary</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Location</th>
+                            <th>Total Moqas</th>
+                            <th>Lifted Moqas</th>
+                            <th>Unlifted Moqas</th>
+                            <th>Total Containers</th>
+                            <th>Lifted Containers</th>
+                            <th>Unlifted Containers</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for data in location_data %}
+                            <tr>
+                                <td>{{ data.location }}</td>
+                                <td>{{ data.total_moqas }}</td>
+                                <td>{{ data.lifted_moqas }}</td>
+                                <td>{{ data.unlifted_moqas }}</td>
+                                <td>{{ data.total_containers }}</td>
+                                <td>{{ data.lifted_containers }}</td>
+                                <td>{{ data.unlifted_containers }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center">No records found.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Primary Activities
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Primary Activities</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <tbody>
+                        <tr>
+                            <td>Primary Waste Collection</td>
+                            <td>{{ totals.primary_waste_collection }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div> -->
+
+    <!-- Secondary Activities -->
+    <!-- <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Secondary Activities</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <tbody>
+                        <tr>
+                            <td>Waste Dumped at LFS</td>
+                            <td>{{ totals.waste_dumped_at_lfs }}</td>
+                        </tr>
+                        <tr>
+                            <td>Waste Locally Dumped</td>
+                            <td>{{ totals.waste_locally_dumped }}</td>
+                        </tr>
+                        <tr>
+                            <td>LFS Trips (No)</td>
+                            <td>{{ totals.lfs_trips }}</td>
+                        </tr>
+                        <tr>
+                            <td>Local Dumping Trips (No)</td>
+                            <td>{{ totals.local_dumping_trips }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div> -->
+
+    <!-- Additional Activities -->
+    <!-- <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Additional Activities</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <tbody>
+                        <tr>
+                            <td>Door to Door Collection</td>
+                            <td>{{ totals.door_to_door_collection }}</td>
+                        </tr>
+                        <tr>
+                            <td>Replacement of Manhole Covers</td>
+                            <td>{{ totals.replacement_of_manhole_covers }}</td>
+                        </tr>
+                        <tr>
+                            <td>Cleaning De-siltation of Manhole</td>
+                            <td>{{ totals.cleaning_de_siltation_of_manhole }}</td>
+                        </tr>
+                        <tr>
+                            <td>Cleaning De-siltation of Drain Sewers (Km)</td>
+                            <td>{{ totals.cleaning_de_siltation_of_drain_sewars }}</td>
+                        </tr>
+                        <tr>
+                            <td>Fumigation Sprays</td>
+                            <td>{{ totals.fumigation_sprays }}</td>
+                        </tr>
+                        <tr>
+                            <td>IR Spray</td>
+                            <td>{{ totals.ir_spray }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div> -->
+{% endblock %}

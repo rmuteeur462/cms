@@ -1,0 +1,370 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Manhole Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- Chart.js + DataLabels -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+<style>
+  .stat-card { border-left: 4px solid; border-radius: 8px; }
+  .stat-card.blue   { border-color: #0d6efd; }
+  .stat-card.red    { border-color: #dc3545; }
+  .stat-card.green  { border-color: #198754; }
+  .stat-card.amber  { border-color: #ffc107; }
+  .stat-card .num   { font-size: 2rem; font-weight: 700; }
+
+  /* Give every chart canvas a fixed height so they never collapse */
+  canvas { max-height: 320px; }
+  #chart-uc      { max-height: 380px; }
+  #chart-zone    { max-height: 380px; }
+  #chart-material{ max-height: 300px; }
+  #chart-shape   { max-height: 300px; }
+
+  /* Status doughnut: keep it centred and not too tall */
+  #chart-status { max-height: 260px; display: block; margin: auto; }
+</style>
+
+<div class="container-fluid mt-4 px-4">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between mb-3 flex-wrap gap-2">
+    <h3 class="fw-bold">Manhole Dashboard</h3>
+        <div class="d-flex gap-2 align-items-center">
+      <span class="badge bg-primary">{{ total }} records</span>
+      <!-- <a href="{% url 'manhole_create' %}" class="btn btn-primary btn-sm">+ Add</a> -->
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card mb-3">
+    <div class="card-body py-2">
+      <form method="GET" class="row g-2 align-items-center">
+
+        <div class="col-auto">
+          <select name="location" class="form-select form-select-sm">
+            <option value="">All Locations</option>
+            {% for loc in locations %}
+              <option value="{{ loc.id }}" {% if f_location == loc.id|stringformat:"s" %}selected{% endif %}>
+                {{ loc.location_name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-auto">
+          <select name="uc" class="form-select form-select-sm">
+            <option value="">All UCs</option>
+            {% for uc in ucs %}
+              <option value="{{ uc.id }}" {% if f_uc == uc.id|stringformat:"s" %}selected{% endif %}>
+                {{ uc.uc_name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-auto">
+          <select name="status" class="form-select form-select-sm">
+            <option value="">All Status</option>
+            <option value="open"    {% if f_status == "open"    %}selected{% endif %}>Open</option>
+            <option value="covered" {% if f_status == "covered" %}selected{% endif %}>Covered</option>
+          </select>
+        </div>
+
+        <div class="col-auto">
+          <select name="shape" class="form-select form-select-sm">
+            <option value="">All Shapes</option>
+            {% for s in shapes %}
+              <option value="{{ s.id }}" {% if f_shape == s.id|stringformat:"s" %}selected{% endif %}>
+                {{ s.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-auto">
+          <select name="material" class="form-select form-select-sm">
+            <option value="">All Materials</option>
+            {% for m in materials %}
+              <option value="{{ m.id }}" {% if f_material == m.id|stringformat:"s" %}selected{% endif %}>
+                {{ m.material }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-auto">
+          <input type="text" name="search" value="{{ f_search }}"
+                 class="form-control form-control-sm" placeholder="Search">
+        </div>
+
+        <div class="col-auto">
+          <button class="btn btn-primary btn-sm">Filter</button>
+          <a href="?" class="btn btn-outline-secondary btn-sm ms-1">Reset</a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- Summary bar -->
+  <div class="alert alert-light border mb-3 py-2">
+    Total: <strong>{{ total }}</strong> &nbsp;|&nbsp;
+    Open: <strong class="text-danger">{{ open_c }}</strong> &nbsp;|&nbsp;
+    Covered: <strong class="text-success">{{ covered }}</strong> &nbsp;|&nbsp;
+    Open %: <strong>{{ open_pct }}%</strong>
+  </div>
+
+  <!-- Stat cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="card stat-card blue h-100">
+        <div class="card-body">
+          <div class="text-muted small">Total</div>
+          <div class="num text-primary">{{ total }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card stat-card red h-100">
+        <div class="card-body">
+          <div class="text-muted small">Open</div>
+          <div class="num text-danger">{{ open_c }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card stat-card green h-100">
+        <div class="card-body">
+          <div class="text-muted small">Covered</div>
+          <div class="num text-success">{{ covered }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card stat-card amber h-100">
+        <div class="card-body">
+          <div class="text-muted small">UCs</div>
+          <div class="num text-warning">{{ uc_count }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 1: Status (col-4) + Material (col-4) + Shape (col-4) -->
+  <div class="row g-3 mb-3">
+
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-header fw-semibold">Status</div>
+        <div class="card-body d-flex align-items-center justify-content-center">
+          <canvas id="chart-status"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card h-200">
+        <div class="card-header fw-semibold">Material</div>
+        <div class="card-body">
+          <canvas id="chart-material"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card h-200">
+        <div class="card-header fw-semibold">Shape</div>
+        <div class="card-body">
+          <canvas id="chart-shape"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Row 2: Zone (full width) -->
+  <div class="row g-3 mb-3">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header fw-semibold">Zone Summary</div>
+        <div class="card-body">
+          <canvas id="chart-zone"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 3: UC (full width) -->
+  <div class="row g-3 mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header fw-semibold">All UCs</div>
+        <div class="card-body">
+          <canvas id="chart-uc"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container-fluid -->
+
+<script>
+Chart.register(ChartDataLabels);
+
+const safe = v => v || 'Unknown';
+
+const CHART_STATUS   = {{ chart_status|safe }};
+const CHART_BY_UC    = {{ chart_by_uc|safe }};
+const CHART_MATERIAL = {{ chart_by_material|safe }};
+const CHART_SHAPE    = {{ chart_by_shape|safe }};
+const CHART_ZONE     = {{ chart_by_zone|safe }};
+
+// Show % inside doughnut chart
+new Chart(document.getElementById('chart-status'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Open', 'Covered'],
+        datasets: [{
+            data: [CHART_STATUS.open, CHART_STATUS.covered],
+            backgroundColor: ['#f5c6cb', '#d4edda']  
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        let label = context.label || '';
+                        let value = context.raw;
+                        let pct = label === 'Open' ? CHART_STATUS.open_pct : CHART_STATUS.covered_pct;
+                        return `${label}: ${value} (${pct}%)`;
+                    }
+                }
+            },
+            legend: { position: 'bottom' }
+        }
+    }
+});
+/* ── UC bar ── */
+/* ── UC bar with multiple colors ── */
+new Chart(document.getElementById('chart-uc'), {
+  type: 'bar',
+  data: {
+    labels: CHART_BY_UC.map(r => safe(r.uc__uc_name)),
+    datasets: [{
+      data: CHART_BY_UC.map(r => r.count),
+      backgroundColor: CHART_BY_UC.map((r, i) => {
+        // Example: alternate colors or use a color palette
+        const colors = ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#6f42c1'];
+        return colors[i % colors.length];
+      })
+    }]
+  },
+  options: {
+    layout: { padding: { top: 24 } },
+    plugins: {
+      legend: { display: false },
+      datalabels: {
+        anchor: 'end', align: 'top',
+        font: { weight: 'bold', size: 11 },
+        clamp: true
+      }
+    },
+    scales: {
+      x: { ticks: { autoSkip: false, maxRotation: 45, minRotation: 30 } },
+      y: { beginAtZero: true }
+    }
+  }
+});
+/* ── Material bar ── */
+new Chart(document.getElementById('chart-material'), {
+  type: 'bar',
+  data: {
+    labels: CHART_MATERIAL.map(r => safe(r.cover_material__material)),
+    datasets: [{
+      data: CHART_MATERIAL.map(r => r.count),
+      backgroundColor: '#20c997'
+    }]
+  },
+  options: {
+    layout: { padding: { top: 24 } },
+    plugins: {
+      legend: { display: false },
+      datalabels: {
+        anchor: 'end', align: 'top',
+        font: { weight: 'bold', size: 11 },
+        clamp: true
+      }
+    },
+    scales: {
+      x: { ticks: { autoSkip: false, maxRotation: 45, minRotation: 30 } },
+      y: { beginAtZero: true }
+    }
+  }
+});
+
+/* ── Shape bar ── */
+new Chart(document.getElementById('chart-shape'), {
+  type: 'bar',
+  data: {
+    labels: CHART_SHAPE.map(r => safe(r.shape__name)),
+    datasets: [{
+      data: CHART_SHAPE.map(r => r.count),
+      backgroundColor: '#ffc107'
+    }]
+  },
+  options: {
+    layout: { padding: { top: 24 } },
+    plugins: {
+      legend: { display: false },
+      datalabels: {
+        anchor: 'end', align: 'top',
+        font: { weight: 'bold', size: 11 },
+        clamp: true
+      }
+    },
+    scales: {
+      x: { ticks: { autoSkip: false, maxRotation: 45, minRotation: 30 } },
+      y: { beginAtZero: true }
+    }
+  }
+});
+
+/* ── Zone grouped bar ── */
+new Chart(document.getElementById('chart-zone'), {
+  type: 'bar',
+  data: {
+    labels: CHART_ZONE.map(r => safe(r.uc__location__location_name)),
+    datasets: [
+      { label: 'Total',   data: CHART_ZONE.map(r => r.total),   backgroundColor: '#0d6efd' },
+      { label: 'Open',    data: CHART_ZONE.map(r => r.open),    backgroundColor: '#dc3545' },
+      { label: 'Covered', data: CHART_ZONE.map(r => r.covered), backgroundColor: '#198754' }
+    ]
+  },
+  options: {
+    layout: { padding: { top: 24 } },
+    plugins: {
+      legend: { position: 'bottom' },
+      datalabels: {
+        anchor: 'end',
+        align: 'top',
+        color: '#333',
+        font: { weight: 'bold', size: 10 },
+        clamp: true,
+        formatter: val => val > 0 ? val : ''
+      }
+    },
+    scales: {
+      x: { ticks: { autoSkip: false, maxRotation: 30, minRotation: 0 } },
+      y: { beginAtZero: true }
+    }
+  }
+});
+</script>
+
+{% endblock %}

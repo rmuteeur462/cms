@@ -1,0 +1,547 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Perfoma Tube</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+        .form-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        .form-container h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .section {
+            margin-bottom: 15px;
+        }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #007BFF;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .section-header:hover {
+            background-color: #0056b3;
+        }
+        .section-content {
+            display: none;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+            padding: 15px;
+            background-color: #f9f9f9;
+        }
+        .section-content.visible {
+            display: block;
+        }
+        .form-row {
+            margin-bottom: 10px;
+        }
+        .form-row label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            background: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .form-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.form-row label {
+    flex: 1; /* Ensures labels take up consistent space */
+    text-align: left; /* Aligns labels to the left */
+}
+
+.form-row input, 
+.form-row select, 
+.form-row textarea {
+    flex: 2; /* Ensures inputs take up consistent space */
+    text-align: left; /* Aligns inputs to the left */
+}
+
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h1>Perfoma WSSP M&E Field Visit</h1>
+        <form method="POST">
+            {% csrf_token %}
+
+            <!-- Section 1: General Information -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    1. General Information <span>&#9660;</span>
+                </div>
+                <div class="section-content">
+                    <div class="form-row">
+                        <label for="name_of_official">Name of Official</label>
+                        {{ form.name_of_official }}
+                    </div>
+
+                    <div class="form-row">
+                        <label for="date">Date</label>
+                        {{ form.date }}
+                    </div>
+                </div>
+            </div>
+
+
+
+            <!-- Section 2: Drinking Water Supply -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    2. Drinking Water Supply <span>&#9660;</span>
+                </div>
+                <div class="section-content">
+                    <div class="form-row">
+                        <label for="tube_well_id">1. Tube Well ID</label>
+                        {{ form.tube_well_id }}
+                    </div>
+                    <div class="form-row">
+                        <label for="tube_well_functional">2. Tube Well Functional</label>
+                        {{ form.tube_well_functional }}
+                    </div>
+                    <div class="form-row">
+                        <label for="operator_present">3. Operator Present</label>
+                        {{ form.operator_present }}
+                    </div>
+                    <div class="form-row">
+                        <label for="supervisor_present">4. Supervisor Present</label>
+                        {{ form.supervisor_present }}
+                    </div>
+                    <div class="form-row">
+                        <label for="bookkeeping_updated">5. Bookkeeping Updated</label>
+                        {{ form.bookkeeping_updated }}
+                    </div>
+                    <div class="form-row">
+                        <label for="filtration_plant_functional">6. Filtration Plant Functional</label>
+                        {{ form.filtration_plant_functional }}
+                    </div>
+                    <div class="form-row">
+                        <label for="scada_system_functional">7. SCADA system installed & functional</label>
+                        {{ form.scada_system_functional }}
+                    </div>
+                    <div class="form-row">
+                        <label for="water_quality_device_functional">8. Water Quality device installed & functional</label>
+                        {{ form.water_quality_device_functional }}
+                    </div>
+                    <div class="form-row">
+                        <label for="operator_in_uniform">9. TW operator in duty uniform</label>
+                        {{ form.operator_in_uniform }}
+                    </div>
+                    <div class="form-row">
+                        <label for="mechanical_fault">10. Mechanical & Electrification fault in TW</label>
+                        {{ form.mechanical_fault }}
+                    </div>
+                    <div class="form-row">
+                        <label for="pipe_leakage">11. Pipe leak etc at TW, at Network</label>
+                        {{ form.pipe_leakage }}
+                    </div>
+                    <div class="form-row">
+                        <label for="maintenance_record_maintained">12. Maintenance record maintained Water Quality Device Functional</label>
+                        {{ form.maintenance_record_maintained }}
+                    </div>
+                    <div class="form-row">
+                        <label for="registered_connection">13. Register connection on TW</label>
+                        {{ form.registered_connection }}
+                    </div>
+                    <div class="form-row">
+                        <label for="illegal_connection">14. Illegal connection from TW</label>
+                        {{ form.illegal_connection }}
+                    </div>
+                    <div class="form-row">
+                        <label for="complaints_redressal">15. Complaints/ redressal</label>
+                        {{ form.complaints_redressal }}
+                    </div>
+                </div>
+            </div>
+            
+
+
+            <!-- Section 3: Solid Waste Management -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    3. Solid Waste Management <span>&#9660;</span>
+                </div>
+                <div class="section-content">
+                    <div class="form-row">
+                        <label for="location">1. Location of containers/bins/Moqa</label>
+                        {{ form.location }}
+                    </div>
+                    <div class="form-row">
+                        <label for="bins_clean">2. Containers/bins/Moqa are clean and in good condition</label>
+                        {{ form.bins_clean }}
+                    </div>
+                    <div class="form-row">
+                        <label for="surroundings_clean">3. Surroundings of containers/bins are clean</label>
+                        {{ form.surroundings_clean }}
+                    </div>
+                    <div class="form-row">
+                        <label for="spillage_observed">4. Spillage or overflow observed (document time of occurrence)</label>
+                        {{ form.spillage_observed }}
+                    </div>
+                    <div class="form-row">
+                        <label for="waste_lifted_timely">5. Waste lifted in a timely manner</label>
+                        {{ form.waste_lifted_timely }}
+                    </div>
+                    <div class="form-row">
+                        <label for="staff_uniform">6. Staff duty uniform</label>
+                        {{ form.staff_uniform }}
+                    </div>
+                    <div class="form-row">
+                        <label for="street_littering">7. Street littering</label>
+                        {{ form.street_littering }}
+                    </div>
+                    <div class="form-row">
+                        <label for="area_sweeping">8. Sweeping in the area</label>
+                        {{ form.area_sweeping }}
+                    </div>
+                    <div class="form-row">
+                        <label for="swm_consumer_billed">9. SWM consumer billed</label>
+                        {{ form.swm_consumer_billed }}
+                    </div>
+                    <div class="form-row">
+                        <label for="vehicle_condition">10. SWM collection vehicle condition</label>
+                        {{ form.vehicle_condition }}
+                    </div>
+                    <div class="form-row">
+                        <label for="vehicle_trip_record">11. Vehicle trip record maintained</label>
+                        {{ form.vehicle_trip_record }}
+                    </div>
+                    <div class="form-row">
+                        <label for="pending_complaints">12. SWM Pending complaint</label>
+                        {{ form.pending_complaints }}
+                    </div>
+                    <div class="form-row">
+                        <label for="staff_attendance">13. Staff attendance</label>
+                        {{ form.staff_attendance }}
+                    </div>
+                    
+                </div>
+            </div>
+
+
+            <!-- Section 4: Wastewater Management -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    4. Wastewater Management <span>&#9660;</span>
+                </div>
+                <div class="section-content">
+                    <div class="form-row">
+                        <label for="drain_location">1. Drain location (specific to urban areas prone to blockages)</label>
+                        {{ form.drain_location }}
+                    </div>
+                    <div class="form-row">
+                        <label for="drain_desiltation">2. Drain desiltation</label>
+                        {{ form.drain_desiltation }}
+                    </div>
+                    <div class="form-row">
+                        <label for="manhole_covers">3. Manholes have proper covers (report missing/damaged covers)</label>
+                        {{ form.manhole_covers }}
+                    </div>
+                    <div class="form-row">
+                        <label for="sludge_lifting_timely">4. Timely lifting of sludge</label>
+                        {{ form.sludge_lifting_timely }}
+                    </div>
+                    <div class="form-row">
+                        <label for="manhole_desiltation">5. Desiltation of manholes</label>
+                        {{ form.manhole_desiltation }}
+                    </div>
+                    <div class="form-row">
+                        <label for="dewats_status">6. DEWATS status</label>
+                        {{ form.dewats_status }}
+                    </div>
+                    <div class="form-row">
+                        <label for="staff_attendance">7. Staff attendance</label>
+                        {{ form.staff_attendance }}
+                    </div>
+                </div>
+            </div>
+
+
+
+            <!-- 5. Operational Staff Attendance -->
+
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    5. Operational Staff Attendance <span>&#9660;</span>
+                </div>
+                <div class="section-content">
+                    <div class="form-row">
+                        <label for="Staff_present_specify_numbers_for_absentees">1. Staff present (specify numbers for absentees)</label>
+                        {{ form.Staff_present_specify_numbers_for_absentees }}
+                    </div>
+                    <div class="form-row">
+                        <label for="Staff_wearing_proper_uniform_and_safety_equipment">2. Staff wearing proper uniform and safety equipment</label>
+                        {{ form.Staff_wearing_proper_uniform_and_safety_equipment }}
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- 6. Fleet (Parking Yard) -->
+
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    6. Fleet (Parking Yard) <span>&#9660;</span>
+                </div>
+                <div class="section-content">
+                    <div class="form-row">
+                        <label for="Total_vehicle_in_the_yard">1. Total vehicle in the yard</label>
+                        {{ form.Total_vehicle_in_the_yard }}
+                    </div>
+                    <div class="form-row">
+                        <label for="Layout_of_vehicles">2. Layout of vehicles</label>
+                        {{ form.Layout_of_vehicles }}
+                    </div>
+                    <div class="form-row">
+                        <label for="Layout_and_safety_of_store">3. Layout and safety of store</label>
+                        {{ form.Layout_and_safety_of_store }}
+                    </div>
+                    <div class="form-row">
+                        <label for="vehicle_condition">4. Vehicle condition (Neat & Clean)</label>
+                        {{ form.vehicle_condition }}
+                    </div>
+                    <div class="form-row">
+                        <label for="firefighting_equipment">5. Firefighting equipment</label>
+                        {{ form.firefighting_equipment }}
+                    </div>
+                    <div class="form-row">
+                        <label for="presence_of_security_guard">6. Presence of security guard and other staff</label>
+                        {{ form.presence_of_security_guard }}
+                    </div>
+                    <div class="form-row">
+                        <label for="functionality_bio_attendance">7. Functionality of bio time attendance devices</label>
+                        {{ form.functionality_bio_attendance }}
+                    </div>
+                    <div class="form-row">
+                        <label for="cctv_cameras">8. CCTV cameras</label>
+                        {{ form.cctv_cameras }}
+                    </div>
+                    <div class="form-row">
+                        <label for="availability_oil_spare_parts">9. Availability of oil and replaced spare parts</label>
+                        {{ form.availability_oil_spare_parts }}
+                    </div>
+                    <div class="form-row">
+                        <label for="fuel_register_records">10. Fuel register, use oil, log books, and other records</label>
+                        {{ form.fuel_register_records }}
+                    </div>
+                    <div class="form-row">
+                        <label for="general_cleanliness">11. General cleanliness of vehicles</label>
+                        {{ form.general_cleanliness }}
+                    </div>
+                    <div class="form-row">
+                        <label for="odometer_temp_fuel_gauge">12. Odometer, temp gauge and fuel gauge of vehicles</label>
+                        {{ form.odometer_temp_fuel_gauge }}
+                    </div>
+                    <div class="form-row">
+                        <label for="sheet_provided">13. Sheet provided for vehicle covering solid waste in vehicle </label>
+                        {{ form.sheet_provided }}
+                    </div>
+                    <div class="form-row">
+                        <label for="parking_sheds">14. Parking sheds</label>
+                        {{ form.parking_sheds }}
+                    </div>
+                    <div class="form-row">
+                        <label for="basic_maintenance_tools">15. Basic maintenance tools, tyre inflation pump, puncture machine, oil change machine, grease gun etc</label>
+                        {{ form.basic_maintenance_tools }}
+                    </div>
+                    <div class="form-row">
+                        <label for="washing_pit">16. Washing pit</label>
+                        {{ form.washing_pit }}
+                    </div>
+
+                </div>
+            </div>
+
+
+            <!-- 7. Dumping Site/ Transfer Stations -->
+
+            <div class="section">
+    <div class="section-header" onclick="toggleSection(this)">
+        7. Dumping Site/ Transfer Stations <span>&#9660;</span>
+    </div>
+    <div class="section-content">
+        <div class="form-row">
+            <label for="waste_in_out_record">1. Waste in-out record maintained</label>
+            {{ form.waste_in_out_record }}
+        </div>
+        <div class="form-row">
+            <label for="vehicles_in_out_record">2. Vehicles in-out record</label>
+            {{ form.vehicles_in_out_record }}
+        </div>
+        <div class="form-row">
+            <label for="scavengers_activity">3. Scavengers activity</label>
+            {{ form.scavengers_activity }}
+        </div>
+        <div class="form-row">
+            <label for="backlog">4. Backlog</label>
+            {{ form.backlog }}
+        </div>
+        <div class="form-row">
+            <label for="maintenance_route">5. Maintenance route</label>
+            {{ form.maintenance_route }}
+        </div>
+        <div class="form-row">
+            <label for="fumigation_spray_arrangements">6. Fumigation & Spray arrangements</label>
+            {{ form.fumigation_spray_arrangements }}
+        </div>
+        <div class="form-row">
+            <label for="boundary_wall_control">7. Boundary wall for control</label>
+            {{ form.boundary_wall_control }}
+        </div>
+        <div class="form-row">
+            <label for="leachate_collection">8. Leachate collection</label>
+            {{ form.leachate_collection }}
+        </div>
+        <div class="form-row">
+            <label for="buffer_zone_plantation">9. Buffer zone plantation</label>
+            {{ form.buffer_zone_plantation }}
+        </div>
+        <div class="form-row">
+            <label for="staff_attendance_2">10. Staff attendance</label>
+            {{ form.staff_attendance_2 }}
+        </div>
+        <div class="form-row">
+            <label for="loading_arrangements">11. Loading arrangements</label>
+            {{ form.loading_arrangements }}
+        </div>
+        <div class="form-row">
+            <label for="staff_working_station">12. Staff working station</label>
+            {{ form.staff_working_station }}
+        </div>
+    </div>
+</div>
+
+
+
+
+            <!-- 8. Fuel Station -->
+
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    8. Fuel Station <span>&#9660;</span>
+                </div>
+                <div class="section-content">
+                    <div class="form-row">
+                        <label for="fuel_sops_followed">1. Fuel SOPs followed (check for any anomalies)</label>
+                        {{ form.fuel_sops_followed }}
+                    </div>
+                    <div class="form-row">
+                        <label for="fuel_card_swiped">2. Fuel card swiped at refueling</label>
+                        {{ form.fuel_card_swiped }}
+                    </div>
+                    <div class="form-row">
+                        <label for="driver_signature_fuel_register">3. Driver signature in fuel register</label>
+                        {{ form.driver_signature_fuel_register }}
+                    </div>
+                    <div class="form-row">
+                        <label for="fuel_liters_recorded">4. Fuel liters recorded in vehicle trip sheet</label>
+                        {{ form.fuel_liters_recorded }}
+                    </div>
+                    <div class="form-row">
+                        <label for="staff_on_duty_attendance">5. Staff on duty, attendance</label>
+                        {{ form.staff_on_duty_attendance }}
+                    </div>
+                </div>
+            </div>
+            
+
+
+            <!-- 9. Billing -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    9. Billing <span>&#9660;</span>
+                </div>
+                <div class="section-content">
+                    <div class="form-row">
+                        <label for="random_check_households_bills">1. Random check, households received their bills</label>
+                        {{ form.random_check_households_bills }}
+                    </div>
+                    <div class="form-row">
+                        <label for="random_check_shops_bills">2. Random check, shops and commercial units received bills</label>
+                        {{ form.random_check_shops_bills }}
+                    </div>
+                </div>
+            </div>
+            
+
+
+
+            <!-- 10. General Observations -->
+
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    10. General Observations <span>&#9660;</span>
+                </div>
+                <div class="section-content">
+                    <div class="form-row">
+                        <label for="uc_area_work_quality">1. Overall UC/Area work quality is satisfactory</label>
+                        {{ form.uc_area_work_quality }}
+                    </div>
+                    <div class="form-row">
+                        <label for="field_staff_duty_hours">2. Field staff following duty hours</label>
+                        {{ form.field_staff_duty_hours }}
+                    </div>
+                    <div class="form-row">
+                        <label for="suggestions_recommendations">3. Suggestions or recommendations (if any)</label>
+                        {{ form.suggestions_recommendations }}
+                    </div>
+                </div>
+            </div>
+             
+
+            <!-- Additional Sections... -->
+
+            <button type="submit" class="btn btn-primary">Save</button>
+        </form>
+    </div>
+
+    <script>
+        function toggleSection(header) {
+            const content = header.nextElementSibling;
+            const arrow = header.querySelector('span');
+            content.classList.toggle('visible');
+            arrow.textContent = content.classList.contains('visible') ? '▲' : '▼';
+        }
+    </script>
+</body>
+</html>
+{% endblock %}

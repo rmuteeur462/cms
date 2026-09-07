@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    Bin Lifting Management
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800" style="font-weight: bold; font-size: 1.5rem; text-align: center;">
+        Bin Lifting Data - {{ report_date|date:"Y-m-d" }}
+    </h1>
+
+    <!-- Filter Form -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="form-inline mb-3">
+                <div class="form-group mr-3">
+                    <label for="date" class="mr-2">Select Date:</label>
+                    <input type="date" class="form-control" name="date" value="{{ report_date|date:'Y-m-d' }}" required>
+                </div>
+                <button type="submit" class="btn btn-primary mb-2">Filter</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add New Bin Lifting Data Button -->
+    <button type="button" class="btn btn-primary mb-4" data-toggle="modal" data-target="#addBinfoamModal">
+        Add New Bin Lifting Data
+    </button>
+
+   <!-- Add Binfoam Modal -->
+<div class="modal fade" id="addBinfoamModal" tabindex="-1" role="dialog" aria-labelledby="addBinfoamModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addBinfoamModalLabel">Add New Bin Lifting Data</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" enctype="multipart/form-data" id="binfoamForm">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="id_location">Location:</label>
+                        {{ form.location }}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_uc">UC:</label>
+                        {{ form.uc }}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_bin_name">Bin Name:</label>
+                        {{ form.bin_name }}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_liftingfrequency">Lifting Frequency:</label>
+                        {{ form.liftingfrequency }}
+                    </div>
+                    <div class="form-group" id="firstLiftingTimeGroup">
+                        <label for="id_firstliftingtime">First Lifting Time:</label>
+                        {{ form.firstliftingtime }}
+                    </div>
+                    <div class="form-group" id="secondLiftingTimeGroup" style="display:none;">
+                        <label for="id_secondliftingtime">Second Lifting Time:</label>
+                        {{ form.secondliftingtime }}
+                    </div>
+                    <div class="form-group" id="thirdLiftingTimeGroup" style="display:none;">
+                        <label for="id_thirdliftingtime">Third Lifting Time:</label>
+                        {{ form.thirdliftingtime }}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_attendance_date">Activity Date:</label>
+                        {{ form.attendance_date }}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Add Data</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Function to handle the display of lifting times based on frequency
+    document.getElementById('id_liftingfrequency').addEventListener('change', function() {
+        var liftingFrequency = this.value;
+        
+        // Hide all lifting time fields
+        document.getElementById('firstLiftingTimeGroup').style.display = 'none';
+        document.getElementById('secondLiftingTimeGroup').style.display = 'none';
+        document.getElementById('thirdLiftingTimeGroup').style.display = 'none';
+
+        // Show appropriate lifting time fields based on selection
+        if (liftingFrequency == '1') {
+            document.getElementById('firstLiftingTimeGroup').style.display = 'block';
+        } else if (liftingFrequency == '2') {
+            document.getElementById('firstLiftingTimeGroup').style.display = 'block';
+            document.getElementById('secondLiftingTimeGroup').style.display = 'block';
+        } else if (liftingFrequency == '3') {
+            document.getElementById('firstLiftingTimeGroup').style.display = 'block';
+            document.getElementById('secondLiftingTimeGroup').style.display = 'block';
+            document.getElementById('thirdLiftingTimeGroup').style.display = 'block';
+        }
+    });
+</script>
+ 
+    <!-- Bin Lifting Records Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h2 class="mt-4">Bin Lifting Records</h2>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover shadow-sm bg-white">
+                    <thead class="bg-primary text-white">
+                        <tr>
+                            <th>Sr.No</th>
+                            <th>Location</th>
+                            <th>UC</th>
+                            <th>Bin Name</th>
+                            <th>Lifting Frequency</th>
+                            <th>First Lifting</th>
+                            <th>Second Lifting</th>
+                            <th>Third Lifting</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for data in binfoam_data %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ data.location }}</td>
+                                <td>{{ data.uc }}</td>
+                                <td>{{ data.bin_name }}</td>
+                                <td>{{ data.liftingfrequency }}</td>
+                                <td>{{ data.firstliftingtime }}</td>
+                                <td>{{ data.secondliftingtime }}</td>
+                                <td>{{ data.thirdliftingtime }}</td>
+                                <td>{{ data.attendance_date }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="9" class="text-center">No bin lifting records found for {{ report_date }}.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script type="text/javascript">
+    $(document).ready(function() {
+        // Trigger when location is selected
+        $('#id_location').change(function() {
+            var location_id = $(this).val();
+            
+            if (location_id) {
+                // AJAX call to get UCs based on selected location
+                $.ajax({
+                    url: "{% url 'fetch_uc_by_location' %}",  // Updated URL
+                    data: {
+                        'location_id': location_id
+                    },
+                    success: function(data) {
+                        $('#id_uc').html('<option value="">Select UC</option>'); // Reset UC dropdown
+                        $.each(data.uc_list, function(index, uc) {
+                            $('#id_uc').append('<option value="' + uc.id + '">' + uc.uc_name + '</option>');
+                        });
+                        $('#id_uc').prop('disabled', false); // Enable UC dropdown
+                    }
+                });
+
+                // AJAX call to get Bins based on selected location
+                $.ajax({
+                    url: "{% url 'fetch_bin_by_location' %}",  // Updated URL
+                    data: {
+                        'location_id': location_id
+                    },
+                    success: function(data) {
+                        $('#id_bin_name').html('<option value="">Select Bin Name</option>'); // Reset Bin dropdown
+                        $.each(data.bin_list, function(index, bin) {
+                            $('#id_bin_name').append('<option value="' + bin.id + '">' + bin.name_container + '</option>');
+                        });
+                        $('#id_bin_name').prop('disabled', false); // Enable Bin dropdown
+                    }
+                });
+            } else {
+                // Reset UC and Bin dropdowns if no location is selected
+                $('#id_uc').html('<option value="">Select UC</option>');
+                $('#id_bin_name').html('<option value="">Select Bin Name</option>');
+                $('#id_uc').prop('disabled', true);
+                $('#id_bin_name').prop('disabled', true);
+            }
+        });
+
+        // Trigger when UC is selected
+        $('#id_uc').change(function() {
+            var uc_id = $(this).val();
+            var location_id = $('#id_location').val();
+            
+            if (uc_id) {
+                // AJAX call to get Bins based on selected UC and Location
+                $.ajax({
+                    url: "{% url 'fetch_bin_by_uc' %}",  // Updated URL
+                    data: {
+                        'uc_id': uc_id,
+                        'location_id': location_id
+                    },
+                    success: function(data) {
+                        $('#id_bin_name').html('<option value="">Select Bin Name</option>'); // Reset Bin dropdown
+                        $.each(data.bin_list, function(index, bin) {
+                            $('#id_bin_name').append('<option value="' + bin.id + '">' + bin.name_container + '</option>');
+                        });
+                        $('#id_bin_name').prop('disabled', false); // Enable Bin dropdown
+                    }
+                });
+            }
+        });
+    });
+</script>
+
+
+{% endblock %}

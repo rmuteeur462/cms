@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+Filtration Management System
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <h1 class="h3 mb-4 text-gray-800" style="font-weight: bold; font-size: 1.5rem; text-align: center;">
+            Filtration Daily Management
+        </h1>
+        
+        {% if messages %}
+            <div class="alert alert-dismissible">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Filter Form -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+            </div>
+            <div class="card-body">
+                <form method="GET" class="form mb-3" onsubmit="showLoader()">
+                    <div class="row">
+                        <!-- Date Filter -->
+                        <div class="col-md-3 mb-3">
+                            <label for="date">Select Date:</label>
+                            <input type="date" name="date" class="form-control" value="{{ date|date:'Y-m-d' }}" required>
+                        </div>
+
+                        <!-- Location Filter -->
+                        <div class="col-md-3 mb-3">
+                            <label for="location">Location:</label>
+                            <select name="location" id="locationFilter" class="form-control">
+                                <option value="">All Locations</option>
+                                {% for location in locations %}
+                                    <option value="{{ location.location_name }}" {% if location.location_name == location_filter %}selected{% endif %}>
+                                        {{ location.location_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                    <div class="row">
+                        <div class="col text-right">
+                            <button type="submit" class="btn btn-primary">Filter</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+
+        <!-- Attendance Table -->
+        <form method="POST" onsubmit="showLoader()">
+            {% csrf_token %}
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Filtration Records</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover shadow-sm bg-white">
+                            <thead class="bg-primary text-white">
+                                <tr>
+                                    <th>Sr. No</th>
+                                    <th>Filter ID</th>
+                                    <th>Name</th>
+                                    <th>Location</th>
+                                    <th>Functional</th>
+                                    <th>Non-functional</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for attendance in attendance_data %}
+                                    <tr {% if attendance.has_attendance %}
+                                            class="{% if attendance.functional %}functional{% elif attendance.non_functional %}non_functional{% endif %}"
+                                        {% endif %}>
+                                        <td>{{ forloop.counter }}</td>
+                                        <td>{{ attendance.filter_id }}</td>
+                                        <td>{{ attendance.name }}</td>
+                                        <td>{{ attendance.location }}</td>
+                                        <td>
+                                            <input type="radio" name="status_{{ attendance.filter_id }}" value="functional" {% if attendance.functional %}checked{% endif %}>
+                                        </td>
+                                        <td>
+                                            <input type="radio" name="status_{{ attendance.filter_id }}" value="non_functional" {% if attendance.non_functional %}checked{% endif %}>
+                                        </td>
+                                        <input type="hidden" name="filter_ids" value="{{ attendance.filter_id }}">
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-right">
+                <button type="submit" class="btn btn-success">Save</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="loader" class="loader" style="display:none;"></div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{% static 'path/to/jquery.js' %}"></script>
+    <script src="{% static 'path/to/jquery.dataTables.js' %}"></script>
+    <script>
+        $(document).ready(function() {
+            $('#dataTable').DataTable({
+                "paging": true,
+                "pageLength": 100,
+                "searching": true,
+                "ordering": true,
+                "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
+            });
+        });
+
+        function showLoader() {
+            document.getElementById("loader").style.display = "flex";
+        }
+    </script>
+    <style>
+        .functional { background-color: #d4edda; }
+        .non_functional { background-color: #f8d7da; }
+        
+        .loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .loader::after {
+            content: '';
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #3498db;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card shadow-sm border-danger">
+                <div class="card-header bg-danger text-white">
+                    Confirm Delete
+                </div>
+
+                <div class="card-body">
+                    <p>
+                        Are you sure you want to delete discharge record for:
+                        <strong>{{ discharge.tubewell.tubewell_name }}</strong>
+                        ({{ discharge.updated_average_discharge_date }})?
+                    </p>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="text-end">
+                            <a href="{% url 'tubewell_discharge_list' %}" class="btn btn-secondary btn-sm">
+                                Cancel
+                            </a>
+                            <button type="submit" class="btn btn-danger btn-sm">
+                                Delete
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

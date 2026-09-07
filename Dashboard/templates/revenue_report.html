@@ -1,0 +1,362 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1 class="h3 mb-4 text-gray-800 text-center font-weight-bold">Revenue Report Generator</h1>
+
+<!-- Filter Form -->
+<form method="get" action="{% url 'revenue_report_generator' %}" style="margin-bottom: 20px;">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3" style="background-color: #ffffff;"> <!-- Light Blue Header -->
+            <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+        </div>
+        <div class="card-body">
+            <div class="form-row">
+                <!-- Date Filters -->
+                <div class="form-group col-md-6">
+                    <label for="start_date">From Date:</label>
+                    <input type="date" id="start_date" name="start_date" value="{{ start_date }}" class="form-control">
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="end_date">To Date:</label>
+                    <input type="date" id="end_date" name="end_date" value="{{ end_date }}" class="form-control">
+                </div>
+
+                <!-- Location Filter -->
+                <div class="form-group col-md-4">
+                    <label for="location">Location:</label>
+                    <select name="location" id="location" class="form-control">
+                        <option value="">-- All Locations --</option>
+                        {% for location in locations %}
+                            <option value="{{ location.location_name }}" {% if location.location_name == location_filter %}selected{% endif %}>
+                                {{ location.location_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group col-md-4">
+                    <label for="month">Month:</label>
+                    <select name="month" id="month" class="form-control">
+                        <option value="">-- Select Month --</option>
+                        {% for month_num, month_name in months %}
+                            <option value="{{ month_num }}" {% if month_num == selected_month %}selected{% endif %}>
+                                {{ month_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="form-row">
+                <div class="form-group col-md-8 text-right">
+                    <button type="submit" class="btn btn-primary">Generate Report</button>
+                </div>
+                
+                <div class="form-group col-md-12 text-right">
+                    <button class="btn btn-success mb-3" id="downloadCsvBtn">Download CSV</button>
+                </div>
+
+                <div class="form-group col-md-12 text-right">
+                    <button type="button" class="btn btn-danger" id="downloadPDF">Download PDF</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+
+
+
+<!-- Load Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+{% if revenue_data %}
+    <h3>Revenue Records</h3>
+
+    <!-- 📊 Revenue Graph -->
+    <div class="card shadow-sm p-3 mb-4 bg-white">
+        <canvas id="revenueChart"></canvas>
+    </div>
+
+    <!-- 📋 Revenue Table -->
+    <table class="table table-bordered table-hover shadow-sm bg-white" id="revenueTable">
+        <thead class="bg-primary text-white">
+            <tr>
+                <th>Location</th>
+                <th>Recovery (Day) - Water Supply</th>
+                <th>Recovery (Day) - Solid Waste</th>
+                <th>Bills Paid (Day) - Water Supply</th>
+                <th>Bills Paid (Day) - Solid Waste</th>
+                <th>Total Revenue Amount of Day</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for revenue in revenue_data %}
+                <tr>
+                    <td>{{ revenue.location.location_name }}</td>
+                    <td>{{ revenue.recovery_day_water_supply }}</td>
+                    <td>{{ revenue.recovery_day_solid_waste_management }}</td>
+                    <td>{{ revenue.bill_paid_day_water_supply }}</td>
+                    <td>{{ revenue.bill_paid_day_solid_waste_management }}</td>
+                    <td>{{ revenue.billed_amount_total }}</td>
+                    <td>{{ revenue.date }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot class="bg-light font-weight-bold">
+            <tr>
+                <td>Total</td>
+                <td>{{ totals.total_recovery_day_water_supply|default:0 }}</td>
+                <td>{{ totals.total_recovery_day_solid_waste_management|default:0 }}</td>
+                <td>{{ totals.total_bill_paid_day_water_supply|default:0 }}</td>
+                <td>{{ totals.total_bill_paid_day_solid_waste_management|default:0 }}</td>
+                <td>{{ totals.total_billed_amount|default:0 }}</td>
+                <td>-</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <!-- 📈 Chart Script -->
+    <script>
+        const labels = [
+            {% for revenue in revenue_data %}
+                "{{ revenue.date|date:'Y-m-d' }}",
+            {% endfor %}
+        ];
+
+        const recoveryWater = [
+            {% for revenue in revenue_data %}
+                {{ revenue.recovery_day_water_supply|default:0 }},
+            {% endfor %}
+        ];
+        
+        const recoverySolidWaste = [
+            {% for revenue in revenue_data %}
+                {{ revenue.recovery_day_solid_waste_management|default:0 }},
+            {% endfor %}
+        ];
+        
+        const billsPaidWater = [
+            {% for revenue in revenue_data %}
+                {{ revenue.bill_paid_day_water_supply|default:0 }},
+            {% endfor %}
+        ];
+        
+        const billsPaidSolidWaste = [
+            {% for revenue in revenue_data %}
+                {{ revenue.bill_paid_day_solid_waste_management|default:0 }},
+            {% endfor %}
+        ];
+        
+        const totalRevenueAmount = [
+            {% for revenue in revenue_data %}
+                {{ revenue.billed_amount_total|default:0 }},
+            {% endfor %}
+        ];
+
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        const revenueChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Recovery (Water Supply)',
+                        data: recoveryWater,
+                        borderColor: '#36a2eb',
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        fill: false,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Recovery (Solid Waste)',
+                        data: recoverySolidWaste,
+                        borderColor: '#ff6384',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        fill: false,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Bills Paid (Water Supply)',
+                        data: billsPaidWater,
+                        borderColor: '#4bc0c0',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        fill: false,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Bills Paid (Solid Waste)',
+                        data: billsPaidSolidWaste,
+                        borderColor: '#ff9f40',
+                        backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                        fill: false,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Total Revenue Amount',
+                        data: totalRevenueAmount,
+                        borderColor: '#9966ff',
+                        backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                        fill: false,
+                        tension: 0.4
+                    },
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Daily Revenue Flow'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Amount'
+                        },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+
+{% else %}
+    <p>No revenue data found for the selected criteria.</p>
+{% endif %}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.21/jspdf.plugin.autotable.min.js"></script>
+
+<script>
+    document.getElementById('downloadCsvBtn').addEventListener('click', function() {
+        var table = document.getElementById('revenueTable');
+        var rows = table.rows;
+        var csvContent = "Location,Recovery (Day) - Water Supply,Recovery (Day) - Solid Waste,Bills Paid (Day) - Water Supply,Bills Paid (Day) - Solid Waste,Billed Amount,Date\n";
+
+        for (var i = 1; i < rows.length - 1; i++) {  // Skip header and footer
+            var cells = rows[i].cells;
+            var rowData = [];
+            for (var j = 0; j < cells.length; j++) {
+                rowData.push(cells[j].innerText);
+            }
+            csvContent += rowData.join(",") + "\n";
+        }
+
+        var totalRow = rows[rows.length - 1];
+        var totalData = [];
+        for (var j = 1; j < totalRow.cells.length - 1; j++) {
+            totalData.push(totalRow.cells[j].innerText);
+        }
+
+        csvContent += "Total," + totalData.join(",") + "\n";
+
+        var hiddenElement = document.createElement('a');
+        hiddenElement.href = 'data:text/csv;charset=utf-8,' + encodeURI(csvContent);
+        hiddenElement.target = '_blank';
+        hiddenElement.download = 'revenue_report.csv';
+        hiddenElement.click();
+    });
+
+    document.getElementById('downloadPDF').addEventListener('click', function() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const table = document.getElementById('revenueTable');
+    const rows = Array.from(table.querySelectorAll('tr'));
+
+    const imagePath = 'http://wod.wsspeshawar.org.pk:4002/static/logo/khan.png';
+
+    // Get selected dates from the form
+    const startDate = document.getElementById('start_date').value || 'N/A';
+    const endDate = document.getElementById('end_date').value || 'N/A';
+
+    doc.addImage(imagePath, 'PNG', -4, 5, 220, 30);
+
+    // Set header background color (Primary Blue - #007bff)
+    doc.setFillColor(0, 123, 255);
+    doc.rect(10, 40, 190, 20, 'F'); // Increased height for better spacing
+
+    doc.setFontSize(16);
+    doc.setTextColor(255, 255, 255); // White text
+    doc.setFont("helvetica", "bold");
+    doc.text("Revenue Report", 86, 47); 
+
+    // Add selected date range inside the header
+    doc.setFontSize(12);
+    doc.text(`From: ${startDate}  To: ${endDate}`, 80, 55); // Center-aligned inside the header
+
+    let header = [];
+    let headerCells = rows[0].querySelectorAll('th');
+    headerCells.forEach(function(cell) {
+        header.push(cell.textContent.trim());
+    });
+
+    let content = [];
+    rows.slice(1, rows.length - 1).forEach(function(row) { // Excluding the total row for now
+        let rowData = [];
+        row.querySelectorAll('td').forEach(function(cell) {
+            rowData.push(cell.textContent.trim());
+        });
+        content.push(rowData);
+    });
+
+    // Extracting total row separately
+    let totalRow = [];
+    let totalCells = rows[rows.length - 1].querySelectorAll('td');
+    totalCells.forEach(function(cell) {
+        totalRow.push(cell.textContent.trim());
+    });
+
+    doc.autoTable({
+        head: [header],
+        body: content,
+        startY: 65, // Moved down to accommodate the new header size
+        styles: {
+            fontSize: 10
+        },
+        headStyles: {
+            fillColor: [0, 123, 255], // Bootstrap Primary Blue
+            textColor: 255, // White text
+            fontStyle: 'bold'
+        }
+    });
+
+    // Adding the total row separately with header color
+    doc.autoTable({
+        body: [totalRow],
+        startY: doc.autoTable.previous.finalY + 2, // Positioning it right below the table
+        styles: {
+            fontSize: 10
+        },
+        bodyStyles: {
+            fillColor: [0, 123, 255], // Bootstrap Primary Blue
+            textColor: 123, // White text
+            fontStyle: 'bold'
+        }
+    });
+
+    doc.save('revenue_report.pdf');
+});
+
+</script>
+
+{% endblock %}

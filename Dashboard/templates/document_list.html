@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="d-flex flex-column justify-content-center align-items-center gap-4">
+    <div class="header-content">
+        <h1 class="display-5 fw-bold mb-2">
+            <span class="text-dark">M&E Reports</span>
+          </h1>
+    </div>
+</div>
+
+
+{% if documents %}
+    {% with latest_document=documents.last %}
+    <div class="card shadow mb-4 p-4" style="border-left: 5px solid #4e73df; background-color: #f8f9fc;">
+        <h5 class="font-weight-bold text-primary">Latest Report</h5>
+        <p>
+            <strong>File Name:</strong> 
+            {{ latest_document.file_name }}
+            <a href="{{ latest_document.uploaded_file.url }}" download class="btn btn-sm btn-primary">
+                <i class="fas fa-download"></i> Download Latest Report
+            </a>
+        </p>
+    </div>
+    
+    {% endwith %}
+{% else %}
+    <p class="text-center text-muted">No reports available.</p>
+{% endif %}
+
+<table class="table table-bordered table-hover shadow-sm bg-white">
+    <thead class="bg-primary text-white">
+        <tr>
+            <th>Sr. No</th>
+            <th>File Name</th>
+            <th>Download File</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for document in documents %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ document.file_name }}</td>
+            <td>
+                <a href="{{ document.uploaded_file.url }}" download class="btn btn-success btn-sm">
+                    Download
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

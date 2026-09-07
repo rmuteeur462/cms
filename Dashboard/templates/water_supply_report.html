@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    Water Supply Management Report
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800" style="font-weight: bold; font-size: 1.5rem; text-align: center;">
+        Water Supply Management Report - {{ report_date|date:"Y-m-d" }}
+    </h1>
+
+    <!-- Filter Form -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="form-inline mb-3">
+                <div class="form-group mr-3">
+                    <label for="date" class="mr-2">Select Date:</label>
+                    <input type="date" class="form-control" name="date" value="{{ report_date|date:'Y-m-d' }}" required>
+                </div>
+                <button type="submit" class="btn btn-primary mb-2">Filter</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add New Water Supply Data Button -->
+    <button type="button" class="btn btn-primary mb-4" data-toggle="modal" data-target="#addWaterSupplyModal">
+        Add New Water Connections
+    </button>
+
+    <!-- Add Water Supply Modal -->
+    <div class="modal fade" id="addWaterSupplyModal" tabindex="-1" role="dialog" aria-labelledby="addWaterSupplyModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addWaterSupplyModalLabel">Add New Water Supply Data</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" id="waterSupplyForm">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="id_location">Location:</label>
+                            {{ form.location }}
+                        </div>
+                        <div class="form-group">
+                            <label for="id_date">Date:</label>
+                            {{ form.date }}
+                        </div>
+                        <div class="form-group">
+                            <label for="id_new_water_supply_connection_registered">New Water Supply Connections:</label>
+                            {{ form.new_water_supply_connection_registered }}
+                        </div>
+                        
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary" id="submitWaterSupplyForm">Add Data</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Water Supply Records Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h2 class="mt-4">Water Supply Records</h2>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover shadow-sm bg-white">
+                    <thead class="bg-primary text-white">
+                        <tr>
+                            <th>Location</th>
+                            
+                            <th>New Connections</th>
+                 
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="waterSupplyDataTableBody">
+                        {% for report in water_supply_data %}
+                            <tr>
+                                <td class="text-center">{{ report.location }}</td>
+                                <td class="text-center">{{ report.new_water_supply_connection_registered }}</td>
+              
+                                <td class="text-center">{{ report.date }}</td>
+
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">No water supply records found for {{ report_date }}.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Revenue Summary
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Revenue Summary for <strong>{{ report_date }}</strong></h2>
+
+    <!-- Filter Form -->
+    <form method="get" class="mb-4">
+        <div class="form-row">
+            <div class="col-md-4 mb-3">
+                <label for="date">Select Date:</label>
+                <input type="date" id="date" name="date" class="form-control" value="{{ report_date }}">
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="location">Select Location:</label>
+                <select id="location" name="location" class="form-control">
+                    <option value="">All Locations</option>
+                    {% for location in locations %}
+                    <option value="{{ location.id }}" {% if location.id == location_filter %}selected{% endif %}>
+                        {{ location.location_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 mb-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary">Filter</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Summary of Revenue -->
+    <div class="table-responsive mt-4">
+        <table class="table table-bordered table-striped" style="border: 2px solid #343a40;">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Location</th>
+                    <th style="min-width: 180px;">Recovery Day (Water Supply)</th>
+                    <th style="min-width: 180px;">Recovery Day (Solid Waste Management)</th>
+                    <th style="min-width: 150px;">Total Recovery of Day</th>
+                    <th style="min-width: 180px;">Bill Paid Day (Water Supply)</th>
+                    <th style="min-width: 180px;">Bill Paid Day (Solid Waste Management)</th>
+                    <th style="min-width: 150px;">Number of Bills Paid</th>
+                    <th style="min-width: 140px;">Total Revenue Amount of Day</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for summary in total_revenue_summary %}
+                <tr>
+                    <td><strong>{{ summary.location.location_name }}</strong></td>
+                    <td><strong>{{ summary.total_recovery_day_water_supply }}</strong></td>
+                    <td><strong>{{ summary.total_recovery_day_solid_waste_management }}</strong></td>
+                    <td><strong>{{ summary.total_recovery_of_day }}</strong></td>
+                    <td><strong>{{ summary.total_bill_paid_day_water_supply }}</strong></td>
+                    <td><strong>{{ summary.total_bill_paid_day_solid_waste_management }}</strong></td>
+                    <td><strong>{{ summary.total_number_of_bills_paid }}</strong></td>
+                    <td><strong>{{ summary.total_billed_amount_total }}</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <!-- Totals Row -->
+            <tfoot>
+                <tr class="table-info">
+                    <td><strong>Total</strong></td>
+                    <td><strong>{{ totals.total_recovery_day_water_supply }}</strong></td>
+                    <td><strong>{{ totals.total_recovery_day_solid_waste_management }}</strong></td>
+                    <td><strong>{{ totals.total_recovery_of_day }}</strong></td>
+                    <td><strong>{{ totals.total_bill_paid_day_water_supply }}</strong></td>
+                    <td><strong>{{ totals.total_bill_paid_day_solid_waste_management }}</strong></td>
+                    <td><strong>{{ totals.total_number_of_bills_paid }}</strong></td>
+                    <td><strong>{{ totals.total_billed_amount_total }}</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

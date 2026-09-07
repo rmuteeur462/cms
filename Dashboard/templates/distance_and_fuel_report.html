@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container">
+    <h1 class="h3 mb-4 text-gray-800 text-center font-weight-bold">Distance and Fuel Report</h1>
+
+    <!-- Filter Form -->
+    <form method="get" action="{% url 'distance_and_fuel_report' %}" class="filter-form" style="margin-bottom: 20px;">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Filter Criteria</h6>
+            </div>
+            <div class="card-body">
+                <div class="form-row">
+                    <!-- Location Filter -->
+                    <div class="form-group col-md-4">
+                        <label for="location">Location:</label>
+                        <select name="location" id="location" class="form-control">
+                            <option value="">-- All Locations --</option>
+                            {% for location in locations %}
+                                <option value="{{ location.location_name }}" {% if selected_location == location.location_name %}selected{% endif %}>
+                                    {{ location.location_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+    
+                    <!-- From Date Filter -->
+                    <div class="form-group col-md-4">
+                        <label for="from_date">From Date:</label>
+                        <input type="date" name="from_date" id="from_date" value="{{ selected_from_date }}" class="form-control">
+                    </div>
+    
+                    <!-- To Date Filter -->
+                    <div class="form-group col-md-4">
+                        <label for="to_date">To Date:</label>
+                        <input type="date" name="to_date" id="to_date" value="{{ selected_to_date }}" class="form-control">
+                    </div>
+    
+                    <!-- Apply Filters Button -->
+                    <div class="form-group col-md-12 text-left">
+                        <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    
+    <!-- Buttons for CSV and PDF Download -->
+    <div class="form-group col-md-12 text-left">
+        <button type="button" class="btn btn-success" id="downloadCSV">Download CSV</button>
+        <button type="button" class="btn btn-danger" id="downloadPDF">Download PDF</button>
+    </div>
+
+    <!-- Overall Report Table -->
+    <table class="table table-bordered table-hover shadow-sm bg-white" id="reportTable">
+        <thead class="bg-primary text-white">
+            <tr>
+                <th>Sr. No.</th>
+                <th>Vehicle ID</th>
+                <th>Location</th>
+                <th>Total Kilometers</th>
+                <th>Total Fuel Issued (Liters)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in report_data %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td class="left-align">{{ entry.vehicle_name__vehicle_id }}</td>
+                <td class="left-align">{{ entry.location__location_name }}</td>
+                <td>{{ entry.total_km }}</td>
+                <td>{{ entry.total_fuel }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="totals-row">
+                <td colspan="3"><strong>Total</strong></td>
+                <td><strong>{{ total_km }}</strong></td>
+                <td><strong>{{ total_fuel }}</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <!-- Zone-Wise Totals Table -->
+    <table class="table table-bordered table-hover shadow-sm bg-white" id="reportTable_2">
+        <thead class="bg-primary text-white">
+            <tr>
+                <th>Sr. No.</th>
+                <th>Zone</th>
+                <th>Total Kilometers</th>
+                <th>Total Fuel Issued (Liters)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for zone in zone_totals %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ zone.location__location_name }}</td>
+                <td>{{ zone.total_zone_km }}</td>
+                <td>{{ zone.total_zone_fuel }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Include JS for CSV and PDF Download -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.21/jspdf.plugin.autotable.min.js"></script>
+
+<script>
+    document.getElementById('downloadCSV').addEventListener('click', function() {
+        var table = document.getElementById('reportTable');
+        var rows = Array.from(table.querySelectorAll('tr'));
+        var csvContent = '';
+
+        rows.forEach(function(row) {
+            var cells = Array.from(row.querySelectorAll('th, td'));
+            var rowData = cells.map(function(cell) {
+                return '"' + cell.textContent.trim().replace(/"/g, '""') + '"'; // Escape quotes in CSV
+            }).join(',');
+            csvContent += rowData + '\n';
+        });
+
+        var link = document.createElement('a');
+        link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+        link.download = 'distance_and_fuel_report.csv';
+        link.click();
+    });
+
+    document.getElementById('downloadPDF').addEventListener('click', function() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const table = document.getElementById('reportTable');
+        const rows = Array.from(table.querySelectorAll('tr'));
+
+        // Set your image path
+        const imagePath = 'http://wod.wsspeshawar.org.pk:4002/static/logo/khan.png';
+
+        // Get selected dates from form inputs
+        const startDate = document.getElementById('from_date').value || 'N/A';
+        const endDate = document.getElementById('to_date').value || 'N/A';
+
+        // Add header image
+        doc.addImage(imagePath, 'PNG', -4, 5, 220, 30);
+
+        // Set header background color
+        doc.setFillColor(0, 123, 255);  // Bootstrap Primary Blue
+        doc.rect(10, 40, 190, 20, 'F');
+
+        // Add title in the header
+        doc.setFontSize(16);
+        doc.setTextColor(255, 255, 255);
+        doc.setFont("helvetica", "bold");
+        doc.text("Distance and Fuel Report", 86, 47);
+
+        // Add date range below the title
+        doc.setFontSize(12);
+        doc.text(`From: ${startDate}  To: ${endDate}`, 80, 55);
+
+        // Extract headers dynamically
+        let header = [];
+        let selectedIndexes = [];
+        let headerCells = rows[0].querySelectorAll('th');
+
+        headerCells.forEach((cell, index) => {
+            const columnName = cell.textContent.trim();
+            if (["Sr. No.","Vehicle ID", "Location", "Total Kilometers", "Total Fuel Issued (Liters)"].includes(columnName)) {
+                header.push(columnName);
+                selectedIndexes.push(index);
+            }
+        });
+
+        // Extract only selected columns from table rows
+        let content = [];
+        rows.slice(1, rows.length - 1).forEach(function(row) { 
+            let rowData = [];
+            row.querySelectorAll('td').forEach((cell, index) => {
+                if (selectedIndexes.includes(index)) {
+                    rowData.push(cell.textContent.trim());
+                }
+            });
+            content.push(rowData);
+        });
+
+        // Extract total row separately
+        let totalRow = [];
+        let totalCells = rows[rows.length - 1].querySelectorAll('td');
+        totalCells.forEach(function(cell) {
+            totalRow.push(cell.textContent.trim());
+        });
+
+        // Generate table with autoTable
+        doc.autoTable({
+            head: [header],
+            body: content,
+            startY: 65,
+            styles: {
+                fontSize: 10
+            },
+            headStyles: {
+                fillColor: [0, 123, 255], // Bootstrap Primary Blue
+                textColor: 255,
+                fontStyle: 'bold'
+            }
+        });
+
+        // Add total activities row at the end with highlight
+        doc.autoTable({
+            body: [totalRow],
+            startY: doc.autoTable.previous.finalY + 2,
+            styles: {
+                fontSize: 10
+            },
+            bodyStyles: {
+                fillColor: [0, 123, 255], // Bootstrap Primary Blue
+                textColor: 123,
+                fontStyle: 'bold'
+            }
+        });
+
+        doc.save('distance_and_fuel_report.pdf');
+    });
+</script>
+
+{% endblock %}

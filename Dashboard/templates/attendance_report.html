@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Attendance Management System
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <h1 class="h3 mb-4 text-gray-800" style="font-weight: bold; font-size: 1.5rem; text-align: center;">
+            Employees Daily Attendance Management
+        </h1>
+        
+        <!-- Display error or success messages -->
+        {% if messages %}
+            <div class="alert alert-dismissible">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Filter Form -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+            </div>
+            <div class="card-body">
+                <form method="GET" class="form mb-3" onsubmit="showLoader()">
+                    <div class="row">
+                        <!-- Date Filter -->
+                        <div class="col-md-3 mb-3">
+                            <label for="date">Select Date:</label>
+                            <input type="date" name="date" class="form-control" value="{{ date|date:'Y-m-d' }}" required>
+                        </div>
+        
+                        <!-- Location Filter -->
+                        <div class="col-md-3 mb-3">
+                            <label for="location">Location:</label>
+                            <select name="location" id="locationFilter" class="form-control">
+                                <option value="">All Locations</option>
+                                {% for location in locations %}
+                                    <option value="{{ location.location_name }}" {% if location.location_name == location_filter %}selected{% endif %}>
+                                        {{ location.location_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+        
+                        <!-- UC Filter -->
+                        <div class="col-md-3 mb-3">
+                            <label for="uc">Sub Location:</label>
+                            <select name="uc" id="ucFilter" class="form-control">
+                                <option value="">All UCs</option>
+                                {% for uc in ucs %}
+                                    <option value="{{ uc.uc_name }}" {% if uc.uc_name == uc_filter %}selected{% endif %}>
+                                        {{ uc.uc_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+        
+                            <!-- Department Filter (Multi-Select Dropdown) -->
+                <div class="col-md-3 mb-3">
+                    <label for="department">Department:</label>
+                    <div id="departmentFilter">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="departmentAll" name="department" {% if not department_filter %}checked{% endif %}>
+                            <label class="form-check-label" for="departmentAll">All Departments</label>
+                        </div>
+                        {% for department in departments %}
+                            <div class="form-check">
+                                <input class="form-check-input department-checkbox" type="checkbox" value="{{ department }}" id="department{{ loop.index }}" name="department" {% if department in department_filter %}checked{% endif %}>
+                                <label class="form-check-label" for="department{{ loop.index }}">{{ department }}</label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <script>
+                    document.getElementById("departmentAll").addEventListener("change", function() {
+                        const isChecked = this.checked;
+                        // Select or deselect all department checkboxes based on 'All Departments' checkbox status
+                        const departmentCheckboxes = document.querySelectorAll(".department-checkbox");
+                        departmentCheckboxes.forEach(function(checkbox) {
+                            checkbox.checked = isChecked;
+                        });
+                    });
+
+                    // Optional: Deselect 'All Departments' if any individual department is unchecked
+                    const departmentCheckboxes = document.querySelectorAll(".department-checkbox");
+                    departmentCheckboxes.forEach(function(checkbox) {
+                        checkbox.addEventListener("change", function() {
+                            const allChecked = [...departmentCheckboxes].every(checkbox => checkbox.checked);
+                            document.getElementById("departmentAll").checked = allChecked;
+                        });
+                    });
+                </script>
+
+
+
+                    </div>
+        
+                    <div class="row">
+                        <div class="col text-right">
+                            <button type="submit" class="btn btn-primary">Filter</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <script>
+        document.getElementById('locationFilter').addEventListener('change', function() {
+            const location = this.value;
+            const url = "{% url 'uc-list' %}?location=" + location;  // Replace 'uc-list' with the name of your view URL
+        
+            // Fetch the UCs based on the selected location
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const ucSelect = document.getElementById('ucFilter');
+                    ucSelect.innerHTML = '<option value="">All UCs</option>';  // Clear current options
+                    data.ucs.forEach(uc => {
+                        const option = document.createElement('option');
+                        option.value = uc.uc_name;
+                        option.textContent = uc.uc_name;
+                        ucSelect.appendChild(option);
+                    });
+                });
+        });
+        </script>
+        
+        <!-- Attendance Table -->
+        <form method="POST" onsubmit="showLoader()">
+            {% csrf_token %}
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Attendance Records</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="dataTable" class="table table-bordered table-hover shadow-sm bg-white">
+
+                            <thead class="bg-primary text-white">
+                                
+                                <tr>
+                                    <th>Sr. No</th> <!-- Added Sr. No column -->
+                                    <th>Employee ID</th>
+                                    <th>Name</th>
+                                    <th>F.Name</th>
+                                    <th>Location</th>
+                                    <th>Sub Location</th>
+                                    <th>Department</th>
+                                    <th>Designation</th>
+                                    <th>Present</th>
+                                    <th>Absent</th>
+                                    <th>Leave</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for attendance in attendance_data %}
+                                    <tr {% if attendance.has_attendance %} 
+                                            class="{% if attendance.present %}present{% elif attendance.absent %}absent{% elif attendance.leave %}leave{% endif %}"
+                                        {% endif %}>
+                                        <td>{{ forloop.counter }}</td>
+                                        <td>{{ attendance.employee_id }}</td>
+                                        <td>{{ attendance.name }}</td>
+                                        <td>{{ attendance.father_name }}</td>
+                                        <td>{{ attendance.location }}</td>
+                                        <td>{{ attendance.uc }}</td>
+                                        <td>{{ attendance.department }}</td>
+                                        <td>{{ attendance.designation }}</td>
+                                        <td>
+                                            <input type="radio" name="status_{{ attendance.employee_id }}" value="present" {% if attendance.present %}checked{% endif %}>
+                                        </td>
+                                        <td>
+                                            <input type="radio" name="status_{{ attendance.employee_id }}" value="absent" {% if attendance.absent %}checked{% endif %}>
+                                        </td>
+                                        <td>
+                                            <input type="radio" name="status_{{ attendance.employee_id }}" value="leave" {% if attendance.leave %}checked{% endif %}>
+                                        </td>
+                                        <input type="hidden" name="employee_ids" value="{{ attendance.employee_id }}">
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                             
+                        </table>
+                    </div>
+                </div>
+            </div>
+        
+            <!-- Save Button -->
+            <div class="text-right">
+                <button type="submit" class="btn btn-success">Save</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Loader Overlay -->
+    <div id="loader" class="loader" style="display:none;"></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'path/to/jquery.js' %}"></script>
+<script src="{% static 'path/to/jquery.dataTables.js' %}"></script>
+<script>
+    $(document).ready(function() {
+        $('#dataTable').DataTable({
+            "paging": true,
+            "pageLength": 100,
+            "searching": true,
+            "ordering": true,
+            "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
+        });
+    });
+
+    function showLoader() {
+            document.getElementById("loader").style.display = "flex"; // Use flex to center the loader
+        }
+    </script>
+
+
+
+    
+
+    <style>
+       .present {
+        background-color: #d4edda; /* Light green for present */
+    }
+
+    .absent {
+        background-color: #f8d7da; /* Light red for absent */
+    }
+
+    .leave {
+        background-color: #fff3cd; /* Light yellow for leave */
+    }
+        .highlight {
+            background-color: yellow;
+            font-weight: bold;
+        }
+
+        .loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.349);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loader::after {
+            content: '';
+            border: 8px solid #f3f3f3; /* Light grey background */
+            border-top: 8px solid #3498db; /* Blue spinner */
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+{% endblock %}

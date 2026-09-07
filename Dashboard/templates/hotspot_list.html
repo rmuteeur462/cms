@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% load custom_filters %}
+{% block content %}
+
+<div class="container-fluid mt-4">
+    <h2 class="fw-bold text-center">WSSP Urban Flooding Hotspot Data</h2>
+    <div class="row">
+        <!-- Map Section -->
+        <!-- <div class="col-md-8">
+            <div id="map" style="height: 500px; width: 100%; border: 1px solid #ccc;"></div>
+        </div> -->
+
+        <!-- Sidebar for Hotspot Details -->
+        <!-- <div class="col-md-4">
+            <div id="hotspot-details" style="height: 500px; overflow-y: auto; border: 1px solid #ccc; padding: 15px;">
+                <h4>Hotspot Details</h4>
+                <p>Select a spot on the map to view details here.</p>
+            </div>
+        </div> -->
+    </div>
+
+    <hr class="my-4">
+
+
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h2 class="m-0 font-weight-bold text-primary">Hotspot List</h2>
+
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover shadow-sm bg-white">
+                    <thead class="bg-primary text-white">
+                        <tr>
+                            <th>S.No</th>
+
+                            <th>Name</th>
+                            <th>Zone</th>
+                            <th>UC</th>
+
+                            <th>Supervisor</th>
+                            <th>Officer</th>
+                            <th>Location</th>
+                            <th>History</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for hotspot in hotspots %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+
+                                <td>{{ hotspot.name }}</td>
+                                <td>{{ hotspot.location }}</td>
+
+                                <td>{{ hotspot.uc }}</td>
+
+                                <td>{{ hotspot.supervisor_name }} ({{ hotspot.supervisor_phone_number }})</td>
+                                <td>{{ hotspot.officer_name }} ({{ hotspot.officer_phone_number }})</td>
+                                <td>
+                                    <a href="https://maps.google.com/?q={{ hotspot.latitude }},{{ hotspot.longitude }}" target="_blank">
+                                        {{ hotspot.latitude }}, {{ hotspot.longitude }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <a href="{% url 'hotspot_history' hotspot.id %}" class="btn btn-sm btn-info">History</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+        </table>
+            </div>
+        </div>
+      </div>
+      </div>
+      
+</div>
+
+<!-- OpenLayers JS and CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v7.5.1/ol.css">
+<script src="https://cdn.jsdelivr.net/npm/ol@v7.5.1/dist/ol.js"></script>
+<script>
+    // Hotspots data with history
+    const hotspots = [
+        {% for hotspot in hotspots %}
+        {
+            id: {{ hotspot.id }},
+            name: "{{ hotspot.name|escapejs }}",
+            zone: "{{ hotspot.location|escapejs }}",
+            uc: "{{ hotspot.uc|escapejs }}",
+            lat: {{ hotspot.latitude }},
+            lon: {{ hotspot.longitude }},
+            supervisor: "{{ hotspot.supervisor_name|escapejs }} ({{ hotspot.supervisor_phone_number }})",
+            officer: "{{ hotspot.officer_name|escapejs }} ({{ hotspot.officer_phone_number }})",
+            history: [
+                {% for e in events_by_hotspot|get_item:hotspot.id %}
+                "{{ e.created_at|date:'Y-m-d H:i' }} - Rainfall Intensity: {{ e.get_rainfall_intensity_display }}{% if e.remarks %} ({{ e.remarks|escapejs }}){% endif %}",
+                {% endfor %}
+            ]
+        },
+        {% endfor %}
+    ];
+
+    // Initialize Map
+    const map = new ol.Map({
+        target: 'map',
+        layers: [new ol.layer.Tile({ source: new ol.source.OSM() })],
+        view: new ol.View({
+            center: ol.proj.fromLonLat([71.5249, 34.0151]),
+            zoom: 12
+        })
+    });
+
+    // Add hotspots to map
+    const vectorSource = new ol.source.Vector();
+    hotspots.forEach(h => {
+        if (!isNaN(h.lat) && !isNaN(h.lon)) {
+            const feature = new ol.Feature({
+                geometry: new ol.geom.Point(ol.proj.fromLonLat([h.lon, h.lat])),
+                id: h.id,
+                name: h.name,
+                supervisor: h.supervisor,
+                officer: h.officer,
+                zone: h.zone,
+                uc: h.uc,
+                coords: `${h.lat}, ${h.lon}`,
+                history: h.history
+            });
+            vectorSource.addFeature(feature);
+        }
+    });
+
+    const vectorLayer = new ol.layer.Vector({
+        source: vectorSource,
+        style: new ol.style.Style({
+            image: new ol.style.Circle({
+                radius: 10,
+                fill: new ol.style.Fill({ color: 'blue' }),
+                stroke: new ol.style.Stroke({ color: 'black', width: 2 })
+            })
+        })
+    });
+    map.addLayer(vectorLayer);
+
+    // Fit map to all points
+    let initialExtent = vectorSource.getExtent();
+    if (vectorSource.getFeatures().length > 0) {
+        map.getView().fit(initialExtent, { padding: [50, 50, 50, 50] });
+    }
+
+    // Sidebar for hotspot details
+    const sidebar = document.getElementById("hotspot-details");
+
+    // On map click, show hotspot details + zoom
+    map.on("singleclick", function(evt) {
+        const feature = map.forEachFeatureAtPixel(evt.pixel, f => f);
+        if (feature) {
+            const name = feature.get("name");
+            const supervisor = feature.get("supervisor");
+            const officer = feature.get("officer");
+            const zone = feature.get("zone");
+            const uc = feature.get("uc");
+            const coords = feature.get("coords");
+            const history = feature.get("history") || [];
+
+            // Zoom to clicked hotspot
+            const geometry = feature.getGeometry();
+            const coordinates = geometry.getCoordinates();
+            map.getView().animate({
+                center: coordinates,
+                zoom: 16,
+                duration: 800
+            });
+
+            let historyHtml = history.length > 0
+                ? `<ul>${history.map(h => `<li>${h}</li>`).join("")}</ul>`
+                : "<p>No history available.</p>";
+
+            sidebar.innerHTML = `
+                <h4>${name}</h4>
+                <p><b>Zone:</b> ${zone}</p>
+                <p><b>UC:</b> ${uc}</p>
+                <p><b>Supervisor:</b> ${supervisor}</p>
+                <p><b>Officer:</b> ${officer}</p>
+                <p><b>Coordinates:</b> ${coords}</p>
+                <h5>History</h5>
+                ${historyHtml}
+            `;
+        } else {
+            sidebar.innerHTML = `<h4>Hotspot Details</h4><p>Select a spot on the map to view details here.</p>`;
+        }
+    });
+
+    // Zoom-Out Button
+    const zoomOutBtn = document.createElement("button");
+    zoomOutBtn.innerText = "Zoom Out";
+    zoomOutBtn.style.position = "absolute";
+    zoomOutBtn.style.top = "15px";
+    zoomOutBtn.style.right = "15px";
+    zoomOutBtn.style.padding = "8px 12px";
+    zoomOutBtn.style.background = "#007bff";
+    zoomOutBtn.style.color = "#fff";
+    zoomOutBtn.style.border = "none";
+    zoomOutBtn.style.borderRadius = "4px";
+    zoomOutBtn.style.cursor = "pointer";
+    zoomOutBtn.style.zIndex = "1000";
+
+    zoomOutBtn.addEventListener("click", () => {
+        map.getView().fit(initialExtent, { padding: [50, 50, 50, 50], duration: 800 });
+    });
+
+    document.getElementById("map").appendChild(zoomOutBtn);
+</script>
+
+{% endblock %}

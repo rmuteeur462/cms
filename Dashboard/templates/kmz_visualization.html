@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>KMZ Visualization</title>
+    <script src="https://cdn.jsdelivr.net/npm/ol@v10.2.1/dist/ol.js"></script>
+    <style>
+        body {
+            display: flex;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #sidebar {
+            width: 300px;
+            padding: 10px;
+            border-right: 1px solid #ccc;
+            background: #f9f9f9;
+            overflow-y: auto;
+            height: 100vh;
+        }
+
+        #map {
+            flex: 1;
+            height: 100vh;
+        }
+
+        #location-list {
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 5px;
+            background: #fff;
+        }
+
+        .location-item {
+            margin-bottom: 10px;
+            padding: 5px;
+            border: 1px solid #000000;
+            background: #ffffffa9;
+            cursor: pointer;
+        }
+
+        .location-item:hover {
+            background: #eef;
+        }
+
+        #details {
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        #details h4 {
+            margin: 0 0 5px;
+        }
+
+        #details p {
+            margin: 0;
+        }
+
+        /* Button style for "Show All Locations" */
+        #show-all-btn {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+
+        #show-all-btn:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <h3>Locations</h3>
+        <button id="show-all-btn">Show All Locations</button> <!-- Added button -->
+        <div id="location-list"></div>
+        <div id="details">
+            <h4>Details:</h4>
+            <p id="location-name">Click a location to see details here.</p>
+        </div>
+    </div>
+    <div id="map"></div>
+    <script>
+        const geojson = {{ geojson|safe }};
+        const colors = {};
+
+        // Helper function to generate a lighter random color
+        function getRandomLightColor() {
+            const r = Math.floor(Math.random() * 128) + 127;
+            const g = Math.floor(Math.random() * 128) + 127;
+            const b = Math.floor(Math.random() * 128) + 127;
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        // Initialize map
+        const map = new ol.Map({
+            target: 'map',
+            layers: [
+                new ol.layer.Tile({
+                    source: new ol.source.OSM(),
+                }),
+            ],
+            view: new ol.View({
+                center: ol.proj.fromLonLat([0, 0]),
+                zoom: 2,
+            }),
+        });
+
+        const features = new ol.format.GeoJSON().readFeatures(geojson, {
+            featureProjection: 'EPSG:3857',
+        });
+
+        const locationList = document.getElementById('location-list');
+        const locationName = document.getElementById('location-name');
+
+        // Assign random light colors and keep track of them
+        features.forEach((feature, index) => {
+            const id = `UC ${index + 1}`;
+            colors[id] = getRandomLightColor();
+            feature.set('id', id);
+            feature.set('color', colors[id]);
+        });
+
+        const styleFunction = (feature) => {
+            const color = feature.get('color');
+            const label = feature.get('name') || feature.get('Name') || feature.get('title') || feature.get('id');
+
+            return new ol.style.Style({
+                fill: new ol.style.Fill({
+                    color: `rgba(${color.slice(4, -1)}, 0.5)`,
+                }),
+                stroke: new ol.style.Stroke({
+                    color: '#000',
+                    width: 1,
+                }),
+                text: new ol.style.Text({
+                    font: 'bold 14px Arial',
+                    text: label,
+                    fill: new ol.style.Fill({
+                        color: '#000',
+                    }),
+                    stroke: new ol.style.Stroke({
+                        color: '#fff',
+                        width: 2,
+                    }),
+                }),
+            });
+        };
+
+        const vectorSource = new ol.source.Vector({
+            features: features,
+        });
+
+        const vectorLayer = new ol.layer.Vector({
+            source: vectorSource,
+            style: styleFunction,
+        });
+
+        map.addLayer(vectorLayer);
+
+        // Generate sidebar list of locations
+        features.forEach((feature, index) => {
+            const id = feature.get('id');
+            const color = colors[id];
+            const name = feature.get('name') || feature.get('Name') || feature.get('title') || id;
+
+            const locationItem = document.createElement('div');
+            locationItem.className = 'location-item';
+            locationItem.innerHTML = `<span style="color: ${color}; font-weight: bold;">${name}</span>`;
+
+            locationItem.addEventListener('click', () => {
+                const geometry = feature.getGeometry();
+                const coordinates = geometry.getType() === 'Point'
+                    ? geometry.getCoordinates()
+                    : geometry.getExtent();
+
+                if (geometry.getType() === 'Point') {
+                    map.getView().animate({
+                        center: coordinates,
+                        zoom: 10,
+                        duration: 500,
+                    });
+                } else {
+                    map.getView().fit(coordinates, {
+                        maxZoom: 10,
+                        duration: 500,
+                    });
+                }
+
+                vectorSource.clear();
+                vectorSource.addFeature(feature);
+
+                locationName.innerHTML = `<span style="color: ${color}; font-weight: bold;">Name: ${name}</span>`;
+            });
+
+            locationList.appendChild(locationItem);
+        });
+
+        // Function to show all locations on the map
+        document.getElementById('show-all-btn').addEventListener('click', () => {
+            // Fit the map view to show all features
+            const extent = vectorSource.getExtent();
+            map.getView().fit(extent, {
+                maxZoom: 6, // Adjust zoom level to show all locations
+                duration: 1000,
+            });
+        });
+    </script>
+</body>
+</html>

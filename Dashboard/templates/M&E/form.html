@@ -1,0 +1,765 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <h2 class="mb-4">Visit Evaluation</h2>
+
+    <div class="card shadow-sm p-4">
+
+        <form method="post" enctype="multipart/form-data" id="evaluationForm">
+            {% csrf_token %}
+
+            {{ form.non_field_errors }}
+
+            <!-- ===================================== -->
+            <!-- Visit Schedule -->
+            <!-- ===================================== -->
+
+            {% if form.visit_schedule %}
+            <div class="row mb-3">
+                <div class="col-md-12 mb-3">
+                    <label>Visit Schedule</label>
+                    {{ form.visit_schedule }}
+                    {{ form.visit_schedule.errors }}
+                </div>
+            </div>
+            <hr>
+            {% endif %}
+
+            <!-- Hidden Fields -->
+            {{ form.status }}
+
+            <!-- ===================================== -->
+            <!-- ✅ 1. Containers / Moqas Section -->
+            <!-- ===================================== -->
+
+            <h5 class="mb-3">1. Containers / Moqas</h5>
+
+            <div class="row">
+
+                <div class="col-md-4 mb-3">
+                    <label>Total Containers</label>
+                    {{ form.total_containers }}
+                    {{ form.total_containers.errors }}
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label>Containers Not Lifted</label>
+                    {{ form.containers_not_lifted }}
+                    {{ form.containers_not_lifted.errors }}
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label>Containers Not Managed</label>
+                    {{ form.containers_not_managed }}
+                    {{ form.containers_not_managed.errors }}
+                </div>
+
+            </div>
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+                    <label>Total Moqas</label>
+                    {{ form.total_moqas }}
+                    {{ form.total_moqas.errors }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Moqas Not Cleaned</label>
+                    {{ form.moqas_not_cleaned }}
+                    {{ form.moqas_not_cleaned.errors }}
+                </div>
+
+            </div>
+
+            <!-- Scores -->
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+                    <label>Containers Total Score</label>
+                    {{ form.containers_total_score }}
+                    {{ form.containers_total_score.errors }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Containers Obtained Score</label>
+                    {{ form.containers_obtained_score }}
+                    {{ form.containers_obtained_score.errors }}
+                </div>
+
+            </div>
+
+            <!-- Pictures & Remarks -->
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+                    <label>Containers Picture 1</label>
+                    {{ form.containers_picture_1 }}
+                    {{ form.containers_picture_1.errors }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Containers Picture 2</label>
+                    {{ form.containers_picture_2 }}
+                    {{ form.containers_picture_2.errors }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Containers Picture 3</label>
+                    {{ form.containers_picture_3 }}
+                    {{ form.containers_picture_3.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Containers Picture 4</label>
+                    {{ form.containers_picture_4 }}
+                    {{ form.containers_picture_4.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Containers Picture 5</label>
+                    {{ form.containers_picture_5 }}
+                    {{ form.containers_picture_5.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Containers Picture 6</label>
+                    {{ form.containers_picture_6 }}
+                    {{ form.containers_picture_6.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Containers Picture 7</label>
+                    {{ form.containers_picture_7 }}
+                    {{ form.containers_picture_7.errors }}
+                </div>
+        
+                <div class="col-md-6 mb-3">
+                    <label>Containers Picture 8</label>
+                    {{ form.containers_picture_8 }}
+                    {{ form.containers_picture_8.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Containers Picture 9</label>
+                    {{ form.containers_picture_9 }}
+                    {{ form.containers_picture_9.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Containers Picture 10</label>
+                    {{ form.containers_picture_10 }}
+                    {{ form.containers_picture_10.errors }}
+                </div>
+
+            </div>
+
+            <div class="row">
+
+                <div class="col-md-12 mb-3">
+                    <label>Containers Remarks</label>
+                    {{ form.containers_remarks }}
+                    {{ form.containers_remarks.errors }}
+                </div>
+
+            </div>
+
+            <hr>
+
+            <!-- ===================================== -->
+            <!-- ✅ 2. Drains & Manholes Section -->
+            <!-- ===================================== -->
+
+            <h5 class="mb-3">2. Drains &amp; Manholes Cleaning</h5>
+
+            <div class="row">
+
+                <div class="col-md-3 mb-3">
+                    <label>Drains Scheduled</label>
+                    {{ form.drains_scheduled }}
+                    {{ form.drains_scheduled.errors }}
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label>Drains Clean</label>
+                    {{ form.drains_clean }}
+                    {{ form.drains_clean.errors }}
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label>Manholes Scheduled</label>
+                    {{ form.manholes_scheduled }}
+                    {{ form.manholes_scheduled.errors }}
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label>Manholes Clean</label>
+                    {{ form.manholes_clean }}
+                    {{ form.manholes_clean.errors }}
+                </div>
+
+            </div>
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+                    <label>Drains Total Score</label>
+                    {{ form.drains_total_score }}
+                    {{ form.drains_total_score.errors }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Drains Obtained Score</label>
+                    {{ form.drains_obtained_score }}
+                    {{ form.drains_obtained_score.errors }}
+                </div>
+
+            </div>
+
+            <!-- Pictures & Remarks -->
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+                    <label>Drains Picture 1</label>
+                    {{ form.drains_picture_1 }}
+                    {{ form.drains_picture_1.errors }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Drains Picture 2</label>
+                    {{ form.drains_picture_2 }}
+                    {{ form.drains_picture_2.errors }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Drains Picture 3</label>
+                    {{ form.drains_picture_3 }}
+                    {{ form.drains_picture_3.errors }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Drains Picture 4</label>
+                    {{ form.drains_picture_4 }}
+                    {{ form.drains_picture_4.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Drains Picture 5</label>
+                    {{ form.drains_picture_5 }}
+                    {{ form.drains_picture_5.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Drains Picture 6</label>
+                    {{ form.drains_picture_6 }}
+                    {{ form.drains_picture_6.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Drains Picture 7</label>
+                    {{ form.drains_picture_7 }}
+                    {{ form.drains_picture_7.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Drains Picture 8</label>
+                    {{ form.drains_picture_8 }}
+                    {{ form.drains_picture_8.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Drains Picture 9</label>
+                    {{ form.drains_picture_9 }}
+                    {{ form.drains_picture_9.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Drains Picture 10</label>
+                    {{ form.drains_picture_10 }}
+                    {{ form.drains_picture_10.errors }}
+                </div>
+
+            </div>
+
+            <div class="row">
+
+                <div class="col-md-12 mb-3">
+                    <label>Drains Remarks</label>
+                    {{ form.drains_remarks }}
+                    {{ form.drains_remarks.errors }}
+                </div>
+
+            </div>
+
+            <hr>
+
+            <!-- ===================================== -->
+            <!-- ✅ 3. Roads / Streets Section -->
+            <!-- ===================================== -->
+
+            <h5 class="mb-3">3. Roads / Streets Sweeping</h5>
+
+            <div class="row">
+
+                <div class="col-md-3 mb-3">
+                    <label>Roads Scheduled</label>
+                    {{ form.roads_scheduled }}
+                    {{ form.roads_scheduled.errors }}
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label>Roads Clean</label>
+                    {{ form.roads_clean }}
+                    {{ form.roads_clean.errors }}
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label>Streets Scheduled</label>
+                    {{ form.streets_scheduled }}
+                    {{ form.streets_scheduled.errors }}
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label>Streets Clean</label>
+                    {{ form.streets_clean }}
+                    {{ form.streets_clean.errors }}
+                </div>
+
+            </div>
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+                    <label>Roads Total Score</label>
+                    {{ form.roads_total_score }}
+                    {{ form.roads_total_score.errors }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Roads Obtained Score</label>
+                    {{ form.roads_obtained_score }}
+                    {{ form.roads_obtained_score.errors }}
+                </div>
+
+            </div>
+
+            <!-- Pictures & Remarks -->
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+                    <label>Roads Picture 1</label>
+                    {{ form.roads_picture_1 }}
+                    {{ form.roads_picture_1.errors }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Roads Picture 2</label>
+                    {{ form.roads_picture_2 }}
+                    {{ form.roads_picture_2.errors }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Roads Picture 3</label>
+                    {{ form.roads_picture_3 }}
+                    {{ form.roads_picture_3.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Roads Picture 4</label>
+                    {{ form.roads_picture_4 }}
+                    {{ form.roads_picture_4.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Roads Picture 5</label>
+                    {{ form.roads_picture_5 }}
+                    {{ form.roads_picture_5.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Roads Picture 6</label>
+                    {{ form.roads_picture_6 }}
+                    {{ form.roads_picture_6.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Roads Picture 7</label>
+                    {{ form.roads_picture_7 }}
+                    {{ form.roads_picture_7.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Roads Picture 8</label>
+                    {{ form.roads_picture_8 }}
+                    {{ form.roads_picture_8.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Roads Picture 9</label>
+                    {{ form.roads_picture_9 }}
+                    {{ form.roads_picture_9.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Roads Picture 10</label>
+                    {{ form.roads_picture_10 }}
+                    {{ form.roads_picture_10.errors }}
+                </div>
+
+            </div>
+
+            <div class="row">
+
+                <div class="col-md-12 mb-3">
+                    <label>Roads Remarks</label>
+                    {{ form.roads_remarks }}
+                    {{ form.roads_remarks.errors }}
+                </div>
+
+            </div>
+
+            <hr>
+
+            <!-- ===================================== -->
+            <!-- ✅ 4. D2D Section -->
+            <!-- ===================================== -->
+
+            <h5 class="mb-3">4. Door to Door Collection</h5>
+
+            <div class="row">
+
+                <div class="col-md-4 mb-3">
+                    <label>Streets D2D</label>
+                    {{ form.streets_scheduled_d2d }}
+                    {{ form.streets_scheduled_d2d.errors }}
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label>Houses D2D</label>
+                    {{ form.houses_scheduled_d2d }}
+                    {{ form.houses_scheduled_d2d.errors }}
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label>Verified D2D</label>
+                    {{ form.streets_verified_d2d }}
+                    {{ form.streets_verified_d2d.errors }}
+                </div>
+
+            </div>
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+                    <label>D2D Total Score</label>
+                    {{ form.d2d_total_score }}
+                    {{ form.d2d_total_score.errors }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>D2D Obtained Score</label>
+                    {{ form.d2d_obtained_score }}
+                    {{ form.d2d_obtained_score.errors }}
+                </div>
+
+            </div>
+
+            <!-- Pictures & Remarks -->
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+                    <label>D2D Picture 1</label>
+                    {{ form.d2d_picture_1 }}
+                    {{ form.d2d_picture_1.errors }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>D2D Picture 2</label>
+                    {{ form.d2d_picture_2 }}
+                    {{ form.d2d_picture_2.errors }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>D2D Picture 3</label>
+                    {{ form.d2d_picture_3 }}
+                    {{ form.d2d_picture_3.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>D2D Picture 4</label>
+                    {{ form.d2d_picture_4 }}
+                    {{ form.d2d_picture_4.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>D2D Picture 5</label>
+                    {{ form.d2d_picture_5 }}
+                    {{ form.d2d_picture_5.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>D2D Picture 6</label>
+                    {{ form.d2d_picture_6 }}
+                    {{ form.d2d_picture_6.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>D2D Picture 7</label>
+                    {{ form.d2d_picture_7 }}
+                    {{ form.d2d_picture_7.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>D2D Picture 8</label>
+                    {{ form.d2d_picture_8 }}
+                    {{ form.d2d_picture_8.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>D2D Picture 9</label>
+                    {{ form.d2d_picture_9 }}
+                    {{ form.d2d_picture_9.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>D2D Picture 10</label>
+                    {{ form.d2d_picture_10 }}
+                    {{ form.d2d_picture_10.errors }}
+                </div>
+
+            </div>
+
+            <div class="row">
+
+                <div class="col-md-12 mb-3">
+                    <label>D2D Remarks</label>
+                    {{ form.d2d_remarks }}
+                    {{ form.d2d_remarks.errors }}
+                </div>
+
+            </div>
+
+            <hr>
+
+            <!-- ===================================== -->
+            <!-- ✅ 5. Tubewell Section -->
+            <!-- ===================================== -->
+
+            <h5 class="mb-3">5. Tube Wells</h5>
+
+            <div class="row">
+
+                <div class="col-md-4 mb-3">
+                    <label>Total Tubewells</label>
+                    {{ form.total_tubewells }}
+                    {{ form.total_tubewells.errors }}
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label>Tubewells Visited</label>
+                    {{ form.tubewells_visited }}
+                    {{ form.tubewells_visited.errors }}
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label>Satisfactory</label>
+                    {{ form.tubewells_satisfactory }}
+                    {{ form.tubewells_satisfactory.errors }}
+                </div>
+
+            </div>
+
+            <!-- Boolean Checks -->
+
+            <div class="row mb-3">
+
+                <div class="col-md-3 mb-2">
+                    <div class="form-check">
+                        {{ form.record }}
+                        <label class="form-check-label" for="{{ form.record.id_for_label }}">Record</label>
+                        {{ form.record.errors }}
+                    </div>
+                </div>
+
+                <div class="col-md-3 mb-2">
+                    <div class="form-check">
+                        {{ form.uniform }}
+                        <label class="form-check-label" for="{{ form.uniform.id_for_label }}">Uniform</label>
+                        {{ form.uniform.errors }}
+                    </div>
+                </div>
+
+                <div class="col-md-3 mb-2">
+                    <div class="form-check">
+                        {{ form.functional_time }}
+                        <label class="form-check-label" for="{{ form.functional_time.id_for_label }}">Functional Time</label>
+                        {{ form.functional_time.errors }}
+                    </div>
+                </div>
+
+                <div class="col-md-3 mb-2">
+                    <div class="form-check">
+                        {{ form.leaks }}
+                        <label class="form-check-label" for="{{ form.leaks.id_for_label }}">Leaks</label>
+                        {{ form.leaks.errors }}
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+                    <label>Tubewell Total Score</label>
+                    {{ form.tubewell_total_score }}
+                    {{ form.tubewell_total_score.errors }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Tubewell Obtained Score</label>
+                    {{ form.tubewell_obtained_score }}
+                    {{ form.tubewell_obtained_score.errors }}
+                </div>
+
+            </div>
+
+            <!-- Pictures & Remarks -->
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+                    <label>Tubewell Picture 1</label>
+                    {{ form.tubewell_picture_1 }}
+                    {{ form.tubewell_picture_1.errors }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Tubewell Picture 2</label>
+                    {{ form.tubewell_picture_2 }}
+                    {{ form.tubewell_picture_2.errors }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Tubewell Picture 3</label>
+                    {{ form.tubewell_picture_3 }}
+                    {{ form.tubewell_picture_3.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Tubewell Picture 4</label>
+                    {{ form.tubewell_picture_4 }}
+                    {{ form.tubewell_picture_4.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Tubewell Picture 5</label>
+                    {{ form.tubewell_picture_5 }}
+                    {{ form.tubewell_picture_5.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Tubewell Picture 6</label>
+                    {{ form.tubewell_picture_6 }}
+                    {{ form.tubewell_picture_6.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Tubewell Picture 7</label>
+                    {{ form.tubewell_picture_7 }}
+                    {{ form.tubewell_picture_7.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Tubewell Picture 8</label>
+                    {{ form.tubewell_picture_8 }}
+                    {{ form.tubewell_picture_8.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Tubewell Picture 9</label>
+                    {{ form.tubewell_picture_9 }}
+                    {{ form.tubewell_picture_9.errors }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Tubewell Picture 10</label>
+                    {{ form.tubewell_picture_10 }}
+                    {{ form.tubewell_picture_10.errors }}
+                </div>
+
+            </div>
+
+            <div class="row">
+
+                <div class="col-md-12 mb-3">
+                    <label>Tubewell Remarks</label>
+                    {{ form.tubewell_remarks }}
+                    {{ form.tubewell_remarks.errors }}
+                </div>
+
+            </div>
+
+            <hr>
+
+            <!-- ===================================== -->
+            <!-- ✅ Overall -->
+            <!-- ===================================== -->
+
+            <h5 class="mb-3">Overall</h5>
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+                    <label>Overall Total Score</label>
+                    {{ form.overall_total_score }}
+                    {{ form.overall_total_score.errors }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Overall Obtained Score</label>
+                    {{ form.overall_obtained_score }}
+                    {{ form.overall_obtained_score.errors }}
+                </div>
+
+            </div>
+
+            <!-- ===================================== -->
+            <!-- Buttons -->
+            <!-- ===================================== -->
+
+            <div class="mt-3">
+
+                <button type="submit" name="save_draft" class="btn btn-warning me-2">
+                    💾 Save as Draft
+                </button>
+
+                <button type="submit" name="save_complete" class="btn btn-success">
+                    ✅ Save &amp; Complete
+                </button>
+
+                <a href="{% url 'visit_evaluation_list' %}" class="btn btn-secondary ms-2">
+                    🔙 Back
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+<!-- ========================================= -->
+<!-- 🔥 AUTO TOTAL CALCULATION -->
+<!-- ========================================= -->
+
+<script>
+
+document.addEventListener("input", function () {
+
+    let fields = [
+        "id_containers_obtained_score",
+        "id_drains_obtained_score",
+        "id_roads_obtained_score",
+        "id_d2d_obtained_score",
+        "id_tubewell_obtained_score"
+    ];
+
+    let total = 0;
+
+    fields.forEach(function (id) {
+
+        let el = document.getElementById(id);
+
+        if (el) {
+            total += parseInt(el.value || 0);
+        }
+
+    });
+
+    let overall = document.getElementById("id_overall_obtained_score");
+
+    if (overall) {
+        overall.value = total;
+    }
+
+});
+
+</script>
+
+{% endblock %}

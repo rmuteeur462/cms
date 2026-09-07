@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    TubeWell Attendance Management
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        
+        <h1 class="h3 mb-4 text-gray-800" style="font-weight: bold; font-size: 1.5rem; text-align: center;">
+            TubeWells Daily Status Management
+        </h1>
+
+        <!-- Display error or success messages -->
+        {% if messages %}
+            <div class="alert alert-dismissible">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Filters Form -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+            </div>
+            <div class="card-body">
+                <form method="GET" class="mb-3" onsubmit="showLoader()">
+                    <div class="form-row align-items-center">
+                        <!-- Date Filter -->
+                        <div class="form-group col-md-4">
+                            <label for="date" class="form-label">Select Date:</label>
+                            <input type="date" name="date" class="form-control" value="{{ date|date:'Y-m-d' }}" required>
+                        </div>
+        
+                        <!-- Location Filter -->
+                        <div class="form-group col-md-4">
+                            <label for="location" class="form-label">Location:</label>
+                            <select name="location" id="locationFilter" class="form-control">
+                                <option value="">All Locations</option>
+                                {% for location in locations %}
+                                <option value="{{ location.location_name }}" {% if location.location_name == location_filter %}selected{% endif %}>
+                                    {{ location.location_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+        
+                        <!-- UC Filter -->
+                        <div class="form-group col-md-4">
+                            <label for="uc" class="form-label">UC:</label>
+                            <select name="uc" id="ucFilter" class="form-control">
+                                <option value="">All UCs</option>
+                                {% for uc in ucs %}
+                                <option value="{{ uc.uc_name }}" {% if uc.uc_name == uc_filter %}selected{% endif %}>
+                                    {{ uc.uc_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+        
+                    <div class="form-row mt-3">
+                        <div class="col text-right">
+                            <button type="submit" class="btn btn-primary">Filter</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+<script>
+    document.getElementById('locationFilter').addEventListener('change', function() {
+        const location = this.value;
+        const url = "{% url 'uc-list' %}?location=" + location;  // Replace 'uc-list' with the name of your view URL
+    
+        // Fetch the UCs based on the selected location
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                const ucSelect = document.getElementById('ucFilter');
+                ucSelect.innerHTML = '<option value="">All UCs</option>';  // Clear current options
+                data.ucs.forEach(uc => {
+                    const option = document.createElement('option');
+                    option.value = uc.uc_name;
+                    option.textContent = uc.uc_name;
+                    ucSelect.appendChild(option);
+                });
+            });
+    });
+    </script>
+    
+
+        <!-- TubeWell Attendance Table -->
+        <form method="POST" onsubmit="showLoader()">
+            {% csrf_token %}
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">TubeWell Records</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="dataTable" class="table table-bordered table-hover shadow-sm bg-white">
+
+                            <thead class="bg-primary text-white">
+                                <tr>
+                                    <th>Sr. No</th> <!-- Added Sr. No column -->
+
+                                    <th>TubeWell ID</th>
+                                    <th>TubeWell Name</th>
+                                    <th>Location</th>
+                                    <th>UC</th>
+                                    <th>Scada Install</th>
+                                    <th>Flow Meter Install</th>
+                                    <th>Tubewell No Of Connection</th>
+                                    <th>Motor Hours Power</th>
+
+                                    <!-- <th>Average Water Discharge</th> -->
+                                    <th>Operational</th>
+                                    <th>Non-Operational</th>
+                                    <th>Non-Functional</th>
+                                    <!-- <th>Run Hour</th>
+                                    <th>Meter Reading Start</th>
+                                    <th>Meter Reading End</th>
+                                    <th>Electricity Consumed</th>
+                                    <th>Water Produced</th>
+                                    <th>Remarks</th> -->
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for attendance in attendance_data %}
+                                    <tr>
+                                        <td>{{ forloop.counter }}</td> <!-- Serial number using forloop.counter -->
+
+                                        <td>{{ attendance.tubewell_id }}</td>
+                                        <td>{{ attendance.tubewell_name }}</td>
+                                        <td>{{ attendance.location }}</td>
+                                        <td>{{ attendance.uc }}</td>
+                                        <td>{{ attendance.scada  }}</td>
+                                        <td>{{ attendance.flow_meter }}</td>
+                                        <td>{{ attendance.tubewell_no_connection }}</td>
+                                        <td>{{ attendance.motor_hours_power }}</td>
+
+                                        <!-- <td>{{ attendance.average_discharge}}</td> -->
+                                        <td>
+                                            <input type="radio" name="status_{{ attendance.tubewell_id }}" value="functional" {% if attendance.functional %}checked{% endif %}>
+                                        </td>
+                                        <td>
+                                            <input type="radio" name="status_{{ attendance.tubewell_id }}" value="non_operational" {% if attendance.non_operational %}checked{% endif %}>
+                                        </td>
+                                        <td>
+                                            <input type="radio" name="status_{{ attendance.tubewell_id }}" value="non_functional" {% if attendance.non_functional %}checked{% endif %}>
+                                        </td>
+
+                                        <!-- <td>
+                                            <input type="text" name="run_hour_{{ attendance.tubewell_id }}" value="{{ attendance.run_hour }}" class="form-control" {% if not attendance.functional %}disabled{% endif %}>
+                                        </td>
+                                        <td>
+                                            <input type="text" name="meter_reading_start_{{ attendance.tubewell_id }}" value="{{ attendance.meter_reading_start }}" class="form-control" {% if not attendance.functional %}disabled{% endif %}>
+                                        </td>
+                                        <td>
+                                            <input type="text" name="meter_reading_end_{{ attendance.tubewell_id }}" value="{{ attendance.meter_reading_end}}" class="form-control" {% if not attendance.functional %}disabled{% endif %}>
+                                        </td>
+                                        <td>
+                                            <input type="text" name="electricity_consume_{{ attendance.tubewell_id }}" value="{{ attendance.electricity_consume }}" class="form-control" {% if not attendance.functional %}disabled{% endif %}>
+                                        </td>
+                                        <td>
+                                            <input type="text" name="water_produce_{{ attendance.tubewell_id }}" value="{{ attendance.water_produce }}" class="form-control" {% if not attendance.functional %}disabled{% endif %}>
+                                        </td>
+                                        <td>
+                                            <input type="text" name="remarks_{{ attendance.tubewell_id }}" value="{{ attendance.remarks }}" class="form-control">
+                                        </td> -->
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-success">Save</button>
+        </form>
+    </div>
+
+    <!-- Loader Overlay -->
+    <div id="loader" class="loader" style="display:none;"></div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{% static 'path/to/jquery.js' %}"></script>
+    <script src="{% static 'path/to/jquery.dataTables.js' %}"></script>
+    <script>
+        $(document).ready(function() {
+            $('#dataTable').DataTable({
+                "paging": true,
+                "pageLength": 25,
+                "searching": true,
+                "ordering": true,
+                "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+            });
+
+            // Custom search highlighting for TubeWell ID and Name only
+            $('#dataTable_filter input').on('keyup change clear', function() {
+                var searchValue = $(this).val().toLowerCase();
+                $('#dataTable').DataTable().rows().every(function() {
+                    var row = $(this.node());
+                    row.find('td').each(function(index) {
+                        if (index === 0 || index === 1) { // Only check TubeWell ID (index 0) and Name (index 1)
+                            var cell = $(this);
+                            var cellText = cell.text().toLowerCase();
+                            cell.html(cellText.replace(new RegExp('(' + searchValue + ')', 'gi'), "<span class='highlight'>$1</span>"));
+                        }
+                    });
+                });
+            });
+        });
+
+        function showLoader() {
+            document.getElementById("loader").style.display = "flex"; // Show loader
+        }
+    </script>
+
+    <style>
+        .highlight {
+            background-color: yellow;
+            font-weight: bold;
+        }
+
+        .loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.349);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loader::after {
+            content: '';
+            border: 8px solid #f3f3f3; /* Light grey background */
+            border-top: 8px solid #3498db; /* Blue spinner */
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+{% endblock %}

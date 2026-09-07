@@ -1,0 +1,283 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1 class="h3 mb-4 text-gray-800" style="font-weight: bold; font-size: 1.5rem; text-align: center;">
+    Attendance Details
+</h1>
+
+<form method="get" action="{% url 'attendance_report_generator' %}" style="margin-bottom: 20px;" onsubmit="showLoader()">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+        </div>
+        <div class="card-body">
+            <div class="form-row mb-3">
+
+                <!-- Date Filters -->
+                <div class="form-group col-md-6">
+                    <label for="start_date">Start Date:</label>
+                    <input type="date" id="start_date" name="start_date" value="{{ start_date }}" class="form-control" required>
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="end_date">End Date:</label>
+                    <input type="date" id="end_date" name="end_date" value="{{ end_date }}" class="form-control" required>
+                </div>
+
+                <!-- Location Filter -->
+                <div class="form-group col-md-4">
+                    <label for="location">Location:</label>
+                    <select name="location" id="locationFilter" class="form-control">
+                        <option value="">-- All Locations --</option>
+                        {% for location in locations %}
+                            <option value="{{ location.location_name }}" {% if location.location_name == location_filter %}selected{% endif %}>
+                                {{ location.location_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- UC Filter -->
+                <div class="form-group col-md-4">
+                    <label for="uc">Sub Location:</label>
+                    <select name="uc" id="ucFilter" class="form-control">
+                        <option value="">-- All Sub Locations --</option>
+                        {% for uc in ucs %}
+                            <option value="{{ uc.uc_name }}" {% if uc.uc_name == uc_filter %}selected{% endif %}>
+                                {{ uc.uc_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Department Filter -->
+                <div class="form-group col-md-4">
+                    <label for="department">Department:</label>
+                    <select name="department" id="department" class="form-control">
+                        <option value="">-- All Departments --</option>
+                        {% for department in departments %}
+                            <option value="{{ department }}" {% if department == department_filter %}selected{% endif %}>
+                                {{ department }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Employee ID Search -->
+                <div class="form-group col-md-4">
+                    <label for="employee_id">Employee ID:</label>
+                    <input type="text" id="employee_id" name="employee_id" value="{{ employee_id_filter }}" class="form-control" placeholder="Search by Employee ID">
+                </div>
+
+                <!-- Attendance Status Filter -->
+                <div class="form-group col-md-4">
+                    <label for="attendance_status">Attendance Status:</label>
+                    <select name="attendance_status" id="attendance_status" class="form-control">
+                        <option value="">-- All Statuses --</option>
+                        <option value="present" {% if attendance_status == 'present' %}selected{% endif %}>Present</option>
+                        <option value="absent" {% if attendance_status == 'absent' %}selected{% endif %}>Absent</option>
+                        <option value="leave" {% if attendance_status == 'leave' %}selected{% endif %}>Leave</option>
+                    </select>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="form-group col-md-6 text-left">
+                    <button type="submit" class="btn btn-primary">Generate Report</button>
+                </div>
+                
+
+                <div class="form-group col-md-6 text-right">
+                    <button id="downloadCsvBtn" class="btn btn-success">Download CSV</button>
+                </div>
+
+                <!-- <div class="form-group col-md-6 text-right">
+                    <button type="button" id="downloadPdfBtn" class="btn btn-danger">Download PDF</button>
+                </div> -->
+                
+
+            </div>
+
+        </div>
+    </div>
+</form>
+
+<script>
+document.getElementById('locationFilter').addEventListener('change', function() {
+    const location = this.value;
+    const url = "{% url 'uc-list' %}?location=" + location;  // Ensure 'uc-list' is the correct name for your URL route
+
+    // Fetch the UCs based on the selected location
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            const ucSelect = document.getElementById('ucFilter');
+            ucSelect.innerHTML = '<option value="">-- Select UC --</option>';  // Clear current options
+            data.ucs.forEach(uc => {
+                const option = document.createElement('option');
+                option.value = uc.uc_name;
+                option.textContent = uc.uc_name;
+                ucSelect.appendChild(option);
+            });
+        });
+});
+</script>
+
+{% if attendance_data %}
+    <h3>Attendance Records from {{ start_date }} to {{ end_date }}</h3>
+    
+    <table class="table table-bordered table-hover shadow-sm bg-white">
+        <thead class="bg-primary text-white">
+            <tr>
+                <th>#</th>
+
+                <th>Employee ID</th>
+                <th>Name</th>
+                <th>Location</th>
+                <th>Sub Location</th>
+                <th>Department</th>
+                <th>Designation</th>
+                <th>Attendance Records</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in attendance_data %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+
+                    <td>{{ entry.employee_id }}</td>
+                    <td>{{ entry.name }}</td>
+                    <td>{{ entry.location }}</td>
+                    <td>{{ entry.uc }}</td>
+                    <td>{{ entry.department }}</td>
+                    <td>{{ entry.designation }}</td>
+                    <td>
+                        <ul class="list-unstyled">
+                            {% for record in entry.attendance_records %}
+                                <li>
+                                    {{ record.attendance_date }}: 
+                                    {% if record.present %}Present
+                                    {% elif record.absent %}Absent
+                                    {% elif record.leave %}Leave
+                                    {% else %}No Record
+                                    {% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+                    <td>{{ entry.status }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No attendance records found for the selected criteria.</p>
+{% endif %}
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.21/jspdf.plugin.autotable.min.js"></script>
+
+
+
+<script>
+    document.getElementById("downloadCsvBtn").addEventListener("click", function() {
+    var tables = document.querySelectorAll("table"); // Select all tables
+    var csvData = [];
+    
+    tables.forEach(function(table) {
+        var rows = table.rows;
+        var tableData = [];
+    
+        // Get headers
+        var headers = [];
+        for (var i = 0; i < rows[0].cells.length; i++) {
+            headers.push('"' + rows[0].cells[i].innerText.trim().replace(/"/g, '""') + '"'); // Escape quotes
+        }
+        tableData.push(headers.join(","));
+    
+        // Get table rows
+        for (var i = 1; i < rows.length; i++) {
+            var rowData = [];
+            for (var j = 0; j < rows[i].cells.length; j++) {
+                let cellText = rows[i].cells[j].innerText.trim().replace(/"/g, '""'); // Escape quotes
+                // Special handling for Attendance Records (7th column)
+                if (j === 6) { 
+                    let records = [];
+                    let listItems = rows[i].cells[j].querySelectorAll('ul li');
+                    listItems.forEach(function(record) {
+                        records.push(record.innerText.trim().replace(/"/g, '""'));
+                    });
+                    cellText = '"' + records.join(", ") + '"'; // Join records as comma-separated
+                }
+                rowData.push(cellText);
+            }
+            tableData.push(rowData.join(","));
+        }
+    
+        csvData.push(tableData.join("\n"));
+    });
+    
+    var csvString = csvData.join("\n\n");
+    var blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    var link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "attendance_summary.csv";
+    link.click();
+});
+
+
+    document.getElementById('downloadPdfBtn').addEventListener('click', function() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Image path (use the appropriate URL where the image is served)
+    const imagePath = 'http://172.16.17.100:8002/static/logo/ali.png'; // Replace with your actual image URL
+
+    // Add image to the top of the PDF (adjust position as needed)
+    doc.addImage(imagePath, 'PNG', 15, 5, 180, 50); // Image format, position (x, y), width, height
+
+    // Add heading below the image
+    const heading = "Attendance Report"; // Customize your heading text
+    doc.setFontSize(16); // Set font size for the heading
+    doc.setFont("helvetica", "bold"); // Set the font style to bold
+    doc.text(heading, 85, 60); // Position of the heading (x, y)
+
+    // Table headers
+    let header = ['Employee ID', 'Name', 'Location', 'Sub Location', 'Department', 'Designation', 'Attendance Records'];
+
+    // Extract the table content
+    let content = [];
+    let rows = document.querySelectorAll('table tbody tr');
+    rows.forEach(function(row) {
+        let rowData = [];
+        let cells = row.querySelectorAll('td');
+        cells.forEach(function(cell, index) {
+            if (index === 6) { // Attendance Records (last column) - extract all the records
+                let records = [];
+                let listItems = cell.querySelectorAll('ul li');
+                listItems.forEach(function(record) {
+                    records.push(record.innerText.trim());
+                });
+                rowData.push(records.join(", "));
+            } else {
+                rowData.push(cell.innerText.trim());
+            }
+        });
+        content.push(rowData);
+    });
+
+    // Use jsPDF's autoTable to create the table in the PDF
+    doc.autoTable({
+        head: [header], // Table headers
+        body: content, // Table content
+        startY: 70, // Start below the heading (adjust as necessary)
+    });
+
+    // Save the PDF
+    doc.save('attendance_report.pdf');
+});
+    </script>
+    
+
+{% endblock %}

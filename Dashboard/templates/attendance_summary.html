@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Attendance Summary
+{% endblock %}
+
+{% block content %}
+
+
+<style>
+    table.table-bordered {
+        border: 2px solid #000; /* Darker border */
+    }
+
+    table.table-bordered th, table.table-bordered td {
+        border: 2px solid #000; /* Darker border for cells */
+    }
+    .table-blue {
+    background-color: #e0e2fa;
+}
+
+.table-green {
+    background-color: #e0fbe0;
+}
+
+.table-orange {
+    background-color: #ffe8cc;
+}
+
+.table-red {
+    background-color: #ffe6e6;
+}
+
+/* Add more colors as needed */
+
+</style>
+    <div class="container-fluid">
+
+
+
+        <h1 class="h3 mb-4 text-gray-800" style="font-weight: bold; font-size: 1.5rem; text-align: center;">
+            Attendance Summary
+        </h1>
+        <!-- Display error or success messages -->
+        {% if messages %}
+            <div class="alert alert-dismissible">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} fade show" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+        <!-- Date Filter Form -->
+        <form method="get" class="mb-4">
+            <div class="form-group row">
+                <label for="date" class="col-sm-2 col-form-label">Select Date:</label>
+                <div class="col-sm-4">
+                    <input type="date" id="date" name="date" class="form-control" value="{{ selected_date|date:"Y-m-d" }}" required>
+                </div>
+                <div class="col-sm-2">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                </div>
+            </div>
+        </form>
+
+
+
+        <!-- Selected Date -->
+        <div class="mb-4">
+            <h6>Attendance Date: {{ selected_date|date:"Y-m-d" }}</h6>
+        </div>
+
+        <button id="downloadCsvBtn" class="btn btn-success mb-4">Download CSV</button>
+
+
+
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Overall Department Wise Summary</h6>
+            </div>
+            <div class="card-body table-blue">
+                <div class="table-responsive">
+                    <table id="attendanceTable" class="table table-bordered table-striped" width="100%" cellspacing="0">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th>Department</th>
+                                <th>Present</th>
+                                <th>Absent</th>
+                                <th>Leave</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for department in department_summary_all_locations %}
+                                <tr>
+                                    <td><strong>{{ department.employee_name__department }}</strong></td>
+                                    <td><strong>{{ department.total_present }}</strong></td>
+                                    <td><strong>{{ department.total_absent }}</strong></td>
+                                    <td><strong>{{ department.total_leave }}</strong></td>
+                                    <td><strong>{{ department.total_present|add:department.total_absent|add:department.total_leave }}</strong></td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center"><strong>No records found.</strong></td>
+                                </tr>
+                            {% endfor %}
+            
+                            <tr class="font-weight-bold">
+                                <td>Total</td>
+                                <td>{{ overall_totals.total_present }}</td>
+                                <td>{{ overall_totals.total_absent }}</td>
+                                <td>{{ overall_totals.total_leave }}</td>
+                                <td>{{ overall_totals.total_attendance }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        
+        <!-- Location-wise Attendance Summary Table (Green) -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Overall Location Wise Summary</h6>
+            </div>
+            <div class="card-body table-green">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped" width="100%" cellspacing="0">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th>Location</th>
+                                <th>Present</th>
+                                <th>Absent</th>
+                                <th>Leave</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for loc in all_locations_summary %}
+                                <tr>
+                                    <td><strong>{{ loc.employee_name__location__location_name }}</strong></td>
+                                    <td><strong>{{ loc.total_present }}</strong></td>
+                                    <td><strong>{{ loc.total_absent }}</strong></td>
+                                    <td><strong>{{ loc.total_leave }}</strong></td>
+                                    <td><strong>{{ loc.total_present|add:loc.total_absent|add:loc.total_leave }}</strong></td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center"><strong>No records found.</strong></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th>Total</th>
+                                <th>{{ overall_totals.total_present }}</th>
+                                <th>{{ overall_totals.total_absent }}</th>
+                                <th>{{ overall_totals.total_leave }}</th>
+                                <th>{{ overall_totals.total_attendance }}</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+         
+        <!-- Per Location Attendance Tables -->
+        {% for location, summary in location_wise_summary.items %}
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{{ location }}</h6>
+                </div>
+                <div class="card-body table-orange">
+                    <!-- Location Totals at the Top -->
+                    <div class="mb-3">
+                        <strong>Total Employees in {{ location }}: {{ summary.total_employees }}</strong><br>
+                        Present: <strong>{{ summary.totals.total_present }}</strong>, 
+                        Absent: <strong>{{ summary.totals.total_absent }}</strong>, 
+                        Leave: <strong>{{ summary.totals.total_leave }}</strong>
+                    </div>
+        
+                    <!-- Department-wise Table -->
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped" width="100%" cellspacing="0">
+                            <thead class="thead-dark">  
+                                <tr>
+                                    <th>Department</th>
+                                    <th>Present</th>
+                                    <th>Absent</th>
+                                    <th>Leave</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for department in summary.departments %}
+                                    <tr>
+                                        <td><strong>{{ department.employee_name__department }}</strong></td>
+                                        <td><strong>{{ department.total_present }}</strong></td>
+                                        <td><strong>{{ department.total_absent }}</strong></td>
+                                        <td><strong>{{ department.total_leave }}</strong></td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center"><strong>No records found.</strong></td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td><strong>Total</strong></td>
+                                    <td><strong>{{ summary.totals.total_present }}</strong></td>
+                                    <td><strong>{{ summary.totals.total_absent }}</strong></td>
+                                    <td><strong>{{ summary.totals.total_leave }}</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+             
+
+        <!-- Bar Chart for Attendance Summary -->
+        <div class="mb-4">
+            <canvas id="attendanceChart" width="400" height="200"></canvas>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            var ctx = document.getElementById('attendanceChart').getContext('2d');
+            var attendanceChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: {{ location_labels|safe }},
+                    datasets: [
+                    {
+    label: 'Total Employees',
+    data: {{ total_employees_data|safe }},
+    backgroundColor: 'rgba(34, 139, 230, 0.7)',  // Medium blue
+    borderColor: 'rgba(0, 102, 204, 0.8)',  // Medium-dark blue
+    borderWidth: 2
+},
+{
+    label: 'Total Present',
+    data: {{ total_present_data|safe }},
+    backgroundColor: 'rgba(60, 179, 113, 0.7)',  // Medium sea green
+    borderColor: 'rgba(46, 139, 87, 0.8)',  // Medium-dark green
+    borderWidth: 2
+},
+{
+    label: 'Total Leave',
+    data: {{ total_leave_data|safe }},
+    backgroundColor: 'rgba(255, 165, 0, 0.7)',  // Dark orange
+    borderColor: 'rgba(255, 140, 0, 0.8)',  // Darker orange
+    borderWidth: 2
+},
+{
+    label: 'Total Absent',
+    data: {{ total_absent_data|safe }},
+    backgroundColor: 'rgba(220, 20, 60, 0.7)',  // Crimson red
+    borderColor: 'rgba(178, 34, 34, 0.8)',  // Firebrick red
+    borderWidth: 2
+}
+
+
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        </script>
+
+<script>
+   document.getElementById("downloadCsvBtn").addEventListener("click", function() {
+    var tables = document.querySelectorAll("table"); // Select all tables
+    var csvData = [];
+
+    // Loop through all tables
+    tables.forEach(function(table) {
+        var rows = table.rows;
+        var tableData = [];
+
+        // Get headers
+        var headers = [];
+        for (var i = 0; i < rows[0].cells.length; i++) {
+            headers.push(rows[0].cells[i].innerText);
+        }
+        tableData.push(headers.join(","));
+
+        // Get table rows
+        for (var i = 1; i < rows.length; i++) {
+            var rowData = [];
+            for (var j = 0; j < rows[i].cells.length; j++) {
+                rowData.push(rows[i].cells[j].innerText);
+            }
+            tableData.push(rowData.join(","));
+        }
+
+        // Add the data of the current table to the CSV data
+        csvData.push(tableData.join("\n"));
+    });
+
+    // Convert array to CSV string and separate tables with a blank line
+    var csvString = csvData.join("\n\n");
+
+    // Create a Blob and download the CSV file
+    var blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    var link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "attendance_summary.csv";
+    link.click();
+});
+</script>
+    </div>
+{% endblock %}

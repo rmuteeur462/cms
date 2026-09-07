@@ -1,0 +1,434 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1 class="h3 mb-4 text-gray-800 text-center font-weight-bold">CLC Activity Report Generator</h1>
+
+<!-- Filter Form -->
+<form method="get" action="{% url 'generate_clc_report' %}" style="margin-bottom: 20px;">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filter Criteria</h6>
+        </div>
+        <div class="card-body">
+            <div class="form-row">
+                <!-- From Date Filter -->
+                <div class="form-group col-md-4">
+                    <label for="start_date">Start Date:</label>
+                    <input type="date" id="start_date" name="start_date" value="{{ start_date }}" class="form-control">
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="end_date">End Date:</label>
+                    <input type="date" id="end_date" name="end_date" value="{{ end_date }}" class="form-control">
+                </div>
+
+                <!-- Location Filter -->
+                <div class="form-group col-md-4">
+                    <label for="location">Select Location:</label>
+                    <select name="location" id="location" class="form-control">
+                        <option value="">-- All Locations --</option>
+                        {% for location in locations %}
+                            <option value="{{ location.location_name }}" {% if location.location_name == location_filter %}selected{% endif %}>
+                                {{ location.location_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Activity Filter -->
+                <div class="form-group col-md-4">
+                    <label for="activity">Select Activity:</label>
+                    <select name="activity" id="activity" class="form-control">
+                        <option value="">-- All Activities --</option>
+                        {% for activity in activities %}
+                            <option value="{{ activity.name }}" {% if activity.name == activity_filter %}selected{% endif %}>
+                                {{ activity.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Designation Filter -->
+                <div class="form-group col-md-4">
+                    <label for="designation">Select Designation:</label>
+                    <select name="designation" id="designation" class="form-control">
+                        <option value="">-- All Designations --</option>
+                        {% for designation in designations %}
+                            <option value="{{ designation.designation }}" {% if designation.designation == designation_filter %}selected{% endif %}>
+                                {{ designation.designation }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="form-group col-md-12 text-left">
+                    <button type="submit" class="btn btn-primary">Generate Report</button>
+                </div>
+
+                <!-- CSV Download Button -->
+                <div class="form-group col-md-12 text-right">
+                    <button type="button" class="btn btn-success" id="downloadCSV">Download CSV</button>
+                </div>
+
+                <div class="form-group col-md-12 text-right">
+                    <button type="button" class="btn btn-danger" id="downloadPDF">Download PDF</button>
+                </div>
+            
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- CLC Report Table -->
+{% if clc_reports %}
+    <h3>Generated CLC Activity Reports</h3>
+    
+
+    <table class="table table-bordered table-hover shadow-sm bg-white" id="reportTable">
+        <thead class="bg-primary text-white">
+            <tr>
+                <th>SR No</th>
+                <th>Official Name</th>
+                <th>Designation</th>
+                <th>Location</th>
+                <th>UC</th>
+                <th>NC</th>
+
+
+                <th>Activity</th>
+                <th>No Of Participants</th>
+                <th>IEC Material Distribution</th>
+
+                
+                <th>Brief Report</th>
+                <th>Image</th>
+                <th>Date</th>
+
+                
+            </tr>
+        </thead>
+        <tbody>
+            {% for report in clc_reports %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ report.name_of_official.name }}</td>
+                    <td>{{ report.name_of_official.designation }}</td>
+                    <td>{{ report.location.location_name }}</td>
+                    <td>{{ report.uc.uc_name }}</td>
+                    <td>{{ report.nc.nc_name }}</td>
+
+
+                    <td>{{ report.activity.name }}</td>
+                    <td>{{ report.no_of_participants }}</td>
+                    <td>{{ report.IEC_material_distribution }}</td>
+
+                    
+                    <td>{{ report.brief_report }}</td>
+                    <td>
+                        {% if report.image %}
+                            <img src="{{ report.image.url }}" alt="Report Image" style="max-width: 100px;" data-toggle="modal" data-target="#imageModal{{ forloop.counter }}">
+                        {% else %}
+                            No Image Available
+                        {% endif %}
+                    </td>
+
+                    <td>{{ report.date }}</td>
+
+                </tr>
+
+                <!-- Modal for Enlarged Image -->
+                {% if report.image %}
+                    <div class="modal fade" id="imageModal{{ forloop.counter }}" tabindex="-1" role="dialog" aria-labelledby="imageModalLabel{{ forloop.counter }}" aria-hidden="true">
+                        <div class="modal-dialog modal-lg" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="imageModalLabel{{ forloop.counter }}">Full Image</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body text-center">
+                                    <img src="{{ report.image.url }}" alt="Full View" class="img-fluid">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </tbody>
+        <tfoot class="bg-light font-weight-bold">
+            <tr>
+                <td colspan="8">Total CLC Activities: {{ clc_reports.count }}</td>
+            </tr>
+        </tfoot>
+    </table>
+
+{% else %}
+    <p>No CLC activities found for the selected criteria.</p>
+{% endif %}
+
+
+<div class="row">
+    <!-- Location-based Activity Chart -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Location-based Activity Chart</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="locationActivityChart" width="300" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- UC-based Activity Chart -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">UC-based Activity Chart</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="ucActivityChart" width="300" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- NC-based Activity Chart -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">NC-based Activity Chart</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="ncActivityChart" width="300" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity-based Count Chart -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Activity-based Count Chart</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="activityCountChart" width="300" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    
+    <script>
+        // Location-based Activity Chart
+        var ctxLocation = document.getElementById('locationActivityChart').getContext('2d');
+        new Chart(ctxLocation, {
+            type: 'bar',
+            data: {
+                labels: {{ location_activity_data.0|safe }},
+                datasets: [{
+                    label: 'Activities by Location',
+                    data: {{ location_activity_data.1|safe }},
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    
+        // UC-based Activity Chart
+        var ctxUC = document.getElementById('ucActivityChart').getContext('2d');
+        new Chart(ctxUC, {
+            type: 'bar',
+            data: {
+                labels: {{ uc_activity_data.0|safe }},
+                datasets: [{
+                    label: 'Activities by UC',
+                    data: {{ uc_activity_data.1|safe }},
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    
+        // NC-based Activity Chart
+        var ctxNC = document.getElementById('ncActivityChart').getContext('2d');
+        new Chart(ctxNC, {
+            type: 'bar',
+            data: {
+                labels: {{ nc_activity_data.0|safe }},
+                datasets: [{
+                    label: 'Activities by NC',
+                    data: {{ nc_activity_data.1|safe }},
+                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                    borderColor: 'rgba(153, 102, 255, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    
+        // Activity-based Count Chart
+        var ctxActivity = document.getElementById('activityCountChart').getContext('2d');
+        new Chart(ctxActivity, {
+            type: 'pie',
+            data: {
+                labels: {{ activity_count_data.0|safe }},
+                datasets: [{
+                    label: 'Activity Count',
+                    data: {{ activity_count_data.1|safe }},
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
+                    borderColor: '#ffffff',
+                    borderWidth: 1
+                }]
+            }
+        });
+    </script>
+    
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.21/jspdf.plugin.autotable.min.js"></script>
+
+<script>
+    document.getElementById('downloadCSV').addEventListener('click', function() {
+        var table = document.getElementById('reportTable');
+        var rows = Array.from(table.querySelectorAll('tr'));
+        var csvContent = '';
+
+        rows.forEach(function(row) {
+            var cells = Array.from(row.querySelectorAll('th, td'));
+            var rowData = cells.map(function(cell) {
+                return '"' + cell.textContent.trim().replace(/"/g, '""') + '"'; // Escape quotes in CSV
+            }).join(',');
+            csvContent += rowData + '\n';
+        });
+
+        var link = document.createElement('a');
+        link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+        link.download = 'clc_activity_report.csv';
+        link.click();
+    });
+
+    document.getElementById('downloadPDF').addEventListener('click', function() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const table = document.getElementById('reportTable');
+    const rows = Array.from(table.querySelectorAll('tr'));
+
+    // Set your image path
+    const imagePath = 'http://wod.wsspeshawar.org.pk:4002/static/logo/khan.png';
+
+    // Get selected dates from form inputs
+    const startDate = document.getElementById('start_date').value || 'N/A';
+    const endDate = document.getElementById('end_date').value || 'N/A';
+
+    // Add header image
+    doc.addImage(imagePath, 'PNG', -4, 5, 220, 30);
+
+    // Set header background color
+    doc.setFillColor(0, 123, 255);  // Bootstrap Primary Blue
+    doc.rect(10, 40, 190, 20, 'F');
+
+    // Add title in the header
+    doc.setFontSize(16);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.text("CLC Activity Report", 86, 47);
+
+    // Add date range below the title
+    doc.setFontSize(12);
+    doc.text(`From: ${startDate}  To: ${endDate}`, 80, 55);
+
+    // Extract headers dynamically
+    let header = [];
+    let selectedIndexes = [];
+    let headerCells = rows[0].querySelectorAll('th');
+
+    headerCells.forEach((cell, index) => {
+        const columnName = cell.textContent.trim();
+        if (["Official Name", "Designation", "Location", "UC", "Activity", "No Of Participants","Brief Report"].includes(columnName)) {
+            header.push(columnName);
+            selectedIndexes.push(index);
+        }
+    });
+
+    // Extract only selected columns from table rows
+    let content = [];
+    rows.slice(1, rows.length - 1).forEach(function(row) { 
+        let rowData = [];
+        row.querySelectorAll('td').forEach((cell, index) => {
+            if (selectedIndexes.includes(index)) {
+                rowData.push(cell.textContent.trim());
+            }
+        });
+        content.push(rowData);
+    });
+
+    // Extract total row separately
+    let totalRow = [];
+    let totalCells = rows[rows.length - 1].querySelectorAll('td');
+    totalCells.forEach(function(cell) {
+        totalRow.push(cell.textContent.trim());
+    });
+
+    // Generate table with autoTable
+    doc.autoTable({
+        head: [header],
+        body: content,
+        startY: 65,
+        styles: {
+            fontSize: 10
+        },
+        headStyles: {
+            fillColor: [0, 123, 255], // Bootstrap Primary Blue
+            textColor: 255,
+            fontStyle: 'bold'
+        }
+    });
+
+    // Add total activities row at the end with highlight
+    doc.autoTable({
+        body: [totalRow],
+        startY: doc.autoTable.previous.finalY + 2,
+        styles: {
+            fontSize: 10
+        },
+        bodyStyles: {
+            fillColor: [0, 123, 255], // Bootstrap Primary Blue
+            textColor: 123,
+            fontStyle: 'bold'
+        }
+    });
+
+    doc.save('clc_activity_report.pdf');
+});
+
+
+</script>
+
+{% endblock %}

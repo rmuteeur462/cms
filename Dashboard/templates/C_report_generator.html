@@ -1,0 +1,681 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1 class="h3 mb-4 text-gray-800 text-center font-weight-bold">
+    Complaint Report Generator
+</h1>
+
+{% if start_date and end_date %}
+    <p class="text-center mb-4">
+        Report Period: <strong>{{ start_date }}</strong> to <strong>{{ end_date }}</strong>
+    </p>
+{% endif %}
+
+<!-- Filters Section -->
+<form method="get" action="{% url 'C_report_generator' %}">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filter Options</h6>
+        </div>
+        <div class="card-body">
+            <div class="form-row">
+                <!-- Date Range -->
+                <div class="form-group col-md-6">
+                    <label for="start_date">Start Date</label>
+                    <input type="date" id="start_date" name="start_date" 
+                           value="{{ start_date }}" class="form-control">
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="end_date">End Date</label>
+                    <input type="date" id="end_date" name="end_date" 
+                           value="{{ end_date }}" class="form-control">
+                </div>
+
+                <!-- Location & UC -->
+                <div class="form-group col-md-4">
+                    <label for="location">Location</label>
+                    <select name="location" id="location" class="form-control">
+                        <option value="">All Locations</option>
+                        {% for location in locations %}
+                            <option value="{{ location.location_name }}" 
+                                    {% if location.location_name == location_filter %}selected{% endif %}>
+                                {{ location.location_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group col-md-4">
+                    <label for="uc">UC</label>
+                    <select name="uc" id="uc" class="form-control">
+                        <option value="">All UCs</option>
+                        {% for uc in ucs %}
+                            <option value="{{ uc.uc_name }}" 
+                                    {% if uc.uc_name == uc_filter %}selected{% endif %}>
+                                {{ uc.uc_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group col-md-4">
+                    <label for="complaint_source">Complaint Source</label>
+                    <select name="complaint_source" id="complaint_source" class="form-control">
+                        <option value="">All Sources</option>
+                        {% for source in complaint_sources %}
+                            <option value="{{ source.source_name }}" 
+                                    {% if source.source_name == source_filter %}selected{% endif %}>
+                                {{ source.source_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Complaint Type & SubType -->
+                <div class="form-group col-md-6">
+                    <label for="complaint_type">Complaint Type</label>
+                    <select name="complaint_type" id="complaint_type" class="form-control">
+                        <option value="">All Types</option>
+                        {% for ct in complaint_types %}
+                            <option value="{{ ct.type_name }}" 
+                                    {% if type_filter == ct.type_name %}selected{% endif %}>
+                                {{ ct.type_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group col-md-6">
+                    <label for="complaint_subtype">Complaint SubType</label>
+                    <select name="complaint_subtype" id="complaint_subtype" class="form-control">
+                        <option value="">All SubTypes</option>
+                        {% for st in complaint_subtypes %}
+                            <option value="{{ st.type_name }}" 
+                                    {% if subtype_filter == st.type_name %}selected{% endif %}>
+                                {{ st.type_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Status & Search Fields -->
+                <div class="form-group col-md-4">
+                    <label for="status">Status</label>
+                    <select name="status" id="status" class="form-control">
+                        <option value="">All Statuses</option>
+                        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>
+                            Pending
+                        </option>
+                        <option value="resolved" {% if status_filter == 'resolved' %}selected{% endif %}>
+                            Resolved
+                        </option>
+                    </select>
+                </div>
+
+                <div class="form-group col-md-4">
+                    <label for="name">Applicant Name</label>
+                    <input type="text" id="name" name="name" 
+                           placeholder="Search by name" 
+                           value="{{ name_search }}" class="form-control">
+                </div>
+
+                <div class="form-group col-md-4">
+                    <label for="cell_number">Cell Number</label>
+                    <input type="text" id="cell_number" name="cell_number" 
+                           placeholder="Search by cell number" 
+                           value="{{ cell_number_search }}" class="form-control">
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex justify-content-end mt-3">
+                <button type="submit" class="btn btn-primary mr-2">
+                    <i class="fas fa-filter"></i> Apply Filters
+                </button>
+                <button type="button" id="downloadCsvBtn" class="btn btn-success">
+                    <i class="fas fa-download"></i> Download CSV
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+{% if complaints %}
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <!-- Total Complaints -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Complaints
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_complaints }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resolved -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Resolved
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ resolved_count }}</div>
+                        <div class="text-xs text-muted">{{ resolution_rate }}% Resolution Rate</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Average Resolve Time -->
+    <!-- <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Avg Resolve Time
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ avg_resolve_time_formatted }}</div>
+                        <div class="text-xs text-muted">{{ avg_resolve_time_days }} days</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clock fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> -->
+
+    <!-- Customer Satisfaction -->
+    <!-- <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Satisfaction Rate
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ satisfaction_rate }}%</div>
+                        <div class="text-xs text-muted">{{ satisfied_count }} of {{ resolved_count }} satisfied</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-smile fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> -->
+</div>
+
+<!-- Complaint Records Table -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Complaint Records</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                <thead class="thead-light">
+                    <tr class="text-center">
+                        <th>Sr.No</th>
+                        <th>ID</th>
+                        <th>Status</th>
+                        <th>Location</th>
+                        <th>UC</th>
+                        <th>Source</th>
+                        <th>Type</th>
+                        <th>SubType</th>
+                        <th>Title</th>
+                        <th>Details</th>
+                        <th>Category</th>
+                        <th>Date</th>
+                        <th>Applicant</th>
+                        <th>Bill No</th>
+                        <th>CNIC</th>
+                        <th>Gender</th>
+                        <th>Consumer Type</th>
+                        <th>Cell No</th>
+                        <th>Phone No</th>
+                        <th>Area</th>
+                        <th>Address</th>
+                        <th>Tehsil</th>
+                        <th>Zone Feedback</th>
+                        <th>1334 Feedback</th>
+                        <th>Created At</th>
+                        <th>Resolved At</th>
+                        <th>Resolve Time</th>
+                        <th>Before</th>
+                        <th>After</th>
+                        <th>History</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for complaint in complaints %}
+                    {% with created_action=complaint.actions.all|dictsort:"timestamp"|first %}
+                    {% with resolved_actions=complaint.actions.all|dictsort:"timestamp" %}
+                    <tr class="text-center">
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ complaint.id }}</td>
+                        <td>
+                            {% if complaint.status == 'resolved' %}
+                                <span class="badge badge-success">Resolved</span>
+                            {% else %}
+                                <span class="badge badge-danger">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ complaint.location.location_name }}</td>
+                        <td>{{ complaint.uc|default:"N/A" }}</td>
+                        <td>{{ complaint.complaint_source.source_name }}</td>
+                        <td>{{ complaint.complaint_type.type_name }}</td>
+                        <td>{{ complaint.SubType.type_name|default:"N/A" }}</td>
+                        <td>{{ complaint.title|default:"N/A" }}</td>
+                        <td class="text-left">{{ complaint.complaint_detail }}</td>
+                        <td>{{ complaint.type|default:"N/A" }}</td>
+                        <td>{{ complaint.date }}</td>
+                        <td>{{ complaint.first_name }} {{ complaint.last_name }}</td>
+                        <td>{{ complaint.bill_number|default:"N/A" }}</td>
+                        <td>{{ complaint.cnic|default:"N/A" }}</td>
+                        <td>{{ complaint.gender|default:"N/A" }}</td>
+                        <td>{{ complaint.consumer_type|default:"N/A" }}</td>
+                        <td>{{ complaint.cell_number|default:"N/A" }}</td>
+                        <td>{{ complaint.phone_number|default:"N/A" }}</td>
+                        <td>{{ complaint.area|default:"N/A" }}</td>
+                        <td class="text-left">{{ complaint.address|default:"N/A" }}</td>
+                        <td>{{ complaint.tehsil|default:"N/A" }}</td>
+                        <td>
+                            {% if complaint.resolution.customer_satisfaction == 'yes' %}
+                                <span class="badge bg-success">Yes</span>
+                        
+                            {% elif complaint.resolution.customer_satisfaction == 'no' %}
+                                <span class="badge bg-danger">No</span>
+                        
+                            {% elif complaint.resolution.customer_satisfaction == 'call_no_response' %}
+                                <span class="badge bg-secondary">Call Not Responded</span>
+                        
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% with response=complaint.responses.first %}
+                                {% if response %}
+                                    {% if response.feedback == 'yes' %}
+                                        <span class="badge badge-success">Yes</span>
+                                    {% elif response.feedback == 'no' %}
+                                        <span class="badge badge-danger">No</span>
+                                    {% elif response.feedback == 'neutral' %}
+                                        <span class="badge badge-secondary">Neutral</span>
+                                    {% elif response.feedback == 'not_responded' %}
+                                        <span class="badge badge-warning">No Response</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            {% endwith %}
+                        </td>
+                        <td>
+                            {% if created_action and created_action.action == 'created' %}
+                                {{ created_action.timestamp|date:"Y-m-d H:i" }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if complaint.status == 'resolved' %}
+                                {% for action in resolved_actions %}
+                                    {% if action.action == 'resolved' %}
+                                        {{ action.timestamp|date:"Y-m-d H:i" }}
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if complaint.status == 'resolved' %}
+                                <span class="badge badge-info">{{ complaint.resolve_time_formatted }}</span>
+                            {% else %}
+                                <span class="text-muted">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if complaint.before_image %}
+                                <img src="{{ complaint.before_image.url }}" 
+                                     class="img-thumbnail cursor-pointer" 
+                                     width="50" height="50"
+                                     data-toggle="modal" 
+                                     data-target="#imageModal"
+                                     onclick="showImage('{{ complaint.before_image.url }}')">
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if complaint.resolution.after_image %}
+                                <img src="{{ complaint.resolution.after_image.url }}" 
+                                     class="img-thumbnail cursor-pointer" 
+                                     width="50" height="50"
+                                     data-toggle="modal" 
+                                     data-target="#imageModal"
+                                     onclick="showImage('{{ complaint.resolution.after_image.url }}')">
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-info" 
+                                    data-toggle="modal" 
+                                    data-target="#historyModal-{{ complaint.id }}">
+                                <i class="fas fa-history"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endwith %}
+                    {% endwith %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Image Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Image Preview</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" class="img-fluid">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- History Modals -->
+{% for complaint in complaints %}
+<div class="modal fade" id="historyModal-{{ complaint.id }}" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Complaint History #{{ complaint.id }}</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Applicant Information -->
+                <h6 class="font-weight-bold border-bottom pb-2 mb-3">Applicant Information</h6>
+                <table class="table table-sm table-bordered mb-4">
+                    {% if complaint.first_name or complaint.last_name %}
+                    <tr><th width="30%">Name</th><td>{{ complaint.first_name }} {{ complaint.last_name }}</td></tr>
+                    {% endif %}
+                    {% if complaint.bill_number %}
+                    <tr><th>Bill No</th><td>{{ complaint.bill_number }}</td></tr>
+                    {% endif %}
+                    {% if complaint.cnic %}
+                    <tr><th>CNIC</th><td>{{ complaint.cnic }}</td></tr>
+                    {% endif %}
+                    {% if complaint.gender %}
+                    <tr><th>Gender</th><td>{{ complaint.gender }}</td></tr>
+                    {% endif %}
+                    {% if complaint.consumer_type %}
+                    <tr><th>Consumer Type</th><td>{{ complaint.consumer_type }}</td></tr>
+                    {% endif %}
+                    {% if complaint.cell_number %}
+                    <tr><th>Cell No</th><td>{{ complaint.cell_number }}</td></tr>
+                    {% endif %}
+                    {% if complaint.phone_number %}
+                    <tr><th>Phone No</th><td>{{ complaint.phone_number }}</td></tr>
+                    {% endif %}
+                    {% if complaint.area %}
+                    <tr><th>Area</th><td>{{ complaint.area }}</td></tr>
+                    {% endif %}
+                    {% if complaint.address %}
+                    <tr><th>Address</th><td>{{ complaint.address }}</td></tr>
+                    {% endif %}
+                    {% if complaint.tehsil %}
+                    <tr><th>Tehsil</th><td>{{ complaint.tehsil }}</td></tr>
+                    {% endif %}
+                </table>
+
+                <!-- Complaint Details -->
+            <h6 class="font-weight-bold border-bottom pb-2 mb-3">Complaint Details</h6>
+            <table class="table table-sm table-bordered">
+                {% if complaint.location %}
+                <tr><th width="30%">Location</th><td>{{ complaint.location }}</td></tr>
+                {% endif %}
+                {% if complaint.uc %}
+                <tr><th>UC</th><td>{{ complaint.uc }}</td></tr>
+                {% endif %}
+                {% if complaint.title %}
+                <tr><th>Title</th><td>{{ complaint.title }}</td></tr>
+                {% endif %}
+                {% if complaint.complaint_source %}
+                <tr><th>Source</th><td>{{ complaint.complaint_source }}</td></tr>
+                {% endif %}
+                {% if complaint.Pcp_compalin_no %}
+                <tr><th>PCP No</th><td>{{ complaint.Pcp_compalin_no }}</td></tr>
+                {% endif %}
+                {% if complaint.Eak_compalin_no %}
+                <tr><th>EAK No</th><td>{{ complaint.Eak_compalin_no }}</td></tr>
+                {% endif %}
+                {% if complaint.complaint_type %}
+                <tr><th>Category</th><td>{{ complaint.complaint_type }}</td></tr>
+                {% endif %}
+                {% if complaint.SubType %}
+                <tr><th>Sub Category</th><td>{{ complaint.SubType }}</td></tr>
+                {% endif %}
+                {% if complaint.type %}
+                <tr><th>Type</th><td>{{ complaint.type }}</td></tr>
+                {% endif %}
+                {% if complaint.complaint_detail %}
+                <tr><th>Details</th><td>{{ complaint.complaint_detail }}</td></tr>
+                {% endif %}
+                {% if complaint.status %}
+                <tr><th>Status</th><td>
+                    {% if complaint.status == 'resolved' %}
+                        <span class="badge badge-success">Resolved</span>
+                    {% else %}
+                        <span class="badge badge-danger">Pending</span>
+                    {% endif %}
+                </td></tr>
+                {% endif %}
+                {% if complaint.resolution.customer_satisfaction %}
+                <tr><th>Customer Satisfaction</th><td>
+                    {% if complaint.resolution.customer_satisfaction == 'yes' %}
+                        <span class="badge badge-success">Yes</span>
+                    {% else %}
+                        <span class="badge badge-warning">No</span>
+                    {% endif %}
+                </td></tr>
+                {% endif %}
+                {% if complaint.date %}
+                <tr><th>Date</th><td>{{ complaint.date|date:"Y-m-d" }}</td></tr>
+                {% endif %}
+                
+                {% with created_action=complaint.actions.all|dictsort:"timestamp"|first %}
+                    {% if created_action and created_action.action == 'created' %}
+                    <tr><th>Created At</th><td>{{ created_action.timestamp|date:"Y-m-d H:i" }}</td></tr>
+                    {% endif %}
+                {% endwith %}
+                
+                {% if complaint.status == 'resolved' %}
+                    {% with resolved_actions=complaint.actions.all|dictsort:"timestamp" %}
+                        {% for action in resolved_actions %}
+                            {% if action.action == 'resolved' %}
+                            <tr><th>Resolved At</th><td>{{ action.timestamp|date:"Y-m-d H:i" }}</td></tr>
+                            <tr><th>Resolve Time</th><td><span class="badge badge-info">{{ complaint.resolve_time_formatted }}</span></td></tr>
+                            {% endif %}
+                        {% endfor %}
+                    {% endwith %}
+                {% endif %}
+            </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% else %}
+<div class="alert alert-info text-center">
+    <i class="fas fa-info-circle"></i> No complaints found matching the selected criteria.
+</div>
+{% endif %}
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
+
+<script>
+// Initialize DataTable
+$(document).ready(function() {
+    $('#dataTable').DataTable({
+        paging: true,
+        pageLength: 25,
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+        ordering: true,
+        searching: true,
+        responsive: true,
+        language: {
+            paginate: {
+                previous: "‹ Previous",
+                next: "Next ›"
+            },
+            lengthMenu: "Show _MENU_ entries",
+            info: "Showing _START_ to _END_ of _TOTAL_ complaints"
+        }
+    });
+});
+
+// Show image in modal
+function showImage(src) {
+    document.getElementById('modalImage').src = src;
+}
+
+// Download CSV with all fields including satisfaction and resolve time
+// Download CSV with all fields including satisfaction and resolve time
+document.getElementById("downloadCsvBtn").addEventListener("click", function() {
+    const csvData = [];
+    
+    // Define CSV headers
+    const headers = [
+        "Sr.No", "ID", "Status", "Location", "UC", "Source", "Type", "SubType", 
+        "Title", "Details", "Category", "Date", "Applicant", "Bill No", "CNIC", 
+        "Gender", "Consumer Type", "Cell No", "Phone No", "Area", "Address", 
+        "Tehsil", "Customer Satisfaction", "1334 Feedback", "Created At", "Resolved At", "Resolve Time", "Resolve Time (Hours)", "Resolve Time (Days),"
+    ];
+    
+    csvData.push(headers.map(h => '"' + h + '"').join(","));
+    
+    // Add data rows
+    {% for complaint in complaints %}
+    {% with created_action=complaint.actions.all|dictsort:"timestamp"|first %}
+    {% with resolved_actions=complaint.actions.all|dictsort:"timestamp" %}
+    
+    var resolvedTimestamp_{{ complaint.id }} = "N/A";
+    {% for action in resolved_actions %}
+        {% if action.action == 'resolved' %}
+            resolvedTimestamp_{{ complaint.id }} = "{{ action.timestamp|date:'Y-m-d H:i'|escapejs }}";
+        {% endif %}
+    {% endfor %}
+    
+    csvData.push([
+        "{{ forloop.counter }}",
+        "{{ complaint.id }}",
+        "{{ complaint.status|escapejs }}",
+        "{{ complaint.location.location_name|escapejs }}",
+        "{{ complaint.uc|default:'N/A'|escapejs }}",
+        "{{ complaint.complaint_source.source_name|escapejs }}",
+        "{{ complaint.complaint_type.type_name|escapejs }}",
+        "{{ complaint.SubType.type_name|default:'N/A'|escapejs }}",
+        "{{ complaint.title|default:'N/A'|escapejs }}",
+        "{{ complaint.complaint_detail|escapejs }}",
+        "{{ complaint.type|default:'N/A'|escapejs }}",
+        "{{ complaint.date|escapejs }}",
+        "{{ complaint.first_name|escapejs }} {{ complaint.last_name|escapejs }}",
+        "{{ complaint.bill_number|default:'N/A'|escapejs }}",
+        "{{ complaint.cnic|default:'N/A'|escapejs }}",
+        "{{ complaint.gender|default:'N/A'|escapejs }}",
+        "{{ complaint.consumer_type|default:'N/A'|escapejs }}",
+        "{{ complaint.cell_number|default:'N/A'|escapejs }}",
+        "{{ complaint.phone_number|default:'N/A'|escapejs }}",
+        "{{ complaint.area|default:'N/A'|escapejs }}",
+        "{{ complaint.address|default:'N/A'|escapejs }}",
+        "{{ complaint.tehsil|default:'N/A'|escapejs }}",
+        "{% if complaint.resolution.customer_satisfaction %}{{ complaint.resolution.get_customer_satisfaction_display|escapejs }}{% else %}N/A{% endif %}",
+        "{{ complaint.responses.first.get_feedback_display|default:'N/A'|escapejs }}",
+
+        "{% if created_action and created_action.action == 'created' %}{{ created_action.timestamp|date:'Y-m-d H:i'|escapejs }}{% else %}N/A{% endif %}",
+        resolvedTimestamp_{{ complaint.id }},
+        "{{ complaint.resolve_time_formatted|default:'N/A' }}",
+        "{{ complaint.resolve_time_hours|default:'N/A' }}",
+        "{{ complaint.resolve_time_days|default:'N/A' }}"
+    ].map(cell => '"' + String(cell).replace(/"/g, '""') + '"').join(","));
+    
+    {% endwith %}
+    {% endwith %}
+    {% endfor %}
+    
+    // Create and download
+    const csvString = "\uFEFF" + csvData.join("\n");
+    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "complaint_report_" + new Date().toISOString().split('T')[0] + ".csv";
+    link.click();
+});
+</script>
+
+<style>
+.cursor-pointer {
+    cursor: pointer;
+}
+.img-thumbnail {
+    transition: transform 0.2s;
+}
+.img-thumbnail:hover {
+    transform: scale(1.1);
+}
+.border-left-primary {
+    border-left: 0.25rem solid #4e73df !important;
+}
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+}
+.border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+}
+.border-left-warning {
+    border-left: 0.25rem solid #f6c23e !important;
+}
+</style>
+
+{% endblock %}

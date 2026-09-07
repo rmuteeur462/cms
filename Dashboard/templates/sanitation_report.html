@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}Daily Sanitation Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <h1 class="h3 mb-4 text-gray-800" style="font-weight: bold; font-size: 1.5rem; text-align: center;">
+        Daily Sanitation Report for {{ report_date }}
+    </h1>
+
+    <!-- Filter Form -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="form-inline mb-3">
+                <div class="form-group mr-3">
+                    <label for="date" class="mr-2">Select Date:</label>
+                    <input type="date" class="form-control" name="date" value="{{ report_date|date:'Y-m-d' }}" required>
+                </div>
+                <button type="submit" class="btn btn-primary mb-2">Filter</button>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Modal Button -->
+    <button class="btn btn-primary mb-4" data-toggle="modal" data-target="#entryModal">
+        <i class="fas fa-plus-circle"></i> Add or Update Sanitation Data
+    </button>
+
+
+    <button 
+        type="button"
+        class="btn btn-primary mb-4"
+        onclick="window.location.href='{% url 'sanitation_data' %}'">
+        <i class="fas fa-file-alt me-1"></i>
+        Sanitation Report
+    </button>
+
+
+    <!-- Data Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Sanitation Data</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 50px;">Sr. No</th>
+                            <th style="min-width: 120px;">Location</th>
+                            <th style="min-width: 170px;">Primary Waste Collection</th>
+                            <th style="min-width: 170px;">Waste Locally Dumped</th>
+                            <th style="min-width: 170px;">Waste Dumped at LFS </th>
+                            <th style="min-width: 100px;">LFS Trips</th>
+                            <th style="min-width: 140px;">Local Dumping Trips</th>
+                            <th style="min-width: 150px;">Door to Door Collection</th>
+                            <th style="min-width: 150px;">Replacement of Manhole Covers</th>
+                            <th style="min-width: 180px;">Cleaning De-siltation of Manhole</th>
+                            <th style="min-width: 200px;">Cleaning De-siltation of Drain Sewers (Km)</th>
+                            <th style="min-width: 140px;">Fumigation Sprays</th>
+                            <th style="min-width: 100px;">IR Spray</th>
+                            <th style="min-width: 120px;">Rate Killing</th>          <!-- ✅ New Column -->
+                            <th style="min-width: 120px;">Dog Catching</th>        <!-- ✅ New Column -->
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in total_data %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ entry.location.location_name }}</td>
+                            <td>{{ entry.primary_waste_collection }}</td>
+                            <td>{{ entry.waste_locally_dumped }}</td>
+                            <td>{{ entry.waste_dumped_at_lfs }}</td>
+                            <td>{{ entry.lfs_trips }}</td>
+                            <td>{{ entry.local_dumping_trips }}</td>
+                            <td>{{ entry.door_to_door_collection }}</td>
+                            <td>{{ entry.replacement_of_manhole_covers }}</td>
+                            <td>{{ entry.cleaning_de_siltation_of_manhole }}</td>
+                            <td>{{ entry.cleaning_de_siltation_of_drain_sewars }}</td>
+                            <td>{{ entry.fumigation_sprays }}</td>
+                            <td>{{ entry.ir_spray }}</td>
+                            <td>{{ entry.rate_killing }}</td>               <!-- ✅ New Data -->
+                            <td>{{ entry.dog_catching }}</td>              <!-- ✅ New Data -->
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td></td>
+                            <td><strong>Total</strong></td>
+                            <td><strong>{{ totals.primary_waste_collection }}</strong></td>
+                            <td><strong>{{ totals.waste_locally_dumped }}</strong></td>
+                            <td><strong>{{ totals.waste_dumped_at_lfs }}</strong></td>
+                            <td><strong>{{ totals.lfs_trips }}</strong></td>
+                            <td><strong>{{ totals.local_dumping_trips }}</strong></td>
+                            <td><strong>{{ totals.door_to_door_collection }}</strong></td>
+                            <td><strong>{{ totals.replacement_of_manhole_covers }}</strong></td>
+                            <td><strong>{{ totals.cleaning_de_siltation_of_manhole }}</strong></td>
+                            <td><strong>{{ totals.cleaning_de_siltation_of_drain_sewars }}</strong></td>
+                            <td><strong>{{ totals.fumigation_sprays }}</strong></td>
+                            <td><strong>{{ totals.ir_spray }}</strong></td>
+                            <td><strong>{{ totals.rate_killing }}</strong></td>       <!-- ✅ New Total -->
+                            <td><strong>{{ totals.dog_catching }}</strong></td>      <!-- ✅ New Total -->
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Structure -->
+    <div class="modal fade" id="entryModal" tabindex="-1" role="dialog" aria-labelledby="entryModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="entryModalLabel">Add New Sanitation Entry</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form method="post" action="{% url 'daily_sanitation_report' %}">
+                        {% csrf_token %}
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                        {% endif %}
+
+                        <div class="form-group">
+                            {{ form.location.label_tag }}
+                            {{ form.location }}
+                            {% if form.location.errors %}
+                                <ul class="errorlist">
+                                    {% for error in form.location.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ form.date.label_tag }} 
+                            {{ form.date }}
+                        </div>
+                     
+                        <div class="form-group">
+                            {{ form.primary_waste_collection_tons.label_tag }} 
+                            {{ form.primary_waste_collection_tons }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.waste_locally_dumped_tons.label_tag }} 
+                            {{ form.waste_locally_dumped_tons }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.waste_dumped_at_lfs_tons.label_tag }} 
+                            {{ form.waste_dumped_at_lfs_tons }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.lfs_trips_no.label_tag }} 
+                            {{ form.lfs_trips_no }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.local_dumping_trips_no.label_tag }} 
+                            {{ form.local_dumping_trips_no }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.door_to_door_solid_waste_collection_no.label_tag }} 
+                            {{ form.door_to_door_solid_waste_collection_no }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.replacement_of_manhole_covers.label_tag }} 
+                            {{ form.replacement_of_manhole_covers }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.cleaning_de_siltation_of_manholes.label_tag }} 
+                            {{ form.cleaning_de_siltation_of_manholes }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.cleaning_de_siltation_of_drain_sewars_km.label_tag }} 
+                            {{ form.cleaning_de_siltation_of_drain_sewars_km }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.fumigation_sprays_no.label_tag }} 
+                            {{ form.fumigation_sprays_no }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.ir_spray_no.label_tag }} 
+                            {{ form.ir_spray_no }}
+                        </div>
+                        <!-- ✅ New Fields in Modal -->
+                        <div class="form-group">
+                            {{ form.rate_killing_no.label_tag }} 
+                            {{ form.rate_killing_no }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.dog_catching_no.label_tag }} 
+                            {{ form.dog_catching_no }}
+                        </div>
+                        
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Save Entry</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    $('#entryModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);  // Button that triggered the modal
+        var locationId = button.data('location');
+        var reportDate = button.data('date');
+        
+        var modal = $(this);
+        modal.find('.modal-body #id_location').val(locationId);
+        modal.find('.modal-body #id_date').val(reportDate);
+    });
+</script>
+
+{% endblock %}

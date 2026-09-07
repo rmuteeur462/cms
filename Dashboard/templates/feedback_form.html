@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+  <h2 class="mb-4">{% if object %}Update Feedback{% else %}Add Feedback{% endif %}</h2>
+
+  <!-- Step 1: Search Complaint -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-body">
+      <label for="complaint_id" class="form-label fw-bold">Enter Complaint ID</label>
+      <div class="input-group">
+        <input type="number" id="complaint_id" class="form-control" placeholder="Complaint ID">
+        <button type="button" class="btn btn-primary" id="searchComplaintBtn">Search</button>
+      </div>
+      <div id="complaintError" class="text-danger mt-2"></div>
+    </div>
+  </div>
+
+  <!-- Step 2: Feedback Form (hidden initially) -->
+  <div class="card shadow-sm" id="feedbackFormCard" style="display: none;">
+    <div class="card-body">
+        <form method="post" id="feedbackForm">
+            {% csrf_token %}
+            
+            <!-- Hidden complaint field -->
+            <input type="hidden" name="complaint" value="">
+
+            <!-- Feedback Officer Name -->
+            <div class="mb-3">
+                <label for="id_feedback_officer_name" class="form-label">Officer Name</label>
+                {{ form.feedback_officer_name }}
+                {% if form.feedback_officer_name.errors %}
+                    <div class="text-danger">{{ form.feedback_officer_name.errors }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Complaint Feedback -->
+            <div class="mb-3">
+                <label for="id_complaint_feedback" class="form-label">Feedback</label>
+                {{ form.complaint_feedback }}
+                {% if form.complaint_feedback.errors %}
+                    <div class="text-danger">{{ form.complaint_feedback.errors }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Happy Choice -->
+            <div class="mb-3">
+                <label class="form-label">Happy</label>
+                {{ form.happy }}
+                {% if form.happy.errors %}
+                    <div class="text-danger">{{ form.happy.errors }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Form Buttons -->
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-success">Save</button>
+                <a href="{% url 'feedback_list' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+
+            <!-- Display non-field errors -->
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger mt-3">
+                    {% for error in form.non_field_errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+</div>
+
+<script>
+document.getElementById('searchComplaintBtn').addEventListener('click', function() {
+    const complaintId = document.getElementById('complaint_id').value.trim();
+    const errorDiv = document.getElementById('complaintError');
+    const formCard = document.getElementById('feedbackFormCard');
+
+    if (!complaintId) {
+        errorDiv.textContent = "Please enter a Complaint ID.";
+        formCard.style.display = "none";
+        return;
+    }
+
+    fetch("{% url 'complaint_check_api' %}?id=" + complaintId)
+      .then(response => {
+          if (!response.ok) throw new Error("Network response was not ok");
+          return response.json();
+      })
+      .then(data => {
+          if (data.exists) {
+              // Populate hidden complaint field
+              const complaintInput = document.querySelector('#feedbackForm input[name="complaint"]');
+              if (complaintInput) {
+                  complaintInput.value = complaintId;
+              }
+
+              formCard.style.display = "block";
+              errorDiv.textContent = "";
+          } else {
+              errorDiv.textContent = "❌ Complaint not found or already has feedback!";
+              formCard.style.display = "none";
+          }
+      })
+      .catch(error => {
+          console.error("Fetch error:", error);
+          errorDiv.textContent = "Error checking complaint. Please try again.";
+          formCard.style.display = "none";
+      });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-4">
+
+    <h4 class="fw-bold text-center mb-3">{{ title }}</h4>
+
+    <!-- FILTER FORM -->
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-md-2">
+            <input type="date" name="from_date" value="{{ request.GET.from_date }}" class="form-control">
+        </div>
+        <div class="col-md-2">
+            <input type="date" name="to_date" value="{{ request.GET.to_date }}" class="form-control">
+        </div>
+
+        <div class="col-md-2">
+            <select name="zone" class="form-select">
+                <option value="">All Zones</option>
+                {% for z in zones %}
+                <option value="{{ z.id }}" {% if request.GET.zone == z.id|stringformat:"s" %}selected{% endif %}>
+                    {{ z }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <select name="facility" class="form-select">
+                <option value="">All Facilities</option>
+                {% for f in facilities %}
+                <option value="{{ f.id }}" {% if request.GET.facility == f.id|stringformat:"s" %}selected{% endif %}>
+                    {{ f }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <input type="text" name="search" value="{{ request.GET.search }}" class="form-control" placeholder="Search">
+        </div>
+
+        <div class="col-md-2">
+            <select name="per_page" class="form-select mb-2">
+                <option value="10" {% if per_page == '10' %}selected{% endif %}>10 per page</option>
+                <option value="25" {% if per_page == '25' %}selected{% endif %}>25 per page</option>
+                <option value="50" {% if per_page == '50' %}selected{% endif %}>50 per page</option>
+                <option value="all" {% if per_page == 'all' %}selected{% endif %}>All</option>
+            </select>
+            <button class="btn btn-primary w-100">Filter</button>
+        </div>
+    </form>
+
+    <!-- EXCEL DOWNLOAD BUTTON -->
+    <div class="mb-2">
+        <button class="btn btn-success" onclick="downloadTableAsExcel('inspectionTable', '{{ title|default:"Report" }}')">
+            ⬇ Download Excel
+        </button>
+    </div>
+
+    <!-- TABLE -->
+    <table class="table table-bordered table-striped" id="inspectionTable">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Date</th>
+                <th>Zone</th>
+                <th>Facility</th>
+                <th>Free from Garbage / Rubble</th>
+                <th>Dry & Clean</th>
+                <th>Employee</th>
+                <th>Remark</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for obj in page_obj %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ obj.inspection_date }}</td>
+                <td>{{ obj.zone }}</td>
+                <td>{{ obj.facility_name }}</td>
+
+                <!-- YES/NO columns -->
+                <td class="text-center">
+                    {% if obj.free_from_garbage_rubble == 'Yes' %}
+                        <span class="badge bg-success">YES</span>
+                    {% else %}
+                        <span class="badge bg-danger">NO</span>
+                    {% endif %}
+                </td>
+
+                <td class="text-center">
+                    {% if obj.dry_and_clean == 'Yes' %}
+                        <span class="badge bg-success">YES</span>
+                    {% else %}
+                        <span class="badge bg-danger">NO</span>
+                    {% endif %}
+                </td>
+
+                <td>{{ obj.emp_name|default:"—" }}</td>
+                <td>{{ obj.remark|default:"—" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" class="text-center text-muted">
+                    No inspection record found
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- PAGINATION -->
+    {% if per_page != 'all' %}
+    <nav>
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&per_page={{ per_page }}{% if request.GET.from_date %}&from_date={{ request.GET.from_date }}{% endif %}{% if request.GET.to_date %}&to_date={{ request.GET.to_date }}{% endif %}{% if request.GET.zone %}&zone={{ request.GET.zone }}{% endif %}{% if request.GET.facility %}&facility={{ request.GET.facility }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Previous</a>
+            </li>
+            {% endif %}
+
+            <li class="page-item active">
+                <span class="page-link">{{ page_obj.number }}</span>
+            </li>
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}&per_page={{ per_page }}{% if request.GET.from_date %}&from_date={{ request.GET.from_date }}{% endif %}{% if request.GET.to_date %}&to_date={{ request.GET.to_date }}{% endif %}{% if request.GET.zone %}&zone={{ request.GET.zone }}{% endif %}{% if request.GET.facility %}&facility={{ request.GET.facility }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Next</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+</div>
+
+<!-- ====== EXCEL DOWNLOAD SCRIPT ====== -->
+<script>
+function downloadTableAsExcel(tableID, filename = ''){
+    var table = document.getElementById(tableID);
+
+    // Clone table to remove badges
+    var clonedTable = table.cloneNode(true);
+    clonedTable.querySelectorAll('.badge').forEach(el => el.outerHTML = el.textContent);
+
+    var wb = XLSX.utils.table_to_book(clonedTable, {sheet:"Sheet1"});
+    XLSX.writeFile(wb, filename + ".xlsx");
+}
+</script>
+
+<!-- Include XLSX library from CDN -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+{% endblock %}

@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}Manhole List{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+<!-- 🔷 Header -->
+<div class="mb-3 text-center">
+    <h3><strong>Manhole Data</strong></h3>
+
+    <div class="mt-3 d-flex justify-content-center gap-2">
+        <a href="{% url 'manhole_create' %}" class="btn btn-primary">
+            + Add Manhole
+        </a>
+        <a href="{% url 'manhole_dashboard' %}" class="btn btn-primary">
+            Analytics Dashboard
+        </a>
+        <a href="{% url 'manhole_map' %}" class="btn btn-primary">
+            GIS Map
+        </a>
+    </div>
+</div>
+
+<!-- ✅ SUMMARY -->
+<div class="row text-center mb-4">
+
+    <div class="col-md-4">
+        <div class="card bg-primary text-white p-3">
+            <h5>Total</h5>
+            <h3>{{ summary.total }}</h3>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card bg-danger text-white p-3">
+            <h5>Open</h5>
+            <h3>{{ summary.open }}</h3>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card bg-success text-white p-3">
+            <h5>Covered</h5>
+            <h3>{{ summary.covered }}</h3>
+        </div>
+    </div>
+
+</div>
+
+<!-- ✅ FILTERS -->
+<form method="get" class="row mb-3">
+
+    <div class="col-md-3">
+        <select name="zone" id="zoneFilter" class="form-control">
+            <option value="">All Zones</option>
+            {% for z in zones %}
+            <option value="{{ z.id }}" {% if selected_zone == z.id|stringformat:"s" %}selected{% endif %}>
+                {{ z.location_name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="col-md-3">
+        <select name="uc" id="ucFilter" class="form-control">
+            <option value="">All UC</option>
+            {% for u in ucs %}
+            <option value="{{ u.id }}" data-zone="{{ u.location.id }}"
+                {% if selected_uc == u.id|stringformat:"s" %}selected{% endif %}>
+                {{ u.uc_name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="col-md-3">
+        <select name="status" class="form-control">
+            <option value="">All Status</option>
+            <option value="open" {% if selected_status == "open" %}selected{% endif %}>Open</option>
+            <option value="covered" {% if selected_status == "covered" %}selected{% endif %}>Covered</option>
+        </select>
+    </div>
+
+    <div class="col-md-3">
+        <button class="btn btn-success w-100">Apply Filter</button>
+    </div>
+
+</form>
+
+<!-- 🔍 SEARCH -->
+<div class="mb-3" style="max-width:300px;">
+    <input type="text" id="searchInput" class="form-control" placeholder="🔍 Search Manhole...">
+</div>
+
+<!-- ✅ TABLE -->
+<table class="table table-bordered table-striped" id="manholeTable">
+
+<thead class="table-dark">
+<tr>
+    <th>ID</th>
+    <th>Zone</th>
+    <th>UC</th>
+    <th>Shape</th>
+    <th>Cover Size</th>
+    <th>Material</th>
+    <th>Status</th>
+    <th>Location</th>
+    <th>Actions</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for manhole in page_obj %}
+
+<tr>
+    <td>{{ forloop.counter }}</td>
+    <td>{{ manhole.uc.location.location_name }}</td>
+    <td>{{ manhole.uc.uc_name }}</td>
+    <td>{{ manhole.shape }}</td>
+    <td>{{ manhole.cover_size }}</td>
+    <td>{{ manhole.cover_material }}</td>
+
+    <td>
+        {% if manhole.status == "open" %}
+            <span class="badge bg-danger">Open</span>
+        {% else %}
+            <span class="badge bg-success">Covered</span>
+        {% endif %}
+    </td>
+
+    <!-- 📍 Map -->
+    <td>
+        {% if manhole.latitude and manhole.longitude %}
+        <a href="https://www.google.com/maps?q={{ manhole.latitude }},{{ manhole.longitude }}" 
+           target="_blank">
+           📍 {{ manhole.latitude }}, {{ manhole.longitude }}
+                </a>
+        {% else %}
+        <span class="text-muted">No Location</span>
+        {% endif %}
+    </td>
+
+    <td>
+        <a href="{% url 'manhole_update' manhole.id %}" class="btn btn-sm btn-warning">Edit</a>
+        <a href="{% url 'manhole_delete' manhole.id %}" class="btn btn-sm btn-danger">Delete</a>
+    </td>
+
+</tr>
+
+{% empty %}
+
+<tr>
+<td colspan="9" class="text-center">No Manhole Found</td>
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+<!-- ✅ PAGINATION -->
+<nav>
+<ul class="pagination justify-content-center">
+
+    {% if page_obj.has_previous %}
+    <li class="page-item">
+        <a class="page-link" href="?page=1">First</a>
+    </li>
+    <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+    </li>
+    {% endif %}
+
+    <li class="page-item active">
+        <span class="page-link">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+    </li>
+
+    {% if page_obj.has_next %}
+    <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+    </li>
+    <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+    </li>
+    {% endif %}
+
+</ul>
+</nav>
+
+</div>
+
+<!-- 🔎 SEARCH SCRIPT -->
+<script>
+document.getElementById("searchInput").addEventListener("keyup", function() {
+
+    let filter = this.value.toLowerCase();
+    let rows = document.querySelectorAll("#manholeTable tbody tr");
+
+    rows.forEach(function(row) {
+        let text = row.innerText.toLowerCase();
+        row.style.display = text.includes(filter) ? "" : "none";
+    });
+
+});
+</script>
+
+<!-- 🎯 ZONE → UC FILTER -->
+<script>
+
+document.getElementById("zoneFilter").addEventListener("change", function() {
+
+    let zoneId = this.value;
+    let ucOptions = document.querySelectorAll("#ucFilter option");
+
+    ucOptions.forEach(function(option) {
+
+        if (!option.value) return;
+
+        let optionZone = option.getAttribute("data-zone");
+
+        if (!zoneId || optionZone === zoneId) {
+            option.style.display = "block";
+        } else {
+            option.style.display = "none";
+        }
+
+    });
+
+});
+
+</script>
+
+{% endblock %}

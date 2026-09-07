@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+
+
+     <h3 class="text-center fw-bold mb-4">TubeWell M&E Monthly Report</h3>
+
+    <!-- Month Selector -->
+   <form method="get" class="mb-4">
+    <div class="row justify-content-center">
+        <!-- Location Filter -->
+        <div class="col-md-4">
+            <label for="location" class="form-label fw-bold">Select Location:</label>
+            <select name="location" id="location" class="form-select" onchange="this.form.submit()">
+                <option value="">All Locations</option>
+                {% for loc in locations %}
+                    <option value="{{ loc.id }}" {% if loc.id == selected_location %}selected{% endif %}>
+                        {{ loc.location_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Month Filter -->
+        <div class="col-md-4">
+            <label for="month" class="form-label fw-bold">Select Month:</label>
+            <select name="month" id="month" class="form-select" onchange="this.form.submit()">
+                {% for month in month_choices %}
+                    <option value="{{ month.value }}" {% if month.value == selected_month %}selected{% endif %}>
+                        {{ month.label }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+</form>
+
+<!-- CSV Download Button -->
+    <div class="text-right mb-2">
+                    <button id="downloadCsvBtn" class="btn btn-sm btn-primary">Download CSV</button>
+
+       
+        </button>
+    </div>
+
+
+   
+<!-- Summary Table Card -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+    <h6 class="m-0 font-weight-bold text-primary">TubeWell Monthly Summary</h6>
+    <div>
+        <span class="badge bg-success me-1" style="opacity: 0.85;">
+            0 - 0.15 ({{ low_count }})
+        </span>
+    
+        <span class="badge bg-primary me-1" style="opacity: 0.85;">
+            0.15 - 0.3 ({{ medium_count }})
+        </span>
+    
+        <span class="badge bg-danger me-1" style="opacity: 0.85;">
+            &gt; 0.3 ({{ high_count }})
+        </span>
+    
+        <span class="badge bg-secondary" style="opacity: 0.85;">
+            N/A ({{ na_count }})
+        </span>
+    </div>
+    
+</div>
+
+
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="monthlySummaryTable" class="table table-bordered table-striped table-hover shadow-sm bg-white">
+                <thead class="bg-primary text-white">
+                    <tr>
+                        <th>Sr No</th>
+                        <th>TubeWell Name</th>
+                        <th>TubeWell ID</th>
+                        <th>Total Water Produced <small>(m³)</small></th>
+                        <th>Total Electricity Used <small>(kWh)</small></th>
+                        <th>Electricity per m³ <small>(kWh/m³)</small></th>
+                    </tr>
+                </thead>
+              <tbody>
+    {% for row in report_data %}
+        <tr
+            {% if row.electricity_per_cum is not None %}
+                {% if row.electricity_per_cum <= 0.15 %}
+                    class="table-success"
+                {% elif row.electricity_per_cum <= 0.3 %}
+                    class="table-primary"
+                {% else %}
+                    class="table-danger"
+                {% endif %}
+            {% else %}
+                class="table-secondary"
+            {% endif %}
+        >
+            <td>{{ forloop.counter }}</td>
+            <td>{{ row.tubewell_name }}</td>
+            <td>{{ row.tubewell_id }}</td>
+            <td>{{ row.total_cum }}</td>
+            <td>{{ row.total_kwh }}</td>
+            <td>
+                {% if row.electricity_per_cum is not None %}
+                    {% if row.electricity_per_cum <= 0.15 %}
+                        <span class="badge bg-success">{{ row.electricity_per_cum }}</span>
+                    {% elif row.electricity_per_cum <= 0.3 %}
+                        <span class="badge bg-primary">{{ row.electricity_per_cum }}</span>
+                    {% else %}
+                        <span class="badge bg-danger">{{ row.electricity_per_cum }}</span>
+                    {% endif %}
+                {% else %}
+                    <span class="badge bg-secondary">N/A</span>
+                {% endif %}
+            </td>
+        </tr>
+    {% empty %}
+        <tr>
+            <td colspan="6" class="text-center">No data available.</td>
+        </tr>
+    {% endfor %}
+</tbody>
+
+
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('downloadCsvBtn').addEventListener('click', function() {
+    const table = document.getElementById('monthlySummaryTable');
+    let csv = [];
+    // Get headers
+    let headers = [];
+    table.querySelectorAll('thead th').forEach(th => {
+        // Replace any commas inside header text to avoid CSV issues
+        headers.push('"' + th.innerText.replace(/"/g, '""') + '"');
+    });
+    csv.push(headers.join(','));
+
+    // Get rows
+    table.querySelectorAll('tbody tr').forEach(tr => {
+        let row = [];
+        tr.querySelectorAll('td').forEach(td => {
+            let text = td.innerText.trim();
+            // Replace double quotes with two double quotes for CSV escaping
+            text = text.replace(/"/g, '""');
+            row.push('"' + text + '"');
+        });
+        csv.push(row.join(','));
+    });
+
+    // Create CSV file and trigger download
+    const csvString = csv.join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+
+    // You can customize filename here:
+    a.download = 'tubewell_monthly_summary.csv';
+
+    document.body.appendChild(a);
+    a.click();
+
+    // Clean up
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+});
+</script>
+
+</div>
+{% endblock %}
+
+{# IMPORTANT: Make sure your base.html uses "scripts" block name, NOT "extra_scripts" #}
+{% block scripts %}
+<!-- Load CSS for DataTables -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+
+<script>
+    $(document).ready(function () {
+        const table = $('#monthlySummaryTable').DataTable({
+            paging: true,
+            pageLength: 25,
+            searching: true,
+            ordering: true,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+        });
+
+        // Highlight TubeWell Name and ID during search
+        $('#monthlySummaryTable_filter input').on('keyup change clear', function () {
+            var searchValue = $(this).val();
+            table.rows().every(function () {
+                var row = $(this.node());
+                row.find('td').each(function (index) {
+                    if (index === 1 || index === 2) {  // TubeWell Name or ID
+                        var cell = $(this);
+                        var cellText = cell.text();
+                        if (searchValue) {
+                            var regex = new RegExp('(' + searchValue + ')', 'gi');
+                            var newText = cellText.replace(regex, "<span class='highlight'>$1</span>");
+                            cell.html(newText);
+                        } else {
+                            cell.text(cellText); // Remove highlight if search is cleared
+                        }
+                    }
+                });
+            });
+        });
+    });
+</script>
+
+<style>
+    .highlight {
+        background-color: yellow;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}

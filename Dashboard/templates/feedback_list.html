@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Complaint Feedback</h2>
+
+
+<form method="get" class="row g-3 mb-3">
+  <div class="col-auto">
+    <label for="from_date" class="form-label">From</label>
+    <input type="date" id="from_date" name="from_date" class="form-control" value="{{ request.GET.from_date }}">
+  </div>
+  <div class="col-auto">
+    <label for="to_date" class="form-label">To</label>
+    <input type="date" id="to_date" name="to_date" class="form-control" value="{{ request.GET.to_date }}">
+  </div>
+  <div class="col-auto align-self-end">
+    <button type="submit" class="btn btn-primary">Filter</button>
+    <a href="{% url 'feedback_list' %}" class="btn btn-secondary">Reset</a>
+  </div>
+</form>
+<a href="{% url 'feedback_create' %}" class="btn btn-primary mb-3">Add Feedback</a>
+<div class="table-responsive shadow-sm rounded">
+  <table class="table table-hover table-bordered align-middle">
+    <thead class="table-dark">
+      <tr>
+        <th>Complaint ID</th>
+        <th>Officer</th>
+        <th>Feedback</th>
+        <th>complaint satisfaction</th>
+        <th>Feedback Date</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for fb in feedback_list %}
+      <tr>
+        <td>{{ fb.complaint.id }}</td>
+        <td>{{ fb.feedback_officer_name }}</td>
+        <td>{{ fb.complaint_feedback|truncatewords:8 }}</td>
+        <td>
+          {% if fb.happy %}
+            <span class="badge bg-success">Yes</span>
+          {% else %}
+            <span class="badge bg-danger">No</span>
+          {% endif %}
+        </td>
+        <td>{{ fb.created_at|date:"Y-m-d H:i" }}</td>
+        <td>
+          <button 
+            class="btn btn-info btn-sm"
+            data-bs-toggle="modal"
+            data-bs-target="#complaintModal{{ fb.id }}">
+            Info
+          </button>
+        </td>
+      </tr>
+
+      <!-- Modal -->
+      <div class="modal fade" id="complaintModal{{ fb.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+          <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+              <h5 class="modal-title">Complaint #{{ fb.complaint.id }} Details</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <!-- Complaint Info Card -->
+              <div class="card mb-3 shadow-sm">
+                <div class="card-header bg-light fw-bold">Complaint Information</div>
+                <div class="card-body">
+                  <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><b>PCP Complaint No:</b> {{ fb.complaint.Pcp_compalin_no }}</li>
+                    <li class="list-group-item"><b>EAK Complaint No:</b> {{ fb.complaint.Eak_compalin_no }}</li>
+                    <li class="list-group-item"><b>Title:</b> {{ fb.complaint.title }}</li>
+                    <li class="list-group-item"><b>Type:</b> {{ fb.complaint.get_type_display }}</li>
+                    <li class="list-group-item"><b>Status:</b> {{ fb.complaint.get_status_display }}</li>
+                    <li class="list-group-item"><b>Date:</b> {{ fb.complaint.date }}</li>
+                    <li class="list-group-item"><b>Complaint Type:</b> {{ fb.complaint.complaint_type }}</li>
+                    <li class="list-group-item"><b>Sub Type:</b> {{ fb.complaint.SubType }}</li>
+                    <li class="list-group-item"><b>Details:</b> {{ fb.complaint.complaint_detail }}</li>
+                  </ul>
+                </div>
+              </div>
+
+              <!-- Complainant Info Card -->
+              <div class="card mb-3 shadow-sm">
+                <div class="card-header bg-light fw-bold">Complainant Information</div>
+                <div class="card-body">
+                  <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><b>Name:</b> {{ fb.complaint.first_name }} {{ fb.complaint.last_name }}</li>
+                    <li class="list-group-item"><b>Cell#:</b> {{ fb.complaint.cell_number }}</li>
+                    <li class="list-group-item"><b>Phone#:</b> {{ fb.complaint.phone_number }}</li>
+                    <li class="list-group-item"><b>CNIC:</b> {{ fb.complaint.cnic }}</li>
+                    <li class="list-group-item"><b>Area:</b> {{ fb.complaint.area }}</li>
+                    <li class="list-group-item"><b>Address:</b> {{ fb.complaint.address }}</li>
+                    <li class="list-group-item"><b>Tehsil:</b> {{ fb.complaint.tehsil }}</li>
+                    <li class="list-group-item"><b>Gender:</b> {{ fb.complaint.get_gender_display }}</li>
+                    <li class="list-group-item"><b>Consumer Type:</b> {{ fb.complaint.get_consumer_type_display }}</li>
+                  </ul>
+                </div>
+              </div>
+
+              <!-- Feedback Info Card -->
+              <div class="card mb-3 shadow-sm">
+                <div class="card-header bg-light fw-bold">Feedback Information</div>
+                <div class="card-body">
+                  <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><b>Officer:</b> {{ fb.feedback_officer_name }}</li>
+                    <li class="list-group-item"><b>Feedback:</b> {{ fb.complaint_feedback }}</li>
+                    <li class="list-group-item"><b>Happy:</b> {{ fb.get_happy_display }}</li>
+                    <li class="list-group-item"><b>Feedback Date:</b> {{ fb.created_at|date:"Y-m-d H:i" }}</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- End Modal -->
+
+      {% empty %}
+      <tr><td colspan="6" class="text-center">No feedback found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+</div>
+{% endblock %}

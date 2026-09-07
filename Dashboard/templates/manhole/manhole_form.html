@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Add / Update Manhole{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <h3 class="text-center mb-4">Add / Update Manhole</h3>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="row">
+
+            <div class="col-md-6 mb-3">
+                <label>UC</label>
+                {{ form.uc }}
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label>Shape</label>
+                {{ form.shape }}
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label>Cover Size</label>
+                {{ form.cover_size }}
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label>Cover Material</label>
+                {{ form.cover_material }}
+            </div>
+
+          
+
+            <div class="col-md-6 mb-3">
+                <label>Latitude</label>
+                {{ form.latitude }}
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label>Longitude</label>
+                {{ form.longitude }}
+            </div>
+
+
+            <div class="col-md-6 mb-3">
+                <label>Status</label>
+                {{ form.status }}
+            </div>
+
+        </div>
+
+        <!-- Leaflet Map -->
+        <!-- <div class="mb-3">
+            <label>Pick Location on Map</label>
+            <div id="map" style="height: 400px; width: 100%; border:1px solid #ccc;"></div>
+        </div> -->
+
+        <button type="submit" class="btn btn-success">Save</button>
+        <a href="{% url 'manhole_list' %}" class="btn btn-secondary">Back</a>
+
+    </form>
+
+</div>
+
+<!-- Leaflet CSS & JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    const latField = document.getElementById("id_latitude");
+    const lngField = document.getElementById("id_longitude");
+
+    const defaultLat = parseFloat(latField.value) || 34.0;
+    const defaultLng = parseFloat(lngField.value) || 71.5;
+
+    const map = L.map('map').setView([defaultLat, defaultLng], 12);
+
+    // OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Marker
+    const marker = L.marker([defaultLat, defaultLng], {draggable:true}).addTo(map);
+
+    // Update fields when marker dragged
+    marker.on('dragend', function(e){
+        const pos = marker.getLatLng();
+        latField.value = pos.lat.toFixed(6);
+        lngField.value = pos.lng.toFixed(6);
+    });
+
+    // Update marker when map clicked
+    map.on('click', function(e){
+        marker.setLatLng(e.latlng);
+        latField.value = e.latlng.lat.toFixed(6);
+        lngField.value = e.latlng.lng.toFixed(6);
+    });
+
+</script>
+
+{% endblock %}

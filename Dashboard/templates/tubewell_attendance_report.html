@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Tubewell Report
+{% endblock %}
+
+{% block content %}
+<h2 class="text-center">Tubewell Report</h2>
+
+<!-- Filter Form -->
+<form method="get" action="{% url 'tubewell_attendance_report' %}" class="mb-4">
+    <div class="form-row">
+        <div class="form-group col-md-3">
+            <label for="from_date">From Date:</label>
+            <input type="date" id="from_date" name="from_date" class="form-control" value="{{ from_date|date:'Y-m-d' }}">
+        </div>
+        <div class="form-group col-md-3">
+            <label for="to_date">To Date:</label>
+            <input type="date" id="to_date" name="to_date" class="form-control" value="{{ to_date|date:'Y-m-d' }}">
+        </div>
+        <div class="form-group col-md-3">
+            <label for="location">Location:</label>
+            <select id="locationFilter" name="location" class="form-control">
+                <option value="">All Locations</option>
+                {% for location in locations %}
+                    <option value="{{ location.location_name }}" {% if location.location_name == location_filter %}selected{% endif %}>
+                        {{ location.location_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group col-md-3">
+            <label for="uc">UC:</label>
+            <select id="ucFilter" name="uc" class="form-control">
+                <option value="">All UCs</option>
+                {% for uc in ucs %}
+                    <option value="{{ uc.uc_name }}" {% if uc.uc_name == uc_filter %}selected{% endif %}>
+                        {{ uc.uc_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group col-md-3">
+            <label for="tubewell_id">Tubewell ID:</label>
+            <input type="text" id="tubewell_id" name="tubewell_id" class="form-control" value="{{ tubewell_id_filter }}">
+        </div>
+        <div class="form-group col-md-3">
+            <label for="tubewell_name">Tubewell Name:</label>
+            <input type="text" id="tubewell_name" name="tubewell_name" class="form-control" value="{{ tubewell_name_filter }}">
+        </div>
+    </div>
+    <div class="text-center">
+        <button type="submit" class="btn btn-primary">Generate Report</button>
+        <button type="submit" name="download_csv" value="true" class="btn btn-success">Download CSV</button>
+    </div>
+</form>
+
+<!-- Attendance Table -->
+<div class="table-responsive">
+    <table class="table table-bordered table-hover shadow-sm bg-white">
+        <thead class="bg-primary text-white">
+            <tr>
+                <th>Serial No.</th>
+                <th>Tubewell ID</th>
+                <th>Tubewell Name</th>
+                <th>Location</th>
+                <th>UC</th>
+                <th>Date</th>
+                <th>Operational</th>
+                <th>Non Operational</th>
+                <th>Non Functional</th>
+                
+                <th>Run Hour</th>
+                <th>Electricity Consume</th>
+                <th>Water Produce</th>
+                <th>Remarks</th>
+                <th>Water Test (Yes/No)</th>
+                <th>Test Output (Safe/Unsafe)</th>
+                <th>Tubewell Repair (Yes/No)</th>
+                <th>Repair Cost</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for data in attendance_data %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ data.tubewell_id }}</td>
+                <td>{{ data.tubewell_name }}</td>
+                <td>{{ data.location.location_name }}</td>
+                <td>{{ data.uc.uc_name }}</td>
+                <td>{{ data.attendance_date }}</td>
+                <td>{{ data.functional|yesno:"Yes,No" }}</td>
+                <td>{{ data.non_functional|yesno:"Yes,No" }}</td>
+                <td>{{ data.non_operational|yesno:"Yes,No" }}</td>
+                
+                <td>{{ data.run_hour }}</td>
+                <td>{{ data.electricity_consume }}</td>
+                <td>{{ data.water_produce }}</td>
+                <td>{{ data.remarks }}</td>
+                <td>{{ data.water_test }}</td>
+                <td>{{ data.test_output }}</td>
+                <td>{{ data.tubewell_repair }}</td>
+                <td>{{ data.repair_cost }}</td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <td colspan="8"><strong>Totals:</strong></td>
+                <td><strong>{{ total_run_hour }}</strong></td>
+                <td><strong>{{ total_electricity_consume }}</strong></td>
+                <td><strong>{{ total_water_produce }}</strong></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td colspan="15" class="text-right"><strong>Total Repair Cost:</strong> <strong>{{ total_repair_cost }}</strong></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- JavaScript to dynamically update UCs based on selected location -->
+<script>
+    document.getElementById('locationFilter').addEventListener('change', function() {
+        const location = this.value;
+        const url = "{% url 'uc-list' %}?location=" + location;  // Replace 'uc-list' with the correct URL
+
+        // Fetch the UCs based on the selected location
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                const ucSelect = document.getElementById('ucFilter');
+                ucSelect.innerHTML = '<option value="">All UCs</option>';  // Clear current options
+                data.ucs.forEach(uc => {
+                    const option = document.createElement('option');
+                    option.value = uc.uc_name;
+                    option.textContent = uc.uc_name;
+                    ucSelect.appendChild(option);
+                });
+            });
+    });
+</script>
+
+{% endblock %}

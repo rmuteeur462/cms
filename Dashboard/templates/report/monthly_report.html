@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Monthly Report{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        padding: 20px;
+        background-color: #f8f9fa;
+    }
+
+    h3 {
+        text-align: center;
+        margin: 25px 0 15px;
+        font-weight: bold;
+    }
+
+    table {
+        background: #fff;
+    }
+
+    th {
+        text-align: center;
+        background-color: #343a40;
+        color: white;
+    }
+
+    td {
+        text-align: center;
+    }
+
+    .report-header {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .filter-box {
+        background: #fff;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .btn-print {
+        margin-bottom: 15px;
+    }
+
+    @media print {
+        .btn-print,
+        .filter-box,
+        .btn-excel {
+            display: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <!-- ================= HEADER ================= -->
+    <div class="report-header">
+        <h2>PMER Monthly Report</h2>
+        <h6>
+            From <strong>{{ from_date }}</strong>
+            To <strong>{{ to_date }}</strong>
+        </h6>
+    </div>
+
+    <!-- ================= FILTER ================= -->
+    <div class="filter-box shadow-sm">
+        <form method="get" class="row g-3">
+
+            <div class="col-md-3">
+                <label class="form-label">From Date</label>
+                <input type="date" name="from_date" class="form-control" value="{{ from_date }}">
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">To Date</label>
+                <input type="date" name="to_date" class="form-control" value="{{ to_date }}">
+            </div>
+
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">Apply Filter</button>
+                <a href="{% url 'monthly_report' %}" class="btn btn-secondary">Reset</a>
+            </div>
+
+        </form>
+    </div>
+
+    <!-- ================= ACTION BUTTONS ================= -->
+    <div class="text-end mb-3 d-flex justify-content-end gap-2">
+        <button id="btnExcel" class="btn btn-success btn-excel">
+            ⬇ Download Excel
+        </button>
+        <button onclick="window.print()" class="btn btn-primary btn-print">
+            🖨 Print Report
+        </button>
+    </div>
+
+    <!-- ================= SANITATION ================= -->
+    <h3>Sanitation Data</h3>
+    <table class="table table-bordered table-striped" id="table_sanitation">
+        <thead>
+            <tr>
+                <th>Sr.No</th>
+                <th>Zone</th>
+                <th>Primary Waste (Tons)</th>
+                <th>Secondary Waste (Tons)</th>
+                <th>Local Dumped (Tons)</th>
+                <th>Door to Door</th>
+                <th>Manhole Covers</th>
+                <th>Manhole Cleaning</th>
+                <th>Drain Cleaning (KM)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in sanitation_data %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ row.zone }}</td>
+                <td>{{ row.primary_waste|default:0 }}</td>
+                <td>{{ row.secondary_waste|default:0 }}</td>
+                <td>{{ row.local_dumped|default:0 }}</td>
+                <td>{{ row.door_to_door|default:0 }}</td>
+                <td>{{ row.manhole_replacement|default:0 }}</td>
+                <td>{{ row.manhole_cleaning|default:0 }}</td>
+                <td>{{ row.drain_cleaning|default:0 }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="9">No data available</td></tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="total-row">
+                <td colspan="2">Grand Total</td>
+                <td>{{ sanitation_total.primary_waste|default:0 }}</td>
+                <td>{{ sanitation_total.secondary_waste|default:0 }}</td>
+                <td>{{ sanitation_total.local_dumped|default:0 }}</td>
+                <td>{{ sanitation_total.door_to_door|default:0 }}</td>
+                <td>{{ sanitation_total.manhole_replacement|default:0 }}</td>
+                <td>{{ sanitation_total.manhole_cleaning|default:0 }}</td>
+                <td>{{ sanitation_total.drain_cleaning|default:0 }}</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <!-- ================= WATER SUPPLY ================= -->
+    <h3>Water Supply Data</h3>
+    <table class="table table-bordered table-striped" id="table_water_supply">
+        <thead>
+            <tr>
+                <th>Sr.No</th>
+                <th>Zone</th>
+                <th>Run Hour</th>
+                <th>Electricity</th>
+                <th>Water Produce</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in water_supply %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ row.zone }}</td>
+                <td>{{ row.run_hour|default:0 }}</td>
+                <td>{{ row.electricity|default:0 }}</td>
+                <td>{{ row.water_produce|default:0 }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5">No data available</td></tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="total-row">
+                <td colspan="2">Grand Total</td>
+                <td>{{ water_supply_total.total_run_hour|default:0 }}</td>
+                <td>{{ water_supply_total.total_electricity|default:0 }}</td>
+                <td>{{ water_supply_total.total_water_produce|default:0 }}</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <!-- ================= FUEL ================= -->
+    <h3>Trips & Fuel Data</h3>
+    <table class="table table-bordered table-striped" id="table_fuel">
+        <thead>
+            <tr>
+                <th>Sr.No</th>
+                <th>Zone</th>
+                <th>Secondary Trips</th>
+                <th>Primary Trips</th>
+                <th>Fuel Issue</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in fuel_data %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ row.zone }}</td>
+                <td>{{ row.secondary_trips|default:0 }}</td>
+                <td>{{ row.primary_trips|default:0 }}</td>
+                <td>{{ row.fuel_issue|default:0 }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5">No data available</td></tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="total-row">
+                <td colspan="2">Grand Total</td>
+                <td>{{ fuel_totals.total_secondary|default:0 }}</td>
+                <td>{{ fuel_totals.total_primary|default:0 }}</td>
+                <td>{{ fuel_totals.total_fuel|default:0 }}</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <!-- ================= WATER TEST ================= -->
+    <h3>Water Quality Test</h3>
+    <table class="table table-bordered table-striped" id="table_water_test">
+        <thead>
+            <tr>
+                <th>Sr.No</th>
+                <th>Zone</th>
+                <th>Count of Test</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in water_data %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ row.zone }}</td>
+                <td>{{ row.test_count|default:0 }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3">No data available</td></tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="total-row">
+                <td colspan="2">Grand Total</td>
+                <td>{{ water_total.total_tests|default:0 }}</td>
+            </tr>
+        </tfoot>
+    </table>
+
+</div>
+
+<!-- ===== SheetJS loaded at bottom BEFORE the script ===== -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+        var btn = document.getElementById("btnExcel");
+
+        if (!btn) {
+            console.error("Excel button not found.");
+            return;
+        }
+
+        btn.addEventListener("click", function () {
+
+            // Safety check
+            if (typeof XLSX === "undefined") {
+                alert("Excel library failed to load. Please check your internet connection.");
+                return;
+            }
+
+            try {
+                var wb = XLSX.utils.book_new();
+
+                var tables = [
+                    { id: "table_sanitation",   name: "Sanitation"         },
+                    { id: "table_water_supply", name: "Water Supply"       },
+                    { id: "table_fuel",         name: "Trips & Fuel"       },
+                    { id: "table_water_test",   name: "Water Quality Test" }
+                ];
+
+                tables.forEach(function (t) {
+                    var el = document.getElementById(t.id);
+                    if (el) {
+                        var ws = XLSX.utils.table_to_sheet(el);
+                        XLSX.utils.book_append_sheet(wb, ws, t.name);
+                    } else {
+                        console.warn("Table not found: " + t.id);
+                    }
+                });
+
+                var fromDate = "{{ from_date }}" || "start";
+                var toDate   = "{{ to_date }}"   || "end";
+                var filename = "PMER_Report_" + fromDate + "_to_" + toDate + ".xlsx";
+
+                XLSX.writeFile(wb, filename);
+
+            } catch (err) {
+                console.error("Excel export error:", err);
+                alert("Export failed: " + err.message);
+            }
+        });
+    });
+</script>
+
+{% endblock %}

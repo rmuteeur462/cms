@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container mt-4">
+
+  
+
+    <h1 class="text-center display-5 fw-bold mb-2">
+        <span class="text-dark">Street Details</span>
+    </h1>
+    <!-- Add Street -->
+    <div class="mb-3">
+        <a href="{% url 'street_add' %}" class="btn btn-primary">+ Add Street</a>
+    </div>
+
+    <!-- 🔍 Filters -->
+    <form method="get" class="row g-2 mb-3 align-items-end">
+
+        <!-- Location Filter -->
+        <div class="col-md-4">
+            <label class="form-label">Zone</label>
+            <select name="location" class="form-select">
+                <option value="">All Zones</option>
+                {% for loc in locations %}
+                    <option value="{{ loc.id }}"
+                        {% if selected_location == loc.id|stringformat:"s" %}selected{% endif %}>
+                        {{ loc.location_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Page Size Filter -->
+        <div class="col-md-3">
+            <label class="form-label">Records per page</label>
+            <select name="page_size" class="form-select">
+                <option value="10" {% if page_size == "10" %}selected{% endif %}>10</option>
+                <option value="25" {% if page_size == "25" %}selected{% endif %}>25</option>
+                <option value="50" {% if page_size == "50" %}selected{% endif %}>50</option>
+                <option value="all" {% if page_size == "all" %}selected{% endif %}>All</option>
+            </select>
+        </div>
+
+        <!-- Buttons -->
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Apply</button>
+        </div>
+
+        <div class="col-md-2">
+            <a href="{% url 'street_list' %}" class="btn btn-secondary w-100">Reset</a>
+        </div>
+
+    </form>
+
+    <!-- 📊 Totals -->
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <div class="alert alert-info text-center mb-0">
+                <strong>Total Houses:</strong> {{ total_houses }}
+            </div>
+        </div>
+    
+        <div class="col-md-4">
+            <div class="alert alert-success text-center mb-0">
+                <strong>Total Shops:</strong> {{ total_shops }}
+            </div>
+        </div>
+    
+        <div class="col-md-4">
+            <div class="alert alert-warning text-center mb-0">
+                <strong>Total Length:</strong> {{ total_length_km }} km
+            </div>
+        </div>
+    </div>
+    
+
+    <!-- 📋 Table -->
+    <table class="table table-bordered table-striped align-middle">
+        <thead class="table-dark text-center">
+            <tr>
+                <th>#</th>
+                <th>Street Name</th>
+                <th>NC</th>
+                <th>UC</th>
+                <th>Zone</th>
+                <th>Houses</th>
+                <th>Shops</th>
+                <th>Total Lenght in KM</th>
+
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for street in streets %}
+            <tr>
+                <td class="text-center">
+                    {% if is_paginated %}
+                        {{ forloop.counter0|add:page_obj.start_index }}
+                    {% else %}
+                        {{ forloop.counter }}
+                    {% endif %}
+                </td>
+                <td>{{ street.street_name }}</td>
+                <td>{{ street.nc_name.nc_name }}</td>
+                <td>{{ street.uc_name.uc_name }}</td>
+                <td>{{ street.location.location_name }}</td>
+                <td class="text-center">{{ street.no_of_houses|default:"-" }}</td>
+                <td class="text-center">{{ street.no_of_shops|default:"-" }}</td>
+                <td class="text-center">{{ street.total_length_km|default:"-" }}</td>
+
+                <td class="text-center">
+                    <a href="{% url 'street_detail' street.pk %}"
+                       class="btn btn-sm btn-info text-white">
+                        Details
+                    </a>
+                    <a href="{% url 'street_edit' street.pk %}" class="btn btn-sm btn-warning">Edit</a>
+                    <!-- <a href="{% url 'street_delete' street.pk %}" class="btn btn-sm btn-danger">Delete</a> -->
+
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" class="text-center">No streets found</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- 📄 Pagination -->
+    {% if is_paginated %}
+    <nav>
+        <ul class="pagination justify-content-center">
+
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link"
+                   href="?page={{ page_obj.previous_page_number }}
+                   {% if selected_location %}&location={{ selected_location }}{% endif %}
+                   {% if page_size %}&page_size={{ page_size }}{% endif %}">
+                    Previous
+                </a>
+            </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% else %}
+                <li class="page-item">
+                    <a class="page-link"
+                       href="?page={{ num }}
+                       {% if selected_location %}&location={{ selected_location }}{% endif %}
+                       {% if page_size %}&page_size={{ page_size }}{% endif %}">
+                        {{ num }}
+                    </a>
+                </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link"
+                   href="?page={{ page_obj.next_page_number }}
+                   {% if selected_location %}&location={{ selected_location }}{% endif %}
+                   {% if page_size %}&page_size={{ page_size }}{% endif %}">
+                    Next
+                </a>
+            </li>
+            {% endif %}
+
+        </ul>
+    </nav>
+    {% endif %}
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-4">
+
+    <!-- ================= HEADER ================= -->
+    <div class="d-flex align-items-center mb-3 position-relative">
+    
+        <!-- CENTER TITLE -->
+        <h4 class="fw-bold mx-auto">{{ title }}</h4>
+    
+        <!-- RIGHT ACTION BUTTONS -->
+        <div class="d-flex gap-2 position-absolute end-0">
+            
+            <!-- <a href="{% url 'dsd_dashboard' %}" class="btn btn-outline-dark btn-sm">
+                🏠 Dashboard
+            </a> -->
+    
+            <a href="add/" class="btn btn-success btn-sm">
+                ➕ Add New
+            </a>
+        </div>
+    </div>
+
+    <!-- ================= TABLE ================= -->
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover table-sm align-middle" id="dataTable">
+            <thead class="table-dark sticky-top">
+                <tr>
+                    <th>#</th>
+                    <th>Date</th>
+                    <th>Zone</th>
+                    <th>Facility</th>
+                    <th>Employee</th>
+                    <th class="text-center">Images</th>
+                    <th width="120" class="text-center">Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+            {% for i in data %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ i.inspection_date }}</td>
+                    <td>{{ i.zone }}</td>
+                    <td>{{ i.facility_name }}</td>
+                    <td>{{ i.emp_name|default:"-" }}</td>
+
+                    <!-- IMAGES -->
+                    <td class="text-center">
+                        {% if i.image_1 or i.image_2 %}
+                            <button class="btn btn-outline-info btn-sm"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#imageModal"
+                                    onclick="showImages(
+                                        '{% if i.image_1 %}{{ i.image_1.url }}{% endif %}',
+                                        '{% if i.image_2 %}{{ i.image_2.url }}{% endif %}'
+                                    )">
+                                🖼 View
+                            </button>
+                        {% else %}
+                            <span class="text-muted">No Image</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- ACTIONS -->
+                    <td class="text-center">
+                        <a href="edit/{{ i.id }}/" class="btn btn-warning btn-sm">✏️</a>
+                        <!-- <a href="delete/{{ i.id }}/"
+                           class="btn btn-danger btn-sm"
+                           onclick="return confirm('Are you sure?')">🗑️</a> -->
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted">
+                        No data found
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ================= IMAGE MODAL ================= -->
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Inspection Images</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body text-center">
+                <img id="modalImg1" class="img-fluid mb-3 rounded d-none">
+                <img id="modalImg2" class="img-fluid rounded d-none">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= JAVASCRIPT ================= -->
+<script>
+function showImages(img1, img2) {
+    let image1 = document.getElementById("modalImg1");
+    let image2 = document.getElementById("modalImg2");
+
+    if (img1) {
+        image1.src = img1;
+        image1.classList.remove("d-none");
+    } else {
+        image1.classList.add("d-none");
+    }
+
+    if (img2) {
+        image2.src = img2;
+        image2.classList.remove("d-none");
+    } else {
+        image2.classList.add("d-none");
+    }
+}
+</script>
+
+<!-- ================= PRINT STYLE ================= -->
+<style>
+@media print {
+    .btn {
+        display: none !important;
+    }
+}
+</style>
+
+{% endblock %}

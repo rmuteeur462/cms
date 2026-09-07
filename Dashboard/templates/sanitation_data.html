@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Sanitation Data
+{% endblock %}
+
+{% block content %}
+
+<h1 class="h3 mb-4 text-gray-800 text-center font-weight-bold">
+    Sanitation Data Report
+</h1>
+
+<form method="get" action="{% url 'sanitation_data' %}" class="mb-3">
+    <div class="card shadow mb-4">
+        <div class="card-header"><strong>Filters</strong></div>
+        <div class="card-body">
+            <div class="form-row">
+
+                <div class="form-group col-md-3">
+                    <label>From Date</label>
+                    <input type="date" name="from_date" value="{{ from_date }}" class="form-control" required>
+                </div>
+
+                <div class="form-group col-md-3">
+                    <label>To Date</label>
+                    <input type="date" name="to_date" value="{{ to_date }}" class="form-control" required>
+                </div>
+
+                <div class="form-group col-md-3">
+                    <label>Zone</label>
+                    <select name="location" class="form-control">
+                        <option value="">All Zones</option>
+                        {% for location in locations %}
+                        <option value="{{ location.id }}" {% if location.id == selected_location.id %}selected{% endif %}>
+                            {{ location.location_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group col-md-3 d-flex align-items-end justify-content-between">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+
+                    <div>
+                        <button type="button" onclick="downloadCSV()" class="btn btn-success btn-sm">CSV Download</button>
+                        <!-- <button type="button" onclick="downloadPDF()" class="btn btn-danger btn-sm">PDF</button> -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</form>
+
+<h5>
+    From {{ from_date }} To {{ to_date }}
+    {% if selected_location %}
+        | {{ selected_location.location_name }}
+    {% else %}
+        | All Zones
+    {% endif %}
+</h5>
+
+<!-- ✅ TABLE -->
+<table id="sanitation-table" class="table table-bordered table-hover shadow bg-white">
+
+    <!-- HEADER -->
+    <thead class="bg-primary text-white">
+        <tr>
+            <th>#</th>
+            <th>Zone</th>
+            <th>Waste Local</th>
+            <th>Waste LFS</th>
+            <th>Primary Waste</th>
+            <!-- <th>Primary Vehicle Trips</th> -->
+            <th>Local Trips</th>
+
+            <th>LFS Trips</th>
+            <th>Door to Door</th>
+            <th>Manhole Covers</th>
+            <th>Manhole Cleaning</th>
+            <th>Drain KM</th>
+            <th>Fumigation</th>
+            <th>IR Spray</th>
+            <th>Rate Killing</th>
+            <th>Dog Catching</th>
+        </tr>
+    </thead>
+
+    <!-- BODY -->
+    <tbody>
+        {% for row in zone_data %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ row.location__location_name }}</td>
+
+            <td>{{ row.total_waste_locally_dumped_tons|default:"0" }}</td>
+            <td>{{ row.total_waste_dumped_at_lfs_tons|default:"0" }}</td>
+
+            <td>{{ row.total_primary_waste_collection_tons|default:"0" }}</td>
+            <!-- <td>{{ row.total_primary_vehicle_trips|default:"0" }}</td> -->
+            <td>{{ row.total_local_dumping_trips_no|default:"0" }}</td>
+
+            <td>{{ row.total_lfs_trips_no|default:"0" }}</td>
+            <td>{{ row.total_door_to_door_solid_waste_collection_no|default:"0" }}</td>
+            <td>{{ row.total_replacement_of_manhole_covers|default:"0" }}</td>
+            <td>{{ row.total_cleaning_de_siltation_of_manholes|default:"0" }}</td>
+            <td>{{ row.total_cleaning_de_siltation_of_drain_sewars_km|default:"0" }}</td>
+            <td>{{ row.total_fumigation_sprays_no|default:"0" }}</td>
+            <td>{{ row.total_ir_spray_no|default:"0" }}</td>
+            <td>{{ row.total_rate_killing_no|default:"0" }}</td>
+            <td>{{ row.total_dog_catching_no|default:"0" }}</td>
+
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="16" class="text-center">No Data Found</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+
+    <!-- ✅ GRAND TOTAL -->
+    <tfoot class="bg-dark text-white font-weight-bold">
+        <tr>
+            <td colspan="2">Grand Total</td>
+
+            <td>{{ grand_total.total_waste_locally_dumped_tons|default:"0" }}</td>
+            <td>{{ grand_total.total_waste_dumped_at_lfs_tons|default:"0" }}</td>
+
+            <td>{{ grand_total.total_primary_waste_collection_tons|default:"0" }}</td>
+            <!-- <td>{{ grand_total.total_primary_vehicle_trips|default:"0" }}</td> -->
+            <td>{{ grand_total.total_local_dumping_trips_no|default:"0" }}</td>
+
+            <td>{{ grand_total.total_lfs_trips_no|default:"0" }}</td>
+            <td>{{ grand_total.total_door_to_door_solid_waste_collection_no|default:"0" }}</td>
+            <td>{{ grand_total.total_replacement_of_manhole_covers|default:"0" }}</td>
+            <td>{{ grand_total.total_cleaning_de_siltation_of_manholes|default:"0" }}</td>
+            <td>{{ grand_total.total_cleaning_de_siltation_of_drain_sewars_km|default:"0" }}</td>
+            <td>{{ grand_total.total_fumigation_sprays_no|default:"0" }}</td>
+            <td>{{ grand_total.total_ir_spray_no|default:"0" }}</td>
+            <td>{{ grand_total.total_rate_killing_no|default:"0" }}</td>
+            <td>{{ grand_total.total_dog_catching_no|default:"0" }}</td>
+
+        </tr>
+    </tfoot>
+
+</table>
+
+<!-- JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<script>
+function downloadCSV() {
+    let table = document.getElementById("sanitation-table");
+    let rows = table.querySelectorAll("tr");
+    let csv = [];
+
+    rows.forEach(row => {
+        let cols = row.querySelectorAll("th, td");
+        let rowData = [];
+        cols.forEach(col => {
+            rowData.push('"' + col.innerText.replace(/"/g, '""') + '"');
+        });
+        csv.push(rowData.join(","));
+    });
+
+    let blob = new Blob([csv.join("\n")], { type: 'text/csv' });
+    let link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "sanitation_report.csv";
+    link.click();
+}
+
+function downloadPDF() {
+    const { jsPDF } = window.jspdf;
+    let pdf = new jsPDF('l', 'mm', 'a4');
+
+    html2canvas(document.getElementById("sanitation-table")).then(canvas => {
+        let imgData = canvas.toDataURL("image/png");
+        let imgWidth = 280;
+        let imgHeight = canvas.height * imgWidth / canvas.width;
+
+        pdf.text("Sanitation Report", 10, 10);
+        pdf.text("From {{ from_date }} To {{ to_date }}", 10, 18);
+        pdf.addImage(imgData, 'PNG', 10, 25, imgWidth, imgHeight);
+        pdf.save("sanitation_report.pdf");
+    });
+}
+</script>
+
+{% endblock %}

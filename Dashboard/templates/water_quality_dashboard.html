@@ -1,0 +1,522 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    .dashboard-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .dashboard-title {
+        color: white;
+
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .year-selector {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+    }
+    
+    .year-selector label {
+        font-weight: 600;
+        color: #333;
+        margin-right: 1rem;
+    }
+    
+    .year-selector select {
+        padding: 0.5rem 1rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 6px;
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
+    
+    .year-selector select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        transition: transform 0.3s, box-shadow 0.3s;
+        border-left: 4px solid;
+        height: 100%;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    }
+    
+    .stat-card.primary {
+        border-left-color: #667eea;
+    }
+    
+    .stat-card.success {
+        border-left-color: #10b981;
+    }
+    
+    .stat-card-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .stat-card.primary .stat-card-icon {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .stat-card.success .stat-card-icon {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+    
+    .stat-card-title {
+        font-size: 0.9rem;
+        color: #6b7280;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-card-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #1f2937;
+        line-height: 1;
+    }
+    
+    .chart-container {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+    }
+    
+    .chart-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f3f4f6;
+    }
+    
+    .table-container {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    
+    .table-container h5 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f3f4f6;
+    }
+    
+    .custom-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    
+    .custom-table thead th {
+        background: linear-gradient(135deg, #667eea 0%, #ffffff 100%);
+        color: rgb(0, 0, 0);
+        padding: 1rem;
+        text-align: left;
+        font-weight: 900;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+    }
+    
+    .custom-table thead th:first-child {
+        border-top-left-radius: 8px;
+    }
+    
+    .custom-table thead th:last-child {
+        border-top-right-radius: 8px;
+    }
+    
+    .custom-table tbody tr {
+        transition: background-color 0.2s;
+    }
+    
+    .custom-table tbody tr:hover {
+        background-color: #f9fafb;
+    }
+    
+    .custom-table tbody td {
+        padding: 1rem;
+        border-bottom: 1px solid #e5e7eb;
+        color: #374151;
+    }
+    
+    .custom-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .badge-safe {
+        background-color: #d1fae5;
+        color: #065f46;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    
+    .badge-unsafe {
+        background-color: #fee2e2;
+        color: #991b1b;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+</style>
+
+<div class="container mt-4">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">
+            <span>💧</span>
+            <span>Water Quality Testing Dashboard</span>
+        </h1>
+        <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">Comprehensive water quality monitoring and analysis for   (<strong>{{ from_date|date:"Y-m-d" }}</strong> → <strong>{{ to_date|date:"Y-m-d" }}</strong>)
+        </p>
+    </div>
+
+    <!-- Year Filter -->
+    <div class="year-selector mb-3">
+        <form method="get" class="row g-2 align-items-end">
+          
+          <!-- From Date -->
+          <div class="col-md-3">
+            <label for="from_date" class="form-label mb-0">From Date:</label>
+            <input type="date" name="from_date" id="from_date" class="form-control"
+                   value="{{ from_date|date:'Y-m-d' }}">
+          </div>
+      
+          <!-- To Date -->
+          <div class="col-md-3">
+            <label for="to_date" class="form-label mb-0">To Date:</label>
+            <input type="date" name="to_date" id="to_date" class="form-control"
+                   value="{{ to_date|date:'Y-m-d' }}">
+          </div>
+      
+          
+      
+          <!-- Filter Button -->
+          <div class="col-md-3">
+            <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+          </div>
+      
+        </form>
+      </div>
+      
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="stat-card primary">
+                <div class="stat-card-icon">
+                    📊
+                </div>
+                <div class="stat-card-title">Total Tests</div>
+                <div class="stat-card-value">{{ total_tests }}</div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="stat-card success">
+                <div class="stat-card-icon">
+                    📈
+                </div>
+                <div class="stat-card-title">Total Tests (Current Month)</div>
+                <div class="stat-card-value">{{ current_month_total_tests }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Section -->
+    <div class="chart-container">
+        <div class="chart-title">📉 Monthly Water Tests by Zone</div>
+        <canvas id="waterQualityChart" height="100"></canvas>
+    </div>
+
+    <!-- Location-wise Table -->
+    <div class="table-container">
+        <h5>📍 Zone-wise Test Summary</h5>
+        <table class="custom-table table table-bordered table-striped text-center align-middle">
+            <thead class="table-dark">
+              <tr>
+                <th>Zone</th>
+                <th>Total Tests</th>
+                <th>Safe</th>
+                <th>Unsafe</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for loc in location_stats %}
+              <tr>
+                <td><strong>{{ loc.location }}</strong></td>
+                <td>{{ loc.total }}</td>
+                <td><span class="badge bg-success">{{ loc.safe }}</span></td>
+                <td>
+                  {% if loc.unsafe > 0 %}
+                  <a href="#" class="text-danger fw-bold view-unsafe-details" 
+                     data-location="{{ loc.location }}" 
+                     data-bs-toggle="modal" 
+                     data-bs-target="#unsafeModal">
+                     {{ loc.unsafe }}
+                  </a>
+                  {% else %}
+                  <span class="text-muted">0</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          
+          <!-- Modal -->
+          <div class="modal fade" id="unsafeModal" tabindex="-1" aria-labelledby="unsafeModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+              <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                  <h5 class="modal-title" id="unsafeModalLabel">Unsafe Water Test Details</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                  <div id="unsafeDetailsContent" class="table-responsive text-center">
+                    <p>Loading data...</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <script>
+            document.querySelectorAll('.view-unsafe-details').forEach(btn => {
+              btn.addEventListener('click', function() {
+                const location = this.getAttribute('data-location');
+                const contentDiv = document.getElementById('unsafeDetailsContent');
+                contentDiv.innerHTML = "<p>Loading data...</p>";
+            
+                fetch(`/dashboard/get-unsafe-tests/?location=${encodeURIComponent(location)}`)
+                  .then(res => res.json())
+                  .then(data => {
+                    if (data.tests.length === 0) {
+                      contentDiv.innerHTML = "<p class='text-muted'>No unsafe tests found.</p>";
+                      return;
+                    }
+            
+                    let html = `
+                      <table class="table table-bordered table-striped text-start">
+                        <thead class="table-danger">
+                          <tr>
+                            <th>S.No</th>
+                            <th>Date</th>
+                            <th>Zone</th>
+                            <th>UC</th>
+                            <th>Tube Well</th>
+                            <th>Location Type</th>
+                            <th>Output</th>
+                            <th>Temperature (°C)</th>
+                            <th>pH</th>
+                            <th>Conductivity (µS/cm)</th>
+                            <th>Dissolved Oxygen (mg/L)</th>
+                            <th>TSS (mg/L)</th>
+                            <th>Turbidity (NTU)</th>
+                            <th>TDS (mg/L)</th>
+                            <th>Resistivity (Ω·cm)</th>
+                            <th>Salinity (mg/L)</th>
+                            <th>Coliform</th>
+                            <th>Latitude</th>
+                            <th>Longitude</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                    `;
+            
+                    data.tests.forEach((test, index) => {
+                      html += `
+                        <tr>
+                          <td>${index + 1}</td>
+                          <td>${test.date || '-'}</td>
+                          <td>${test.location || '-'}</td>
+                          <td>${test.uc || '-'}</td>
+                          <td>${test.tubewell || '-'}</td>
+                          <td>${test.location_type || '-'}</td>
+                          <td>${test.output || '-'}</td>
+                          <td>${test.temperature_c || '-'}</td>
+                          <td>${test.ph || '-'}</td>
+                          <td>${test.electrical_conductivity_uc_cm || '-'}</td>
+                          <td>${test.dissolved_oxygen_mg_l || '-'}</td>
+                          <td>${test.tss_mg_l || '-'}</td>
+                          <td>${test.turbidity_ntu || '-'}</td>
+                          <td>${test.tds_mg_l || '-'}</td>
+                          <td>${test.resistivity_ojm_cm || '-'}</td>
+                          <td>${test.salinity_mg_l || '-'}</td>
+                          <td>${test.coliform || '-'}</td>
+                          <td>${test.latitude || '-'}</td>
+                          <td>${test.longitude || '-'}</td>
+                        </tr>
+                      `;
+                    });
+            
+                    html += "</tbody></table>";
+                    contentDiv.innerHTML = html;
+                  })
+                  .catch(err => {
+                    contentDiv.innerHTML = "<p class='text-danger'>Error loading data.</p>";
+                  });
+              });
+            });
+            </script>
+            
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.2.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+
+<script>
+// Register the plugins
+Chart.register(
+    window['chartjs-plugin-annotation'],
+    ChartDataLabels
+);
+
+const ctx = document.getElementById('waterQualityChart').getContext('2d');
+
+const data = {
+    labels: {{ months|safe }},
+    datasets: {{ chart_datasets|safe }}
+};
+
+const config = {
+    type: 'bar',
+    data: data,
+    options: {
+        responsive: true,
+        plugins: {
+            title: {
+                display: false
+            },
+            legend: {
+                display: true,
+                position: 'top',
+                labels: {
+                    padding: 15,
+                    font: {
+                        size: 12,
+                        weight: '600'
+                    },
+                    usePointStyle: true,
+                    pointStyle: 'circle'
+                }
+            },
+            annotation: {
+                annotations: {
+                    line100: {
+                        type: 'line',
+                        yMin: 100,
+                        yMax: 100,
+                        borderColor: '#ef4444',
+                        borderWidth: 2,
+                        borderDash: [6, 6],
+                        label: {
+                            content: 'Threshold: 100',
+                            enabled: true,
+                            position: 'end',
+                            backgroundColor: '#ef4444',
+                            color: 'white',
+                            padding: 4,
+                            borderRadius: 4
+                        }
+                    }
+                }
+            },
+            datalabels: {
+                color: '#1f2937',
+                font: { 
+                    weight: 'bold',
+                    size: 11
+                },
+                formatter: function(value, context) {
+                    if (context.datasetIndex !== context.chart.data.datasets.length - 1) return '';
+                    let total = 0;
+                    context.chart.data.datasets.forEach(ds => {
+                        total += ds.data[context.dataIndex];
+                    });
+                    return total;
+                },
+                anchor: 'end',
+                align: 'end',
+                offset: 4
+            }
+        },
+        scales: {
+            x: { 
+                stacked: true,
+                grid: {
+                    display: false
+                },
+                ticks: {
+                    font: {
+                        weight: '600'
+                    }
+                }
+            },
+            y: { 
+                stacked: true, 
+                beginAtZero: true,
+                grid: {
+                    color: '#f3f4f6'
+                },
+                ticks: {
+                    font: {
+                        weight: '600'
+                    }
+                }
+            }
+        }
+    },
+    plugins: [ChartDataLabels]
+};
+
+new Chart(ctx, config);
+</script>
+{% endblock %}

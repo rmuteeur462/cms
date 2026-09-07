@@ -1,0 +1,654 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="container-fluid px-4 py-0">
+  <!-- Header Section -->
+  <div class="row mb-5">
+    <div class="col-12">
+      <div class="header-section text-center">
+        <div class="d-flex flex-column justify-content-center align-items-center gap-4">
+          <div class="header-content">
+            <h1 class="display-5 fw-bold mb-2">
+              <span class="text-dark">WSSP ADP Schemes</span>
+            </h1>
+            <p class="lead text-muted mb-3">Annual Development Program Portfolio</p>
+            <h4 class="text-dark">
+              Total Schemes: {{ schemes|length }}
+            </h4>
+            
+            <!-- <div class="stats-badges d-flex justify-content-center flex-wrap gap-2">
+              <span class="badge-custom bg-primary">
+                <i class="bi bi-collection me-1"></i>
+                Total Schemes: {{ schemes|length }}
+              </span>
+            </div> -->
+          </div>
+        </div>
+      </div>
+      <div class="divider-custom"></div>
+    </div>
+  </div>
+  
+  <!-- Search and Filter Bar -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="search-filter-card">
+        <form method="get" class="row g-3 align-items-center">
+          <!-- Search Input -->
+          <div class="col-md-6">
+            <div class="search-wrapper position-relative">
+              <i class="bi bi-search search-icon position-absolute" style="left:10px; top:50%; transform:translateY(-50%);"></i>
+              <input 
+                type="text" 
+                name="search" 
+                id="searchInput" 
+                class="form-control ps-5 search-input" 
+                placeholder="Search schemes by name or code..." 
+                value="{{ search_query }}">
+            </div>
+          </div>
+  
+          <!-- Year Filter -->
+          <div class="col-md-3">
+            <form method="get">
+              <select name="year" class="form-select filter-select" onchange="this.form.submit()">
+                <option value="" {% if not year_filter %}selected{% endif %}>All Years</option>
+                {% for year in available_years %}
+                  <option value="{{ year }}" {% if year_filter|stringformat:"s" == year|stringformat:"s" %}selected{% endif %}>
+                    {{ year }}
+                  </option>
+                {% endfor %}
+              </select>
+            </form>
+          </div>
+          
+  
+          <!-- Submit Button (Optional for mobile) -->
+          <div class="col-md-3 d-md-none">
+            <button type="submit" class="btn btn-primary w-100">Filter</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Main Content Card -->
+  <div class="row">
+    <div class="col-12">
+      <div class="schemes-card">
+        <div class="card-header-elegant">
+          <div class="d-flex justify-content-between align-items-center">
+            <!-- <h3 class="card-title-elegant mb-0">
+              <i class="bi bi-grid-3x3-gap me-2"></i>
+              Schemes Portfolio
+            </h3> -->
+     
+          </div>
+        </div>
+        
+        <div class="card-body-elegant p-0">
+          <div class="table-container">
+
+                <table class="table table-bordered table-hover shadow-sm bg-white" id="schemesTable">
+                  <thead class="bg-primary text-white">
+                <tr>
+                  <th scope="col" class="sortable" data-sort="code">
+                    <div class="th-content">
+                      <span>Scheme Code</span>
+                      <i class="bi bi-arrow-down-up sort-icon"></i>
+                    </div>
+                  </th>
+                  <th scope="col" class="sortable" data-sort="name">
+                    <div class="th-content">
+                      <span>Scheme Name</span>
+                      <i class="bi bi-arrow-down-up sort-icon"></i>
+                    </div>
+                  </th>
+                  <th scope="col" class="sortable" data-sort="start">
+                    <div class="th-content">
+                      <span>Start Date</span>
+                      <i class="bi bi-arrow-down-up sort-icon"></i>
+                    </div>
+                  </th>
+                  <th scope="col" class="sortable" data-sort="end">
+                    <div class="th-content">
+                      <span>End Date</span>
+                      <i class="bi bi-arrow-down-up sort-icon"></i>
+                    </div>
+                  </th>
+          
+                </tr>
+              </thead>
+              <tbody>
+                {% for scheme in schemes %}
+                <tr class="table-row-elegant" data-href="{% url 'adp_scheme_detail' scheme.pk %}">
+                  <td>
+                    <div class="code-badge">
+                      <span class="code-text">{{ scheme.code }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="scheme-info">
+                      <a href="{% url 'adp_scheme_detail' scheme.pk %}" 
+                         class="scheme-link">
+                        <h6 class="scheme-name mb-1">{{ scheme.name }}</h6>
+                      </a>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="date-info">
+                      <span class="date-primary">{{ scheme.start_date|date:"M d, Y" }}</span>
+                      <small class="date-secondary d-block">{{ scheme.start_date|date:"l" }}</small>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="date-info">
+                      <span class="date-primary">{{ scheme.end_date|date:"M d, Y" }}</span>
+                      <small class="date-secondary d-block">{{ scheme.end_date|date:"l" }}</small>
+                    </div>
+                  </td>
+       
+  
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="6">
+                    <div class="empty-state">
+                      <div class="empty-icon">
+                        <i class="bi bi-inbox"></i>
+                      </div>
+                      <h4 class="empty-title">No Schemes Found</h4>
+                      <p class="empty-text">There are currently no ADP schemes available to display.</p>
+                   
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- <style>
+.container-fluid {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.header-section {
+  padding: 2rem 0;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.badge-custom {
+  padding: 0.75rem 1.25rem;
+  border-radius: 25px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.divider-custom {
+  height: 3px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, transparent 100%);
+  border-radius: 2px;
+  margin-top: 2rem;
+}
+
+.search-filter-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 20px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+.search-wrapper {
+  position: relative;
+}
+
+.search-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6c757d;
+  z-index: 10;
+}
+
+.search-input {
+  padding-left: 3rem;
+  height: 3rem;
+  border-radius: 15px;
+  border: 2px solid #e9ecef;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+}
+
+.search-input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.filter-select {
+  height: 3rem;
+  border-radius: 15px;
+  border: 2px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.filter-select:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.schemes-card {
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+  overflow: hidden;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+.card-header-elegant {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 2rem 2.5rem;
+  border-bottom: 2px solid rgba(0,0,0,0.05);
+}
+
+.card-title-elegant {
+  color: #2c3e50;
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+.view-options .btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 8px;
+}
+
+.card-body-elegant {
+  background: white;
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+.table-elegant {
+  --bs-table-hover-bg: #f8f9fa;
+}
+
+.table-elegant thead th {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 1.5rem 1.25rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+  letter-spacing: 0.5px;
+  position: relative;
+}
+
+.th-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.sort-icon {
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.sortable:hover .sort-icon {
+  opacity: 1;
+}
+
+.table-elegant tbody td {
+  padding: 1.5rem 1.25rem;
+  border-bottom: 1px solid #f1f3f4;
+  vertical-align: middle;
+}
+
+.table-row-elegant {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.table-row-elegant:hover {
+  background-color: #f8f9fa;
+  transform: translateX(4px);
+  box-shadow: inset 4px 0 0 #667eea;
+}
+
+.code-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  border-left: 4px solid #2196f3;
+}
+
+.code-text {
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  color: #1976d2;
+  font-size: 0.9rem;
+}
+
+.scheme-info {
+  max-width: 300px;
+}
+
+.scheme-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: all 0.3s ease;
+}
+
+.scheme-link:hover {
+  color: #667eea;
+}
+
+.scheme-name {
+  color: #2c3e50;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-bottom: 0.25rem;
+}
+
+.scheme-subtitle {
+  color: #6c757d;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.date-info {
+  min-width: 120px;
+}
+
+.date-primary {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 0.95rem;
+}
+
+.date-secondary {
+  color: #6c757d;
+  font-size: 0.8rem;
+}
+
+.status-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.status-active {
+  background: linear-gradient(135deg, #4caf50 0%, #81c784 100%);
+  color: white;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.action-buttons .btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.action-buttons .btn:hover {
+  transform: scale(1.1);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #6c757d;
+}
+
+.empty-icon {
+  font-size: 4rem;
+  color: #dee2e6;
+  margin-bottom: 1.5rem;
+}
+
+.empty-title {
+  color: #495057;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.empty-text {
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+}
+
+.card-footer-elegant {
+  background: #f8f9fa;
+  padding: 1.5rem 2.5rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.pagination-elegant .page-item .page-link {
+  border: none;
+  padding: 0.75rem 1rem;
+  margin: 0 0.125rem;
+  border-radius: 8px;
+  color: #667eea;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.pagination-elegant .page-item.active .page-link {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: transparent;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.pagination-elegant .page-item .page-link:hover {
+  background: #f8f9fa;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .container-fluid {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .header-section {
+    padding: 1rem 0;
+  }
+  
+  .card-header-elegant,
+  .card-footer-elegant {
+    padding: 1.5rem;
+  }
+  
+  .search-filter-card {
+    padding: 1.5rem;
+  }
+  
+  .stats-badges {
+    margin-top: 1rem;
+  }
+  
+  .badge-custom {
+    font-size: 0.8rem;
+    padding: 0.5rem 1rem;
+  }
+  
+  .table-elegant thead th,
+  .table-elegant tbody td {
+    padding: 1rem 0.75rem;
+  }
+  
+  .scheme-info {
+    max-width: 200px;
+  }
+  
+  .empty-state {
+    padding: 2rem 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .gradient-text {
+    font-size: 2rem;
+  }
+  
+  .header-actions .btn-group {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .header-actions .btn {
+    width: 100%;
+  }
+  
+  .table-elegant thead {
+    display: none;
+  }
+  
+  .table-elegant,
+  .table-elegant tbody,
+  .table-elegant tr,
+  .table-elegant td {
+    display: block;
+  }
+  
+  .table-row-elegant {
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    padding: 1rem;
+  }
+  
+  .table-row-elegant td {
+    border: none;
+    padding: 0.5rem 0;
+    position: relative;
+    padding-left: 50%;
+  }
+  
+  .table-row-elegant td:before {
+    content: attr(data-label);
+    position: absolute;
+    left: 0;
+    width: 45%;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.schemes-card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.search-filter-card {
+  animation: fadeInUp 0.4s ease-out;
+}
+
+.table-row-elegant {
+  position: relative;
+  overflow: hidden;
+}
+
+.table-row-elegant::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.table-row-elegant:hover::after {
+  left: 100%;
+}
+</style> -->
+
+<script>
+// Search functionality
+document.getElementById('searchInput').addEventListener('keyup', function() {
+  const searchValue = this.value.toLowerCase();
+  const tableRows = document.querySelectorAll('#schemesTable tbody tr');
+  
+  tableRows.forEach(row => {
+    const text = row.textContent.toLowerCase();
+    row.style.display = text.includes(searchValue) ? '' : 'none';
+  });
+});
+
+// Row click navigation
+document.querySelectorAll('.table-row-elegant').forEach(row => {
+  row.addEventListener('click', function(e) {
+    if (!e.target.closest('.action-buttons')) {
+      const href = this.dataset.href;
+      if (href) {
+        window.location.href = href;
+      }
+    }
+  });
+});
+
+// Sort functionality
+document.querySelectorAll('.sortable').forEach(header => {
+  header.addEventListener('click', function() {
+    // Add sorting logic here
+    console.log('Sorting by:', this.dataset.sort);
+  });
+});
+</script>
+{% endblock %}

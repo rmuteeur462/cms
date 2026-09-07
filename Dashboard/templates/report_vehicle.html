@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Vehicle Report (Consolidated)
+{% endblock %}
+
+{% block content %}
+<h2 class="text-center">Vehicle Report (Consolidated)</h2>
+
+<!-- Filter Form -->
+<form method="get" action="{% url 'report_vehicle' %}" class="mb-4">
+    <div class="form-row">
+        <div class="form-group col-md-3">
+            <label for="from_date">From Date:</label>
+            <input type="date" id="from_date" name="from_date" class="form-control" value="{{ from_date|date:'Y-m-d' }}">
+        </div>
+        <div class="form-group col-md-3">
+            <label for="to_date">To Date:</label>
+            <input type="date" id="to_date" name="to_date" class="form-control" value="{{ to_date|date:'Y-m-d' }}">
+        </div>
+        <div class="form-group col-md-3">
+            <label for="location">Location:</label>
+            <select id="location" name="location" class="form-control">
+                <option value="">All Locations</option>
+                {% for location in locations %}
+                    <option value="{{ location.location_name }}" {% if location.location_name == location_filter %}selected{% endif %}>
+                        {{ location.location_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group col-md-3">
+            <label for="vehicle_type">Vehicle Type:</label>
+            <select id="vehicle_type" name="vehicle_type" class="form-control">
+                <option value="">All Vehicle Types</option>
+                {% for vehicle_type in vehicle_types %}
+                    <option value="{{ vehicle_type }}" {% if vehicle_type == vehicle_type_filter %}selected{% endif %}>
+                        {{ vehicle_type }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group col-md-3">
+            <label for="vehicle_id">Vehicle ID:</label>
+            <input type="text" id="vehicle_id" name="vehicle_id" class="form-control" value="{{ vehicle_id_filter }}" placeholder="Search by Vehicle ID">
+        </div>
+    </div>
+    <div class="text-center">
+        <button type="submit" class="btn btn-primary">Generate Report</button>
+        <button type="submit" name="download_csv" value="true" class="btn btn-success">Download CSV</button>
+    </div>
+</form>
+
+<!-- Consolidated Report Table -->
+<div class="table-responsive">
+    <table class="table table-bordered table-hover shadow-sm bg-white">
+        <thead class="bg-primary text-white">
+            <tr>
+                <th>Sr. No</th>
+                <th>Vehicle ID</th>
+                <th>Vehicle Name</th>
+                <th>Location</th>
+                <th>Vehicle Type</th>
+                <th>Total Functional</th>
+                <th>Total Parked</th>
+                <th>Total Field Operation</th>
+                <th>Total Non-Functional</th>
+                <th>Total Minor Repair</th>
+                <th>Total Major Repair</th>
+                <th>Total Trips</th>
+                <th>Total Fuel Issued</th>
+                <th>Total Running KM</th>
+                <th>Engine Oil (L)</th>         <!-- New column -->
+                <th>Hydraulic Oil (L)</th>      <!-- New column -->
+                <th>Vehicle Repair (Y/N)</th>
+                <th>Total Repair Cost</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in attendance_data %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ record.vehicle_id }}</td>
+                <td>{{ record.vehicle_name }}</td>
+                <td>{{ record.location }}</td>
+                <td>{{ record.vehicle_type }}</td>
+                <td>{{ record.functional_total }}</td>
+                <td>{{ record.parked_total }}</td>
+                <td>{{ record.field_operation_total }}</td>
+                <td>{{ record.non_functional_total }}</td>
+                <td>{{ record.minor_repair_total }}</td>
+                <td>{{ record.major_repair_total }}</td>
+                <td>{{ record.trips }}</td>
+                <td>{{ record.fuel_issued }}</td>
+                <td>{{ record.running_km }}</td>
+                <td>{{ record.engine_oil }}</td>        <!-- New data -->
+                <td>{{ record.hydraulic_oil }}</td>     <!-- New data -->
+                <td>{{ record.repair }}</td>
+                <td>{{ record.repair_cost }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="18" class="text-center"><strong>No records found.</strong></td>
+            </tr>
+            {% endfor %}
+            <tr class="table-success font-weight-bold text-center">
+                <td colspan="5" class="text-right"><strong>Grand Totals</strong></td>
+                <td>{{ total_functional }}</td>
+                <td>{{ total_parked }}</td>
+                <td>{{ total_field_operation }}</td>
+                <td>{{ total_non_functional }}</td>
+                <td>{{ total_minor_repair }}</td>
+                <td>{{ total_major_repair }}</td>
+                <td>{{ total_trips }}</td>
+                <td>{{ total_fuel_issued }}</td>
+                <td>{{ total_km }}</td>
+                <td>{{ total_engine_oil }}</td>       <!-- New total -->
+                <td>{{ total_hydraulic_oil }}</td>    <!-- New total -->
+                <td>-</td>
+                <td>{{ total_repair_cost }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+
+{% endblock %}

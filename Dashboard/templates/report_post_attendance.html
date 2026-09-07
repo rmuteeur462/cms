@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Media Report
+{% endblock %}
+
+{% block content %}
+<h2 class="text-center">Media Report</h2>
+
+<!-- Filter Form -->
+<form method="get" action="{% url 'report_post_attendance' %}" class="mb-4">
+    <div class="form-row">
+        <div class="form-group col-md-4">
+            <label for="from_date">From Date:</label>
+            <input type="date" id="from_date" name="from_date" class="form-control" value="{{ from_date|date:'Y-m-d' }}">
+        </div>
+        <div class="form-group col-md-4">
+            <label for="to_date">To Date:</label>
+            <input type="date" id="to_date" name="to_date" class="form-control" value="{{ to_date|date:'Y-m-d' }}">
+        </div>
+        <div class="form-group col-md-4">
+            <label for="post_type">Post Type:</label>
+            <select id="post_type" name="post_type" class="form-control">
+                <option value="all" {% if post_type_filter == "all" %}selected{% endif %}>All</option>
+                {% for post_type in post_types %}
+                    <option value="{{ post_type.id }}" {% if post_type.id|stringformat:"s" == post_type_filter %}selected{% endif %}>{{ post_type.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    <div class="text-center">
+        <button type="submit" class="btn btn-primary">Generate Report</button>
+        <button type="button" id="downloadCsvBtn" class="btn btn-success">Download CSV</button>
+        <button type="button" id="downloadPDF" class="btn btn-danger">Download PDF</button>
+    </div>
+</form>
+
+<!-- Media Report Table -->
+<div class="table-responsive">
+    <table id="mediaReportTable" class="table table-bordered table-hover shadow-sm bg-white">
+        <thead class="bg-primary text-white">
+            <tr>
+                <th>Post Type</th>
+                <th>Details</th>
+                <th>Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in attendance_data %}
+                <tr>
+                    <td>{{ record.post_type }}</td>
+                    <td>{{ record.details }}</td>
+                    <td>{{ record.count }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="3" class="text-center"><strong>No records found.</strong></td>
+                </tr>
+            {% endfor %}
+            <tr class="font-weight-bold">
+                <td colspan="2" class="text-right"><strong>Total Posts</strong></td>
+                <td>{{ total_posts }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Include jsPDF and autoTable -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.21/jspdf.plugin.autotable.min.js"></script>
+
+<script>
+// CSV Download
+document.getElementById('downloadCsvBtn').addEventListener('click', function() {
+    var table = document.getElementById('mediaReportTable');
+    var rows = table.rows;
+    var csvContent = "Post Type,Details,Count\n";
+
+    for (var i = 1; i < rows.length - 1; i++) {  // Skip header and footer
+        var cells = rows[i].cells;
+        var rowData = [];
+        for (var j = 0; j < cells.length; j++) {
+            rowData.push(cells[j].innerText);
+        }
+        csvContent += rowData.join(",") + "\n";
+    }
+
+    // Add total row
+    var totalRow = rows[rows.length - 1];
+    var totalData = [];
+    for (var j = 1; j < totalRow.cells.length; j++) {
+        totalData.push(totalRow.cells[j].innerText);
+    }
+    csvContent += "Total," + totalData.join(",") + "\n";
+
+    var hiddenElement = document.createElement('a');
+    hiddenElement.href = 'data:text/csv;charset=utf-8,' + encodeURI(csvContent);
+    hiddenElement.target = '_blank';
+    hiddenElement.download = 'media_report.csv';
+    hiddenElement.click();
+});
+
+// PDF Download
+document.getElementById('downloadPDF').addEventListener('click', function() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const table = document.getElementById('mediaReportTable');
+    const rows = Array.from(table.querySelectorAll('tr'));
+
+    const imagePath = 'http://wod.wsspeshawar.org.pk:4002/static/logo/khan.png';
+    doc.addImage(imagePath, 'PNG', -4, 5, 220, 30);
+
+    // Header
+    doc.setFillColor(0, 123, 255);
+    doc.rect(10, 40, 190, 10, 'F');
+    doc.setFontSize(16);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.text("Media Report", 86, 47);
+
+    let header = [];
+    let headerCells = rows[0].querySelectorAll('th');
+    headerCells.forEach(function(cell) {
+        header.push(cell.textContent.trim());
+    });
+
+    let content = [];
+    rows.slice(1, rows.length - 1).forEach(function(row) {
+        let rowData = [];
+        row.querySelectorAll('td').forEach(function(cell) {
+            rowData.push(cell.textContent.trim());
+        });
+        content.push(rowData);
+    });
+
+    let totalRow = [];
+    let totalCells = rows[rows.length - 1].querySelectorAll('td');
+    totalCells.forEach(function(cell) {
+        totalRow.push(cell.textContent.trim());
+    });
+
+    doc.autoTable({
+        head: [header],
+        body: content,
+        startY: 65,
+        styles: { fontSize: 10 },
+        headStyles: {
+            fillColor: [0, 123, 255],
+            textColor: 255,
+            fontStyle: 'bold'
+        }
+    });
+
+    doc.autoTable({
+        body: [totalRow],
+        startY: doc.autoTable.previous.finalY + 2,
+        styles: { fontSize: 10 },
+        bodyStyles: {
+            fillColor: [0, 123, 255],
+            textColor: 255,
+            fontStyle: 'bold'
+        }
+    });
+
+    doc.save('media_summary.pdf');
+});
+</script>
+
+{% endblock %}

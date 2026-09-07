@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h3 class="mb-3 fw-bold text-primary">
+    🏘️ Accumulative Street Collection Report
+    {% if from_date and to_date %}
+      — {{ from_date|date:"F d, Y" }} to {{ to_date|date:"F d, Y" }}
+    {% else %}
+      — {{ now|date:"F Y" }}
+    {% endif %}
+  </h3>
+
+  <!-- 🔍 Filters -->
+  <form method="get" class="row g-3 mb-4">
+    <div class="col-md-3">
+      <label class="form-label">From Date</label>
+      <input type="date" name="from_date" class="form-control" value="{{ from_date|date:'Y-m-d' }}">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">To Date</label>
+      <input type="date" name="to_date" class="form-control" value="{{ to_date|date:'Y-m-d' }}">
+    </div>
+    
+    <div class="col-md-3">
+      <label class="form-label">Zone</label>
+      <select name="location" class="form-select">
+        <option value="">All Zone</option>
+        {% for loc in locations %}
+        <option value="{{ loc.id }}" {% if selected_location|stringformat:"s" == loc.id|stringformat:"s" %}selected{% endif %}>
+            {{ loc.location_name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3 d-flex align-items-end">
+      <button type="submit" class="btn btn-primary w-100">
+        <i class="fas fa-filter"></i> Apply Filters
+      </button>
+    </div>
+  </form>
+
+  <!-- 📊 Export Button -->
+  <div class="mb-3 text-end">
+    <button class="btn btn-success" onclick="exportTableToExcel('reportTable', 'Street_Collection_Report')">
+      💾 Export to Excel
+    </button>
+  </div>
+
+  <!-- 📊 Report Table -->
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped align-middle" id="reportTable">
+      <thead class="table-light">
+        <tr>
+          <th>#</th>
+          <th>Street Name</th>
+          <th>Location</th>
+          <th>Total Houses Collected</th>
+          <th>Total Shops Collected</th>
+          <th>Days Count</th>
+          <th>Avg Houses / Day</th>
+          <th>Avg Shops / Day</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in report %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td>{{ row.street__street_name }}</td>
+          <td>{{ row.street__location__location_name }}</td>
+          <td>{{ row.total_houses|default:0 }}</td>
+          <td>{{ row.total_shops|default:0 }}</td>
+          <td>{{ row.days_count }}</td>
+          <td>{{ row.avg_houses_per_day|floatformat:2 }}</td>
+          <td>{{ row.avg_shops_per_day|floatformat:2 }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" class="text-center text-muted">No data found for selected filters</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ✅ Export Table JS -->
+<script>
+function exportTableToExcel(tableID, filename = ''){
+    var table = document.getElementById(tableID);
+    var rows = table.querySelectorAll('tr');
+    var csv = [];
+    
+    for (var i = 0; i < rows.length; i++) {
+        var cols = rows[i].querySelectorAll('th, td');
+        var row = [];
+        for (var j = 0; j < cols.length; j++) {
+            // Escape double quotes
+            var data = cols[j].innerText.replace(/"/g, '""');
+            row.push('"' + data + '"');
+        }
+        csv.push(row.join(','));
+    }
+
+    var csvFile = new Blob([csv.join("\n")], { type: "text/csv" });
+    var downloadLink = document.createElement("a");
+    downloadLink.download = filename ? filename + ".csv" : "report.csv";
+    downloadLink.href = window.URL.createObjectURL(csvFile);
+    downloadLink.style.display = "none";
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+}
+</script>
+{% endblock %}

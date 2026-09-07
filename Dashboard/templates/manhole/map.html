@@ -1,0 +1,885 @@
+{% extends "base.html" %}
+
+{% block title %}Manhole Map - WSSP{% endblock %}
+
+{% block content %}
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css"/>
+
+<style>
+
+/* =========================
+   RESET & BASE
+========================= */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #f0f4f8;
+    color: #1a1a2e;
+}
+
+/* =========================
+   PAGE WRAPPER
+========================= */
+.map-page {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px;
+    min-height: 100vh;
+    background: #f0f4f8;
+}
+
+/* =========================
+   HEADER BAR
+========================= */
+.header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    background: white;
+    border-radius: 14px;
+    padding: 14px 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.header-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: #00aff2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.header-icon svg {
+    width: 20px;
+    height: 20px;
+    fill: white;
+}
+
+.header-brand h1 {
+    font-size: 17px;
+    font-weight: 700;
+    color: #1a1a2e;
+}
+
+.header-brand p {
+    font-size: 12px;
+    color: #888;
+    margin-top: 2px;
+}
+
+.header-date {
+    font-size: 13px;
+    color: #888;
+}
+
+/* =========================
+   STATS ROW
+========================= */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 14px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border-left: 4px solid transparent;
+}
+
+.stat-card.blue  { border-left-color: #00aff2; }
+.stat-card.red   { border-left-color: #e53935; }
+.stat-card.green { border-left-color: #22c065; }
+
+.stat-icon-box {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.stat-icon-box.blue  { background: #e6f7fd; }
+.stat-icon-box.red   { background: #fdecea; }
+.stat-icon-box.green { background: #eaf7ef; }
+
+.stat-icon-box svg { width: 20px; height: 20px; }
+.stat-icon-box.blue  svg { fill: #00aff2; }
+.stat-icon-box.red   svg { fill: #e53935; }
+.stat-icon-box.green svg { fill: #22c065; }
+
+.stat-info .label {
+    font-size: 12px;
+    color: #888;
+    font-weight: 500;
+}
+
+.stat-info .num {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: #1a1a2e;
+}
+
+/* =========================
+   MAIN GRID
+========================= */
+.main-grid {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 14px;
+    align-items: start;
+}
+
+/* =========================
+   SIDEBAR
+========================= */
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.side-panel {
+    background: white;
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.side-panel-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.side-panel-title svg {
+    width: 13px;
+    height: 13px;
+    fill: #00aff2;
+}
+
+.filter-group {
+    margin-bottom: 12px;
+}
+
+.filter-group:last-of-type {
+    margin-bottom: 0;
+}
+
+.filter-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.filter-group select {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    font-size: 13px;
+    color: #333;
+    background: #fafafa;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%23888' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    cursor: pointer;
+}
+
+.filter-group select:focus {
+    outline: none;
+    border-color: #00aff2;
+}
+
+.btn-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.btn {
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: opacity 0.15s, transform 0.1s;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.btn:active { transform: scale(0.97); }
+
+.btn-apply {
+    background: #00aff2;
+    color: white;
+}
+
+.btn-apply:hover { opacity: 0.88; }
+
+.btn-reset {
+    background: #f5f5f5;
+    color: #555;
+    border: 1px solid #e0e0e0;
+}
+
+.btn-reset:hover { background: #eee; }
+
+.btn svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+}
+
+/* Legend */
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    font-size: 13px;
+    color: #444;
+    border-bottom: 1px solid #f5f5f5;
+}
+
+.legend-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    border: 2px solid rgba(0,0,0,0.12);
+}
+
+/* =========================
+   MAP COLUMN
+========================= */
+.map-col {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.map-box {
+    background: white;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    position: relative;
+}
+
+#map {
+    height: 440px;
+    width: 100%;
+    display: block;
+    transition: height 0.3s ease;
+}
+
+/* Fullscreen map button */
+.map-fullscreen-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 1200;
+    width: 36px;
+    height: 36px;
+    background: white;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, transform 0.1s;
+}
+
+.map-fullscreen-btn:hover {
+    background: #f0f4f8;
+}
+
+.map-fullscreen-btn:active {
+    transform: scale(0.93);
+}
+
+.map-fullscreen-btn svg {
+    width: 18px;
+    height: 18px;
+    fill: #444;
+    pointer-events: none;
+}
+
+/* Fullscreen state */
+.map-box.is-fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+    z-index: 9999;
+}
+
+.map-box.is-fullscreen #map {
+    height: 100vh;
+}
+
+/* Darken overlay behind sidebar when fullscreen */
+.map-fullscreen-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 9998;
+}
+
+.map-fullscreen-overlay.active {
+    display: block;
+}
+
+/* =========================
+   CHARTS ROW
+========================= */
+.charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.chart-card {
+    background: white;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.chart-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 18px 12px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.chart-card-header svg {
+    width: 15px;
+    height: 15px;
+    fill: #00aff2;
+    flex-shrink: 0;
+}
+
+.chart-card-header span {
+    font-size: 13px;
+    font-weight: 600;
+    color: #444;
+}
+
+.chart-card-body {
+    padding: 16px;
+}
+
+canvas { max-width: 100%; }
+#materialChart { max-height: 200px; }
+#shapeChart    { max-height: 200px; }
+
+/* =========================
+   MOBILE RESPONSIVE
+========================= */
+@media (max-width: 900px) {
+    .main-grid { grid-template-columns: 1fr; }
+    .sidebar   { display: grid; grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 600px) {
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .stats-row .stat-card:last-child { grid-column: 1 / -1; }
+    .sidebar   { grid-template-columns: 1fr; }
+    .charts-row { grid-template-columns: 1fr; }
+    #map { height: 340px; }
+    .header-date { display: none; }
+}
+
+</style>
+
+<div class="map-page">
+
+    <!-- HEADER BAR -->
+    <div class="header-bar">
+        <div class="header-brand">
+            <div class="header-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
+                </svg>
+            </div>
+            <div>
+                <h1>Manhole GIS Mapping</h1>
+                <p>WSSP Monitoring</p>
+            </div>
+        </div>
+        <div class="header-date" id="currentDate"></div>
+    </div>
+
+    <!-- STATS ROW -->
+    <div class="stats-row">
+
+        <div class="stat-card blue">
+            <div class="stat-icon-box blue">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                </svg>
+            </div>
+            <div class="stat-info">
+                <div class="label">Total Manholes</div>
+                <div class="num" id="totalCount">0</div>
+            </div>
+        </div>
+
+        <div class="stat-card red">
+            <div class="stat-icon-box red">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                </svg>
+            </div>
+            <div class="stat-info">
+                <div class="label">Open</div>
+                <div class="num" id="openCount">0</div>
+            </div>
+        </div>
+
+        <div class="stat-card green">
+            <div class="stat-icon-box green">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14l-4-4 1.41-1.41L10 13.17l6.59-6.59L18 8l-8 8z"/>
+                </svg>
+            </div>
+            <div class="stat-info">
+                <div class="label">Covered</div>
+                <div class="num" id="coveredCount">0</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="main-grid">
+
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+
+            <div class="side-panel">
+                <div class="side-panel-title">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M4.25 5.61C6.57 8.59 10 13 10 13v6c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-6s3.43-4.41 5.75-7.39c.51-.66.04-1.61-.79-1.61H5.04c-.83 0-1.3.95-.79 1.61z"/>
+                    </svg>
+                    Filters
+                </div>
+
+                <div class="filter-group">
+                    <label for="zoneFilter">Zone</label>
+                    <select id="zoneFilter">
+                        <option value="">All Zones</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="ucFilter">Union Council</label>
+                    <select id="ucFilter">
+                        <option value="">All UCs</option>
+                    </select>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn btn-apply" onclick="applyFilters()">
+                        <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        Apply
+                    </button>
+                    <button class="btn btn-reset" onclick="resetFilters()">
+                        <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                        Reset
+                    </button>
+                </div>
+            </div>
+
+            <div class="side-panel">
+                <div class="side-panel-title">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.11 0 2-.89 2-2V5c0-1.11-.89-2-2-2zm0 5h-2V5h2v3zM4 19h16v2H4z"/>
+                    </svg>
+                    Legend
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot" style="background:#e53935;"></span>
+                    Open Manhole
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot" style="background:#22c065;"></span>
+                    Covered Manhole
+                </div>
+            </div>
+
+        </div>
+
+        <!-- MAP + CHARTS -->
+        <!-- Fullscreen overlay -->
+        <div class="map-fullscreen-overlay" id="mapOverlay" onclick="toggleFullscreen()"></div>
+
+        <div class="map-col">
+
+            <div class="map-box" id="mapBox">
+
+                <button class="map-fullscreen-btn" id="fullscreenBtn" onclick="toggleFullscreen()" title="Toggle fullscreen">
+                    <svg id="iconExpand" viewBox="0 0 24 24">
+                        <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                    </svg>
+                    <svg id="iconCollapse" viewBox="0 0 24 24" style="display:none">
+                        <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
+                    </svg>
+                </button>
+
+                <div id="map"></div>
+            </div>
+
+            <div class="charts-row">
+
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M11 2v20c-5.07-.5-9-4.79-9-10s3.93-9.5 9-10zm2.03 0v8.99H22c-.47-4.74-4.24-8.52-8.97-8.99zm0 11.01V22c4.74-.47 8.5-4.25 8.97-8.99h-8.97z"/>
+                        </svg>
+                        <span>By Material</span>
+                    </div>
+                    <div class="chart-card-body">
+                        <canvas id="materialChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M5 9.2h3V19H5V9.2zM10.6 5h2.8v14h-2.8V5zm5.6 8H19v6h-2.8v-6z"/>
+                        </svg>
+                        <span>By Shape</span>
+                    </div>
+                    <div class="chart-card-body">
+                        <canvas id="shapeChart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div><!-- /map-page -->
+
+{% endblock %}
+
+{% block scripts %}
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+/* =========================
+   HEADER DATE
+========================= */
+(function(){
+    var d = new Date();
+    document.getElementById('currentDate').textContent =
+        d.toLocaleDateString('en-PK', { year:'numeric', month:'long', day:'numeric' });
+})();
+
+/* =========================
+   MAP SETUP
+========================= */
+var map = L.map('map');
+
+L.tileLayer(
+    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    { maxZoom: 19, attribution: '© OpenStreetMap' }
+).addTo(map);
+
+var markers = L.markerClusterGroup({
+    maxClusterRadius: 40,        // clusters only form when markers are very close
+    disableClusteringAtZoom: 15, // at zoom 15+ all markers show individually
+    spiderfyOnMaxZoom: true,     // overlapping markers spread out at max zoom
+    showCoverageOnHover: false,  // no polygon shown on hover
+    zoomToBoundsOnClick: true,   // click cluster zooms straight to its markers
+    chunkedLoading: true
+});
+map.addLayer(markers);
+
+const apiUrl = "/dashboard/manholes/data/";
+
+const PALETTE = ['#00aff2','#f46f24','#22c065','#9b59b6','#e53935','#f1c40f','#1abc9c'];
+
+/* =========================
+   LOAD FILTER OPTIONS
+========================= */
+function loadFilters(){
+    fetch(apiUrl)
+    .then(r => r.json())
+    .then(res => {
+
+        var zones = new Set();
+        var ucs   = new Set();
+
+        res.geojson.features.forEach(function(f){
+            if(f.properties.zone) zones.add(f.properties.zone);
+            if(f.properties.uc)   ucs.add(f.properties.uc);
+        });
+
+        document.getElementById('zoneFilter').innerHTML =
+            '<option value="">All Zones</option>' +
+            [...zones].map(z =>
+                '<option value="' + z + '">' + z + '</option>'
+            ).join('');
+
+        document.getElementById('ucFilter').innerHTML =
+            '<option value="">All UCs</option>' +
+            [...ucs].map(u =>
+                '<option value="' + u + '">' + u + '</option>'
+            ).join('');
+    })
+    .catch(function(err){ console.error('Filter load error:', err); });
+}
+
+/* =========================
+   APPLY / RESET
+========================= */
+function applyFilters(){ loadData(); }
+
+function resetFilters(){
+    document.getElementById('zoneFilter').value = '';
+    document.getElementById('ucFilter').value   = '';
+    loadData();
+}
+
+/* =========================
+   LOAD MAP + STATS + CHARTS
+========================= */
+function loadData(){
+
+    var zone = document.getElementById('zoneFilter').value;
+    var uc   = document.getElementById('ucFilter').value;
+
+    var url = apiUrl + '?';
+    if(zone) url += 'zone=' + encodeURIComponent(zone) + '&';
+    if(uc)   url += 'uc='   + encodeURIComponent(uc);
+
+    fetch(url)
+    .then(r => r.json())
+    .then(function(res){
+
+        /* ---- MAP ---- */
+        markers.clearLayers();
+        var bounds = [];
+
+        L.geoJSON(res.geojson, {
+            pointToLayer: function(f, latlng){
+
+                var isOpen = f.properties.status === 'open';
+
+                var m = L.circleMarker(latlng, {
+                    radius:      7,
+                    fillColor:   isOpen ? '#e53935' : '#22c065',
+                    color:       '#fff',
+                    weight:      1.5,
+                    fillOpacity: 0.9
+                });
+
+                m.bindPopup(
+                    '<table style="font-size:13px;line-height:1.9;min-width:160px">' +
+                    '<tr><td style="color:#888;padding-right:10px">ID</td><td><b>'       + f.properties.id       + '</b></td></tr>' +
+                    '<tr><td style="color:#888;padding-right:10px">Zone</td><td>'        + f.properties.zone     + '</td></tr>' +
+                    '<tr><td style="color:#888;padding-right:10px">UC</td><td>'          + f.properties.uc       + '</td></tr>' +
+                    '<tr><td style="color:#888;padding-right:10px">Status</td><td>'      + f.properties.status   + '</td></tr>' +
+                    '<tr><td style="color:#888;padding-right:10px">Shape</td><td>'       + f.properties.shape    + '</td></tr>' +
+                    '<tr><td style="color:#888;padding-right:10px">Material</td><td>'    + f.properties.material + '</td></tr>' +
+                    '</table>'
+                );
+
+                markers.addLayer(m);
+                bounds.push(latlng);
+                return m;
+            }
+        });
+
+        if(bounds.length){
+            map.fitBounds(bounds, { padding: [20, 20] });
+        }
+
+        /* ---- STATS ---- */
+        document.getElementById('totalCount').innerText   = res.total_manholes || 0;
+        document.getElementById('openCount').innerText    = res.open_count     || 0;
+        document.getElementById('coveredCount').innerText = res.covered_count  || 0;
+
+        /* ---- MATERIAL CHART (doughnut) ---- */
+        if(window._materialChart) window._materialChart.destroy();
+
+        var matLabels = Object.keys(res.material_counts  || {});
+        var matValues = Object.values(res.material_counts || {});
+
+        window._materialChart = new Chart(
+            document.getElementById('materialChart'),
+            {
+                type: 'doughnut',
+                data: {
+                    labels: matLabels,
+                    datasets: [{
+                        data:            matValues,
+                        backgroundColor: PALETTE.slice(0, matLabels.length),
+                        borderWidth:     2,
+                        borderColor:     '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    cutout: '60%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { boxWidth: 10, font: { size: 11 } }
+                        }
+                    }
+                }
+            }
+        );
+
+        /* ---- SHAPE CHART (bar) ---- */
+        if(window._shapeChart) window._shapeChart.destroy();
+
+        var shpLabels = Object.keys(res.shape_counts  || {});
+        var shpValues = Object.values(res.shape_counts || {});
+
+        window._shapeChart = new Chart(
+            document.getElementById('shapeChart'),
+            {
+                type: 'bar',
+                data: {
+                    labels: shpLabels,
+                    datasets: [{
+                        label:           'Count',
+                        data:            shpValues,
+                        backgroundColor: shpLabels.map((l,i) => PALETTE[i % PALETTE.length]),
+                        borderRadius:    5,
+                        borderSkipped:   false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { size: 11 } }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#f0f0f0' },
+                            ticks: { font: { size: 11 }, stepSize: 1 }
+                        }
+                    }
+                }
+            }
+        );
+
+    })
+    .catch(function(err){ console.error('Data load error:', err); });
+}
+
+/* =========================
+   FULLSCREEN TOGGLE
+========================= */
+var _isFullscreen = false;
+
+function toggleFullscreen(){
+    var box     = document.getElementById('mapBox');
+    var overlay = document.getElementById('mapOverlay');
+    var iconExp = document.getElementById('iconExpand');
+    var iconCol = document.getElementById('iconCollapse');
+
+    _isFullscreen = !_isFullscreen;
+
+    if(_isFullscreen){
+        box.classList.add('is-fullscreen');
+        overlay.classList.add('active');
+        iconExp.style.display = 'none';
+        iconCol.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    } else {
+        box.classList.remove('is-fullscreen');
+        overlay.classList.remove('active');
+        iconExp.style.display = 'block';
+        iconCol.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    setTimeout(function(){ map.invalidateSize(); }, 350);
+}
+
+document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && _isFullscreen) toggleFullscreen();
+});
+
+/* =========================
+   INIT
+========================= */
+loadFilters();
+loadData();
+
+</script>
+
+{% endblock %}

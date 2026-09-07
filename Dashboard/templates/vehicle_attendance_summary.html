@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Vehicle Attendance Summary
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Total Vehicles: <strong>{{ total_vehicles }}</strong></h2>  <!-- Display total vehicles at the top -->
+    
+    <h2 class="mb-4">Daily Vehicle Summary ({{ date }})</h2>
+    
+    <!-- Filter Form -->
+    <form method="get" class="mb-4">
+        <div class="form-row">
+            <div class="col-md-4 mb-3">
+                <label for="date">Select Date:</label>
+                <input type="date" id="date" name="date" class="form-control" value="{{ date }}">
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="location">Select Location:</label>
+                <select id="location" name="location" class="form-control">
+                    <option value="">All Locations</option>
+                    {% for location in locations %}
+                    <option value="{{ location.location_name }}" {% if location.location_name == location_filter %}selected{% endif %}>
+                        {{ location.location_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 mb-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary">Filter</button>
+            </div>
+        </div>
+    </form>
+
+    <div class="text-right mb-4">
+        <button id="downloadCsvBtn" class="btn btn-success">Download CSV</button>
+    </div>
+    
+    {% load custom_filters %}
+
+
+
+    <h4 class="text-dark">Vehicles</h4>
+<div class="table-responsive">
+    <table class="table table-bordered table-striped" style="border: 2px solid #444;">
+        <thead style="background-color: #333; color: white;">
+            <tr>
+                <th>Location</th>
+                <th>Total Vehicles</th> 
+                <th>Total Functional</th>
+                <th>Total Non-Functional</th>
+                <th>Total</th>
+                <th>Total Fuel Issue (Liters)</th>  <!-- ✅ New Column -->
+                <th>Total Primary Trips</th> <!-- ✅ New Column -->
+
+                <th>Total Secondary Trips</th>  <!-- ✅ New Column -->
+            </tr>
+        </thead>
+        <tbody>
+            {% if attendance_summary %}
+                {% for summary in attendance_summary %}
+                    <tr style="background-color: #f5f2f2; color: rgb(0, 0, 0);">
+                        <td><strong>{{ summary.location.location_name }}</strong></td>
+                        <td><strong>{{ summary.total_vehicles }}</strong></td>  
+                        <td><strong>{{ summary.total_functional }}</strong></td>
+                        <td><strong>{{ summary.total_non_functional }}</strong></td>
+                        <td><strong>{{ summary.total_functional|add:summary.total_non_functional }}</strong></td>
+                        
+                        <!-- ✅ Fetch Fuel Data -->
+                        {% with fuel_data=fuel_data_dict|dict_get:summary.location.id %}
+    <td><strong>{{ fuel_data.fuel_top_up_liters|default:"0" }}</strong></td>
+    <td><strong>{{ fuel_data.primary_trips|default:"0" }}</strong></td> <!-- ✅ Primary Trips Column -->
+
+    <td><strong>{{ fuel_data.lfs_trips_no|default:"0" }}</strong></td>
+{% endwith %}
+
+                    </tr>
+                {% endfor %}
+                
+                <!-- ✅ Totals Row -->
+                <tr style="background-color: #222; color: white; font-weight: bold;">
+                    <td><strong>Grand Total:</strong></td>
+                    <td><strong>{{ total_vehicles }}</strong></td> 
+                    <td><strong>{{ total_functional }}</strong></td>
+                    <td><strong>{{ total_non_functional }}</strong></td>
+                    <td><strong>{{ total_functional|add:total_non_functional }}</strong></td>
+                    <td><strong>{{ fuel_totals.fuel_top_up_liters }}</strong></td>  <!-- ✅ Total Fuel -->
+                    <td><strong>{{ fuel_totals.primary_trips }}</strong></td> <!-- ✅ Total Primary Trips -->
+
+                    <td><strong>{{ fuel_totals.lfs_trips_no }}</strong></td>  <!-- ✅ Total LFS Trips -->
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="7" class="text-center"><strong>No Vehicle attendance data available for today.</strong></td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+ 
+    
+
+    
+    <h4 class="text-dark">Functional and Non-Functional Vehicle</h4>
+    <table class="table table-bordered table-striped" style="border: 2px solid #444;">
+        <thead style="background-color: #333; color: white;">
+            <tr>
+                <th>Status</th>
+                <th>Parked</th>
+                <th>Field Operation</th>
+                <th>Minor Repair</th>
+                <th>Major Repair</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr style="background-color: #d1e7ff; color: white;">  <!-- Green background for functional vehicles -->
+                <td><strong>Functional</strong></td>
+                <td><strong>{{ total_functional_parked }}</strong></td>
+                <td><strong>{{ total_functional_field_operation }}</strong></td>
+                <td>--</td>
+                <td>--</td>
+                <td><strong>{{ total_functional }}</strong></td>
+            </tr>
+            <tr style="background-color: #d1e7ff; color: rgb(0, 0, 0);">  <!-- Red background for non-functional vehicles -->
+                <td><strong>Non-Functional</strong></td>
+                <td>--</td>
+                <td>--</td>
+                <td><strong>{{ total_non_functional_minor_repair }}</strong></td>
+                <td><strong>{{ total_non_functional_major_repair }}</strong></td>
+                <td><strong>{{ total_non_functional }}</strong></td>
+            </tr>
+        </tbody>
+    </table>
+    
+
+
+    <div class="table-responsive mt-4">
+        <h4 class="text-dark">Vehicle Status (Primary & Secondary)</h4>
+
+        <table class="table table-bordered table-striped" style="border: 2px solid #444;">
+            <thead style="background-color: #333; color: white;">
+                <tr>
+                    <th>Status</th>
+                    <th>Primary</th>
+                    <th>Secondary</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="background-color: #d1e7ff;"> <!-- Light blue background for Parked -->
+                    <td><strong>Parked</strong></td>
+                    <td>{{ status_summary.parked.primary }}</td>
+                    <td>{{ status_summary.parked.secondary }}</td>
+                </tr>
+                <tr style="background-color: #d1e7ff;"> <!-- Light yellow background for Field Operation -->
+                    <td><strong>Field Operation</strong></td>
+                    <td>{{ status_summary.field_operation.primary }}</td>
+                    <td>{{ status_summary.field_operation.secondary }}</td>
+                </tr>
+                <tr style="background-color: #d1e7ff;"> <!-- Light red background for Minor Repair -->
+                    <td><strong>Minor Repair</strong></td>
+                    <td>{{ status_summary.minor_repair.primary }}</td>
+                    <td>{{ status_summary.minor_repair.secondary }}</td>
+                </tr>
+                <tr style="background-color: #d1e7ff;"> <!-- Light orange background for Major Repair -->
+                    <td><strong>Major Repair</strong></td>
+                    <td>{{ status_summary.major_repair.primary }}</td>
+                    <td>{{ status_summary.major_repair.secondary }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+
+    
+    
+
+    <div class="table-responsive mt-4">
+        <h4 class="text-dark">Tracker Status</h4>
+        <table class="table table-bordered table-striped" style="border: 2px solid #444;">
+            <thead style="background-color: #333; color: white;">
+                <tr>
+                    <th>Location</th>
+                    <th>Total Functional Trackers</th>
+                    <th>Total Non-Functional Trackers</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for summary in tracker_summary %}
+                    <tr style="background-color: #f7f7f7; color: rgb(0, 0, 0);">  <!-- Dark background for each row -->
+                        <td><strong>{{ summary.location }}</strong></td>
+                        <td><strong>{{ summary.total_functional }}</strong></td>
+                        <td><strong>{{ summary.total_non_functional }}</strong></td>
+                        <td><strong>{{ summary.total_functional|add:summary.total_non_functional }}</strong></td>
+                    </tr>
+                {% endfor %}
+                <tr style="background-color: #000000; color: white;">
+                    <td><strong>Total:</strong></td>
+                    <td><strong>{{ total_functional_tracker }}</strong></td>
+                    <td><strong>{{ total_non_functional_tracker }}</strong></td>
+                    <td><strong>{{ total_functional_tracker|add:total_non_functional_tracker }}</strong></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+
+
+<!-- Bar Chart for Location-wise Vehicle Status -->
+    <div class="mt-5">
+        <canvas id="vehicleStatusChart"></canvas>
+    </div>
+
+</div>
+
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Prepare data for chart
+    const labels = [
+        {% for summary in attendance_summary %}
+            "{{ summary.location.location_name }}",
+        {% endfor %}
+    ];
+
+    const functionalParkedData = [
+        {% for summary in attendance_summary %}
+            {{ summary.total_functional_parked }},
+        {% endfor %}
+    ];
+
+    const functionalFieldOperationData = [
+        {% for summary in attendance_summary %}
+            {{ summary.total_functional_field_operation }},
+        {% endfor %}
+    ];
+
+    const nonFunctionalMinorRepairData = [
+        {% for summary in attendance_summary %}
+            {{ summary.total_non_functional_minor_repair }},
+        {% endfor %}
+    ];
+
+    const nonFunctionalMajorRepairData = [
+        {% for summary in attendance_summary %}
+            {{ summary.total_non_functional_major_repair }},
+        {% endfor %}
+    ];
+
+    // Render the chart
+    const ctx = document.getElementById('vehicleStatusChart').getContext('2d');
+    const vehicleStatusChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Functional Parked',
+                    data: functionalParkedData,
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)', // Light blue
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Functional Field Operation',
+                    data: functionalFieldOperationData,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)', // Darker blue
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Non-Functional Minor Repair',
+                    data: nonFunctionalMinorRepairData,
+                    backgroundColor: 'rgba(255, 206, 86, 0.6)', // Light yellow
+                    borderColor: 'rgba(255, 206, 86, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Non-Functional Major Repair',
+                    data: nonFunctionalMajorRepairData,
+                    backgroundColor: 'rgba(255, 99, 132, 0.6)', // Light red
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Vehicles'
+                    }
+                }
+            },
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                }
+            }
+        }
+    });
+</script>
+
+<script>
+    document.getElementById("downloadCsvBtn").addEventListener("click", function() {
+        var tables = document.querySelectorAll("table"); // Select all tables
+        var csvData = [];
+
+        // Loop through all tables
+        tables.forEach(function(table) {
+            var rows = table.rows;
+            var tableData = [];
+
+            // Get headers and make them bold (we'll use uppercase to highlight them)
+            var headers = [];
+            for (var i = 0; i < rows[0].cells.length; i++) {
+                headers.push(rows[0].cells[i].innerText.toUpperCase()); // Uppercase for emphasis
+            }
+            tableData.push('"' + headers.join('","') + '"'); // Quoting each header for CSV formatting
+
+            // Get table rows
+            for (var i = 1; i < rows.length; i++) {
+                var rowData = [];
+                for (var j = 0; j < rows[i].cells.length; j++) {
+                    rowData.push('"' + rows[i].cells[j].innerText + '"'); // Quote data for CSV
+                }
+                tableData.push(rowData.join(","));
+            }
+
+            // Add the data of the current table to the CSV data
+            csvData.push(tableData.join("\n"));
+        });
+
+        // Convert array to CSV string and separate tables with a blank line
+        var csvString = csvData.join("\n\n");
+
+        // Create a Blob and download the CSV file
+        var blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        var link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "vehicle_attendance_summary.csv";
+        link.click();
+    });
+</script>
+
+{% endblock %}

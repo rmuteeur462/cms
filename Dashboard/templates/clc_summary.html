@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    CLC Summary Report
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>CLC Summary Report for {{ report_date }}</h2>
+
+   <!-- Filter Form -->
+<form method="get" class="mb-4">
+    <div class="form-row">
+        <div class="col-md-4 mb-3">
+            <label for="date">Select Date:</label>
+            <input
+                type="date"
+                id="date"
+                name="date"
+                class="form-control"
+                value="{{ report_date|date:'Y-m-d' }}">
+        </div>
+        <div class="col-md-4 mb-3">
+            <label for="location">Select Location:</label>
+            <select id="location" name="location" class="form-control">
+                <option value="">All Locations</option>
+                {% for location in locations %}
+                    <option value="{{ location.id }}" {% if location.id|stringformat:"s" == selected_location %}selected{% endif %}>
+                        {{ location.location_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4 mb-3 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </div>
+    </div>
+</form>
+
+
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead class="thead-dark">  
+                <tr>
+                    <th>Sr.No</th>
+                    <th>Key Performance Indicators</th>
+                    <th>Total Reports</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for activity in activity_summary %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ activity.activity__name }}</td>
+                        <td>{{ activity.total_reports }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="3" class="text-center">No activity data available for the selected date.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Summary Table -->
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead class="thead-dark">  
+                <tr>
+                    <th>Sr.No</th>
+                    <th>Location</th>
+                    <th>Total Reports</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in total_data %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ entry.location.location_name }}</td>
+                        <td>{{ entry.report_count }}</td>
+                        <td>
+                            <button class="btn btn-info" data-toggle="collapse" data-target="#details-{{ forloop.counter }}">
+                                View Details
+                            </button>
+                            <div id="details-{{ forloop.counter }}" class="collapse">
+                                <ul>
+                                    {% for report in entry.reports %}
+                                        <li>
+                                            <strong>{{ report.date }}:</strong> {{ report.name_of_official__name }} - 
+                                            {{ report.activity__name }} - {{ report.brief_report }}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="3" class="text-center">No data available for the selected filters.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+  <!-- Bar Chart for Location-wise Activity -->
+<div class="my-4">
+    <canvas id="activityChart"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('activityChart').getContext('2d');
+
+    // Array of colors for each location
+    const backgroundColors = [
+        'rgba(54, 162, 235, 0.2)', // Color for location 1
+        'rgba(255, 99, 132, 0.2)', // Color for location 2
+        'rgba(75, 192, 192, 0.2)', // Color for location 3
+        'rgba(153, 102, 255, 0.2)', // Color for location 4
+        'rgba(255, 159, 64, 0.2)', // Color for location 5
+        'rgba(255, 206, 86, 0.2)', // Color for location 6
+        'rgba(201, 203, 207, 0.2)', // Color for location 7
+        // Add more colors as needed for additional locations
+    ];
+
+    const borderColors = [
+        'rgba(54, 162, 235, 1)', // Border color for location 1
+        'rgba(255, 99, 132, 1)', // Border color for location 2
+        'rgba(75, 192, 192, 1)', // Border color for location 3
+        'rgba(153, 102, 255, 1)', // Border color for location 4
+        'rgba(255, 159, 64, 1)', // Border color for location 5
+        'rgba(255, 206, 86, 1)', // Border color for location 6
+        'rgba(201, 203, 207, 1)', // Border color for location 7
+        // Add more border colors as needed for additional locations
+    ];
+
+    const activityChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [{% for entry in total_data %}"{{ entry.location.location_name }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Total Activities',
+                data: [{% for entry in total_data %}{{ entry.report_count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                backgroundColor: backgroundColors.slice(0, {{ total_data|length }}),
+                borderColor: borderColors.slice(0, {{ total_data|length }}),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,430 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    Water Quality Management Report
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800" style="font-weight: bold; font-size: 1.5rem; text-align: center;">
+        Water Quality Test Data
+    </h1>
+
+    <!-- Filter Form -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+    </div>
+    <div class="card-body">
+        <form method="GET" class="form-inline mb-3">
+            <div class="form-group mr-3">
+                <label for="from_date" class="mr-2">From Date:</label>
+                <input type="date" class="form-control" name="from_date" value="{{ from_date|date:'Y-m-d' }}">
+            </div>
+            <div class="form-group mr-3">
+                <label for="to_date" class="mr-2">To Date:</label>
+                <input type="date" class="form-control" name="to_date" value="{{ to_date|date:'Y-m-d' }}">
+            </div>
+            <button type="submit" class="btn btn-primary mb-2">Filter</button>
+        </form>
+    </div>
+</div>
+
+    <!-- Add New Water Quality Data Button -->
+    <div class="mb-4 d-flex flex-wrap justify-content-start align-items-center gap-2">
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addWaterQualityModal">
+            ➕ Add New Water Quality Data
+        </button>
+
+        <a href="{% url 'water_test_report' %}" class="btn btn-primary">
+            📈 Water Test Report
+        </a>
+
+        <a href="{% url 'water_quality_dashboard' %}" class="btn btn-primary">
+            📊 Dashboard View
+        </a>
+    </div>
+
+    
+    
+
+    <!-- Add Water Quality Modal -->
+    <div class="modal fade" id="addWaterQualityModal" tabindex="-1" role="dialog" aria-labelledby="addWaterQualityModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addWaterQualityModalLabel">Add New Water Quality Data</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" id="waterQualityForm">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="id_location">Location:</label>
+                            {{ form.location }}
+                        </div>
+                        <div class="form-group">
+                            <label for="id_uc">UC:</label>
+                            {{ form.uc }}
+                        </div>
+                        <div class="form-group">
+                            <label for="id_tubewell">Tubewell:</label>
+                            {{ form.tubewell }}
+                        </div>
+                        <div class="form-group">
+                            <label for="id_location_type">Location Type:</label>
+                            {{ form.location_type }}
+                        </div>
+                        <div class="form-group">
+                            <label for="id_temperature_c">Temperature (C):</label>
+                            {{ form.temperature_c }}
+                        </div>
+                        <div class="form-group">
+                            <label for="id_ph">pH:</label>
+                            {{ form.ph }}
+                        </div>
+                        <div class="form-group">
+                            <label for="id_electrical_conductivity_uc_cm">Electrical Conductivity (µS/cm):</label>
+                            {{ form.electrical_conductivity_uc_cm }}
+                        </div>
+                        <div class="form-group">
+                            <label for="id_dissolved_oxygen_mg_l">Dissolved Oxygen (mg/L):</label>
+                            {{ form.dissolved_oxygen_mg_l }}
+                        </div>
+                        <div class="form-group">
+                            <label for="id_tss_mg_l">TSS (mg/L):</label>
+                            {{ form.tss_mg_l }}
+                        </div>
+                        <div class="form-group">
+                            <label for="id_turbidity_ntu">Turbidity (NTU):</label>
+                            {{ form.turbidity_ntu }}
+                        </div>
+                        <div class="form-group">
+                            <label for="id_tds_mg_l">TDS (mg/L):</label>
+                            {{ form.tds_mg_l }}
+                        </div>
+                        <div class="form-group">
+                            <label for="id_resistivity_ojm_cm">Resistivity (Ω·m):</label>
+                            {{ form.resistivity_ojm_cm }}
+                        </div>
+                        <div class="form-group">
+                            <label for="id_salinity_mg_l">Salinity (mg/L):</label>
+                            {{ form.salinity_mg_l }}
+                        </div>
+                        <div class="form-group">
+                            <label for="id_coliform">Coliform:</label>
+                            {{ form.coliform }}
+                        </div>
+                        <div class="form-group">
+                            <label for="id_output">Output:</label>
+                            {{ form.output }}
+                        </div>
+                        <div class="form-group">
+                            <label for="id_longitude">Longitude:</label>
+                            {{ form.longitude }}
+                        </div>
+                        <div class="form-group">
+                            <label for="id_latitude">Latitude:</label>
+                            {{ form.latitude }}
+                        </div>
+                        <div class="form-group">
+                            <label for="id_date">Test Date:</label>
+                            {{ form.date }}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary" id="submitWaterQualityForm">Add Data</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Water Quality Records Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h2 class="mt-4">Water Quality Records</h2>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover shadow-sm bg-white">
+                    <thead class="bg-primary text-white">
+                        <tr>
+                            <th>Sr.No</th>
+                            <th>Zone</th>
+                            <th>UC</th>
+                            <th style="min-width: 120px;">Tubewell</th>
+                            <th style="min-width: 120px;">Location Type</th>               
+                            <th style="min-width: 130px;">Temperature (C)</th>
+                            <th>pH</th>
+                            <th style="min-width: 190px;">Electrical Conductivity (µS/cm)</th>
+                            <th style="min-width: 150px;">Dissolved Oxygen (mg/L)</th>
+                            <th>TSS (mg/L)</th>
+                            <th>Turbidity (NTU)</th>
+                            <th>TDS (mg/L)</th>
+                            <th>Resistivity (Ω·m)</th>
+                            <th>Salinity (mg/L)</th>
+                            <th>Coliform</th>
+                            <th>Output</th>
+                            <th>Longitude</th>
+                            <th>Latitude</th>
+                            <th>Test Date</th>
+
+                       
+                        </tr>
+                    </thead>
+                    <tbody id="waterQualityDataTableBody">
+                        {% for report in water_quality_data %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td class="text-center">{{ report.location }}</td>
+                                <td class="text-center">{{ report.uc }}</td>
+                                <td class="text-center">{{ report.tubewell }}</td>
+                                <td class="text-center">{{ report.location_type }}</td>
+                                <td class="text-center">{{ report.temperature_c }}</td>
+                                <td class="text-center">{{ report.ph }}</td>
+                                <td class="text-center">{{ report.electrical_conductivity_uc_cm }}</td>
+                                <td class="text-center">{{ report.dissolved_oxygen_mg_l }}</td>
+                                <td class="text-center">{{ report.tss_mg_l }}</td>
+                                <td class="text-center">{{ report.turbidity_ntu }}</td>
+                                <td class="text-center">{{ report.tds_mg_l }}</td>
+                                <td class="text-center">{{ report.resistivity_ojm_cm }}</td>
+                                <td class="text-center">{{ report.salinity_mg_l }}</td>
+                                <td class="text-center">{{ report.coliform }}</td>
+                                <td class="text-center">{{ report.output }}</td>
+                                <td class="text-center">{{ report.longitude }}</td>
+                                <td class="text-center">{{ report.latitude }}</td>
+                                <td class="text-center">{{ report.date }}</td>
+
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-warning edit-btn" data-id="{{ report.id }}" data-bs-toggle="modal" data-bs-target="#editWaterTestModal">✏️ Edit</button>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="18" class="text-center">No water quality records found for {{ report_date }}.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Edit Water Test Modal -->
+<div class="modal fade" id="editWaterTestModal" tabindex="-1" role="dialog" aria-labelledby="editWaterTestModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title" id="editWaterTestModalLabel">Edit Water Test Data</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <form id="editWaterTestForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="edit_id">
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label>Location Type:</label>
+                            <select id="edit_location_type" class="form-control">
+                                <option value="At source">At source</option>
+                                <option value="Consumer Tap">Consumer Tap</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label>Output:</label>
+                            <select id="edit_output" class="form-control">
+                                <option value="safe">Safe</option>
+                                <option value="unsafe">Unsafe</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <label>Temperature (°C):</label>
+                            <input type="number" step="0.01" id="edit_temperature_c" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label>pH:</label>
+                            <input type="number" step="0.1" id="edit_ph" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label>Electrical Conductivity (µS/cm):</label>
+                            <input type="number" step="0.01" id="edit_electrical_conductivity_uc_cm" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <label>Dissolved Oxygen (mg/L):</label>
+                            <input type="number" step="0.01" id="edit_dissolved_oxygen_mg_l" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label>TSS (mg/L):</label>
+                            <input type="number" step="0.01" id="edit_tss_mg_l" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label>Turbidity (NTU):</label>
+                            <input type="number" step="0.01" id="edit_turbidity_ntu" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <label>TDS (mg/L):</label>
+                            <input type="number" step="0.01" id="edit_tds_mg_l" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label>Resistivity (Ω·m):</label>
+                            <input type="number" step="0.01" id="edit_resistivity_ojm_cm" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label>Salinity (mg/L):</label>
+                            <input type="number" step="0.01" id="edit_salinity_mg_l" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <label>Coliform:</label>
+                            <input type="number" step="0.01" id="edit_coliform" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label>Longitude:</label>
+                            <input type="number" step="0.000001" id="edit_longitude" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label>Latitude:</label>
+                            <input type="number" step="0.000001" id="edit_latitude" class="form-control">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="updateWaterTestBtn">💾 Update</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+    
+        // Open Edit Modal with current data
+        $(document).on('click', '.edit-btn', function() {
+            const row = $(this).closest('tr');
+            $('#edit_id').val($(this).data('id'));
+            $('#edit_location_type').val(row.find('td:eq(4)').text());
+            $('#edit_temperature_c').val(row.find('td:eq(5)').text());
+            $('#edit_ph').val(row.find('td:eq(6)').text());
+            $('#edit_electrical_conductivity_uc_cm').val(row.find('td:eq(7)').text());
+            $('#edit_dissolved_oxygen_mg_l').val(row.find('td:eq(8)').text());
+            $('#edit_tss_mg_l').val(row.find('td:eq(9)').text());
+            $('#edit_turbidity_ntu').val(row.find('td:eq(10)').text());
+            $('#edit_tds_mg_l').val(row.find('td:eq(11)').text());
+            $('#edit_resistivity_ojm_cm').val(row.find('td:eq(12)').text());
+            $('#edit_salinity_mg_l').val(row.find('td:eq(13)').text());
+            $('#edit_coliform').val(row.find('td:eq(14)').text());
+            $('#edit_output').val(row.find('td:eq(15)').text());
+            $('#edit_longitude').val(row.find('td:eq(16)').text());
+            $('#edit_latitude').val(row.find('td:eq(17)').text());
+        });
+    
+        // Update Data via AJAX
+        $('#updateWaterTestBtn').click(function() {
+            const formData = {
+                'id': $('#edit_id').val(),
+                'location_type': $('#edit_location_type').val(),
+                'temperature_c': $('#edit_temperature_c').val(),
+                'ph': $('#edit_ph').val(),
+                'electrical_conductivity_uc_cm': $('#edit_electrical_conductivity_uc_cm').val(),
+                'dissolved_oxygen_mg_l': $('#edit_dissolved_oxygen_mg_l').val(),
+                'tss_mg_l': $('#edit_tss_mg_l').val(),
+                'turbidity_ntu': $('#edit_turbidity_ntu').val(),
+                'tds_mg_l': $('#edit_tds_mg_l').val(),
+                'resistivity_ojm_cm': $('#edit_resistivity_ojm_cm').val(),
+                'salinity_mg_l': $('#edit_salinity_mg_l').val(),
+                'coliform': $('#edit_coliform').val(),
+                'output': $('#edit_output').val(),
+                'longitude': $('#edit_longitude').val(),
+                'latitude': $('#edit_latitude').val(),
+                'csrfmiddlewaretoken': $('input[name="csrfmiddlewaretoken"]').val()
+            };
+    
+            $.ajax({
+                url: "{% url 'update_watertest' %}",
+                type: "POST",
+                data: formData,
+                success: function(response) {
+                    if (response.status === 'success') {
+                        alert('✅ Record updated successfully!');
+                        location.reload(); // Optional: reload to refresh table
+                    } else {
+                        alert('⚠️ Failed to update record.');
+                    }
+                },
+                error: function() {
+                    alert('❌ Error updating record.');
+                }
+            });
+        });
+    
+    });
+    </script>
+    
+<script>
+    $(document).ready(function() {
+        // When Location changes, fetch corresponding UCs
+        $('#id_location').change(function() {
+            const locationId = $(this).val();
+            if (locationId) {
+                $.ajax({
+                    url: "{% url 'get_ucs' %}",
+                    data: {'location_id': locationId},
+                    success: function(data) {
+                        let ucOptions = '<option value="">Select UC</option>';
+                        data.forEach(uc => {
+                            ucOptions += `<option value="${uc.id}">${uc.uc_name}</option>`;
+                        });
+                        $('#id_uc').html(ucOptions);
+                        $('#id_tubewell').html('<option value="">Select TubeWell</option>');  // Reset TubeWell options
+                    }
+                });
+            } else {
+                $('#id_uc').html('<option value="">Select UC</option>');
+                $('#id_tubewell').html('<option value="">Select TubeWell</option>');
+            }
+        });
+
+        // When UC changes, fetch corresponding TubeWells
+        $('#id_uc').change(function() {
+            const ucId = $(this).val();
+            if (ucId) {
+                $.ajax({
+                    url: "{% url 'get_tubewells' %}",
+                    data: {'uc_id': ucId},
+                    success: function(data) {
+                        let tubewellOptions = '<option value="">Select TubeWell</option>';
+                        data.forEach(tubewell => {
+                            tubewellOptions += `<option value="${tubewell.id}">${tubewell.tubewell_name}</option>`;
+                        });
+                        $('#id_tubewell').html(tubewellOptions);
+                    }
+                });
+            } else {
+                $('#id_tubewell').html('<option value="">Select TubeWell</option>');
+            }
+        });
+    });
+</script>
+
+{% endblock %}

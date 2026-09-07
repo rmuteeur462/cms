@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Street Cleaning Detail{% endblock %}
+
+{% block content %}
+    <div class="container mt-4">
+        <h1 class="h3 mb-4 text-gray-800 text-center" style="font-weight: bold; font-size: 1.5rem;">
+            Road & Street Cleaning Detail
+        </h1>
+
+        <!-- OpenLayers Library -->
+        <link rel="stylesheet" href="https://unpkg.com/ol@v7.3.0/dist/ol.css" type="text/css">
+        <script src="https://unpkg.com/ol@v7.3.0/dist/ol.js"></script>
+
+        <style>
+            #map {
+                width: 100%;
+                height: 500px;
+            }
+        </style>
+        
+        <!-- Detail Table -->
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <tbody>
+                    <tr>
+                        <th>Zone</th>
+                        <td>{{ street_cleaning.loction }}</td>
+                    </tr>
+                    <tr>
+                        <th>UC</th>
+                        <td>{{ street_cleaning.uc_name }}</td>
+                    </tr>
+                    <tr>
+                        <th>NC</th>
+                        <td>{{ street_cleaning.nc_name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Street</th>
+                        <td>{{ street_cleaning.street_name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Cleaning Day</th>
+                        <td>
+                            {% if street_cleaning.day_frequency.all %}
+                                {{ street_cleaning.day_frequency.all|join:", " }}
+                            {% else %}
+                                No days assigned
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Cleaning Frequency</th>
+                        <td>{{ street_cleaning.Cleaning_frequency }}</td>
+                    </tr>
+                    <tr>
+                        <th>Assigned Employees</th>
+                        <td>{{ street_cleaning.employee_assign_for_cleaning.all|join:", " }}</td>
+                    </tr>
+                    <tr>
+                        <th>Assigned Vehicle</th>
+                        <td>{{ street_cleaning.vehicle_assign_for_cleaning.all|join:", " }}</td>
+                    </tr>
+                    <tr>
+                        <th>Bin Assigned</th>
+                        <td>{{ street_cleaning.bin_assign.all|join:", " }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- OpenLayers Map -->
+        <h2 class="text-center">Map View</h2>
+        <div id="map"></div>
+
+        <script>
+            // Retrieve the coordinates from the context
+            var startLat = {{ street_cleaning.street_name.start_latitude }};
+            var startLon = {{ street_cleaning.street_name.start_longitude }};
+            var endLat = {{ street_cleaning.street_name.end_latitude }};
+            var endLon = {{ street_cleaning.street_name.end_longitude }};
+        
+            // Create a map object
+            var map = new ol.Map({
+                target: 'map',
+                layers: [
+                    new ol.layer.Tile({
+                        source: new ol.source.OSM() // OpenStreetMap layer
+                    })
+                ],
+                view: new ol.View({
+                    center: ol.proj.fromLonLat([startLon, startLat]),
+                    zoom: 14
+                })
+            });
+
+            // Create start and end markers with icons
+            var startMarker = new ol.Feature({
+                geometry: new ol.geom.Point(ol.proj.fromLonLat([startLon, startLat]))
+            });
+
+            var endMarker = new ol.Feature({
+                geometry: new ol.geom.Point(ol.proj.fromLonLat([endLon, endLat]))
+            });
+
+            var markerStyle = new ol.style.Style({
+                image: new ol.style.Icon({
+                    src: 'https://img.icons8.com/ios/50/000000/marker.png'
+                })
+            });
+
+            startMarker.setStyle(markerStyle);
+            endMarker.setStyle(markerStyle);
+
+            // Create a vector source and layer for markers
+            var vectorSource = new ol.source.Vector({
+                features: [startMarker, endMarker]
+            });
+
+            var vectorLayer = new ol.layer.Vector({
+                source: vectorSource
+            });
+
+            // Add the vector layer to the map
+            map.addLayer(vectorLayer);
+
+            // Add a bold line between the start and end points
+            var line = new ol.Feature({
+                geometry: new ol.geom.LineString([
+                    ol.proj.fromLonLat([startLon, startLat]),
+                    ol.proj.fromLonLat([endLon, endLat])
+                ])
+            });
+
+            var lineLayer = new ol.layer.Vector({
+                source: new ol.source.Vector({
+                    features: [line]
+                }),
+                style: new ol.style.Style({
+                    stroke: new ol.style.Stroke({
+                        color: 'black',
+                        width: 4
+                    })
+                })
+            });
+
+            // Add the line layer to the map
+            map.addLayer(lineLayer);
+        </script>
+
+        <!-- Back Button -->
+        <div class="text-center mt-3">
+            <a href="{% url 'street_cleaning_list' %}" class="btn btn-primary">
+                <i class="bi bi-arrow-left-circle"></i> Back to List
+            </a>
+        </div>
+    </div>
+{% endblock %}

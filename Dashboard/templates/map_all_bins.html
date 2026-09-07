@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+All Bin Locations Map
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+   
+   
+    <div class="d-flex flex-column justify-content-center align-items-center gap-4">
+        <div class="header-content">
+            <h1 class="display-5 fw-bold mb-2">
+                <span class="text-dark">WSSP All Bins</span>
+              </h1>
+        </div>
+    </div>
+
+    <!-- Display the total count of Containers and Moqas -->
+    <div class="d-flex justify-content-between mb-3">
+        <div><strong>Total Containers:</strong> {{ total_containers }}</div>
+        <div><strong>Total Moqas:</strong> {{ total_moqas }}</div>
+    </div>
+
+    <!-- Search Form -->
+    <form method="get" action="{% url 'map_all_bins' %}">
+        <div class="input-group mb-3">
+            <input type="text" class="form-control" name="bin_id" placeholder="Search Bin by ID" value="{{ request.GET.bin_id }}">
+            <select class="form-select" name="bin_type">
+                <option value="">All Types</option>
+                {% for value, label in TYPE_CHOICES %}
+                    <option value="{{ value }}" {% if request.GET.bin_type == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <select class="form-select" name="location_id">
+                <option value="">All Locations</option>
+                {% for location in locations %}
+                    <option value="{{ location.id }}" {% if request.GET.location_id == location.id|stringformat:"s" %}selected{% endif %}>{{ location.location_name }}</option>
+                {% endfor %}
+            </select>
+            <select class="form-select" name="uc_id">
+                <option value="">All UCs</option>
+                {% for uc in ucs %}
+                    <option value="{{ uc.id }}" {% if request.GET.uc_id == uc.id|stringformat:"s" %}selected{% endif %}>{{ uc.uc_name }}</option>
+                {% endfor %}
+            </select>
+            <select class="form-select" name="bin_status">
+                <option value="">All Statuses</option>
+                <option value="Lifted" {% if request.GET.bin_status == "Lifted" %}selected{% endif %}>Lifted</option>
+                <option value="Unlifted" {% if request.GET.bin_status == "Unlifted" %}selected{% endif %}>Unlifted</option>
+            </select>
+            <input type="date" class="form-control" name="date" value="{{ request.GET.date|default:today_date }}">
+            <button class="btn btn-outline-secondary" type="submit">Search</button>
+        </div>
+    </form>
+     
+    <!-- Toggle Buttons -->
+    <div class="d-flex justify-content-between mb-3">
+        <button id="hideLinesButton" class="btn btn-danger">Hide Lines and Distances</button>
+        <button id="showLinesButton" class="btn btn-success">Show Lines and Distances</button>
+    </div>
+
+    <!-- Map -->
+    <div id="map" style="width: 100%; height: 600px; position: relative;"></div>
+
+    <!-- Legend -->
+    <div class="mt-3">
+        <strong>Legend:</strong>
+        <div><span style="display: inline-block; width: 20px; height: 20px; background-color: #FF0000; margin-right: 5px; border: 1px solid black;"></span> Container</div>
+        <div><span style="display: inline-block; width: 20px; height: 20px; background-color: #0000FF; margin-right: 5px; border: 1px solid black;"></span> Moqa</div>
+    </div>
+
+    <!-- Popup -->
+    <div id="popup" class="ol-popup"><div id="popup-content"></div></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/ol@v10.2.1/dist/ol.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v10.2.1/ol.css">
+
+<style>
+    .ol-popup {
+        display: none;
+        position: absolute;
+        background-color: white;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid black;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+    }
+
+    
+    .ol-popup .close-btn {
+        float: right;
+        margin-left: 10px;
+        cursor: pointer;
+        font-weight: bold;
+        color: #888;
+    }
+
+    .ol-popup table td {
+    padding: 4px 8px;
+    border-bottom: 1px solid #eee;
+}
+
+#popup-content strong {
+    color: #2a2a2a;
+}
+
+
+    
+    
+</style>
+<h3>All Zones</h3>
+<div id="kmz-checkboxes">
+    {% for kmz in kmz_files %}
+        {% if kmz.kml_file %}
+            <div>
+                <input type="checkbox" id="kmz_{{ forloop.counter }}" data-kml-url="{{ kmz.kml_file.url }}">
+                <label for="kmz_{{ forloop.counter }}">{{ kmz.file.name }}</label>
+            </div>
+        {% endif %}
+    {% empty %}
+        <p>No KMZ files uploaded yet.</p>
+    {% endfor %}
+</div>
+
+<script>
+    const kmlLayers = [];
+    const featureColors = {};
+
+    function getRandomColor() {
+        const r = Math.floor(Math.random() * 200);
+        const g = Math.floor(Math.random() * 200);
+        const b = Math.floor(Math.random() * 200);
+        return `rgba(${r}, ${g}, ${b}, 0.3)`;
+    }
+
+    function createLabelStyle(feature) {
+        const id = feature.getId() || feature.get('name') || Math.random().toString();
+        if (!featureColors[id]) {
+            featureColors[id] = getRandomColor();
+        }
+
+        return new ol.style.Style({
+            stroke: new ol.style.Stroke({ color: 'blue', width: 2 }),
+            fill: new ol.style.Fill({ color: featureColors[id] }),
+            text: new ol.style.Text({
+                text: feature.get('name') || '',
+                font: '14px Calibri,sans-serif',
+                fill: new ol.style.Fill({ color: '#fff' }),
+                backgroundFill: new ol.style.Fill({ color: '#000' }),
+                padding: [2, 4, 2, 4],
+                placement: 'point',
+                overflow: true
+            })
+        });
+    }
+
+    document.querySelectorAll('#kmz-checkboxes input[type="checkbox"]').forEach(function (checkbox) {
+        checkbox.addEventListener('change', function () {
+            const kmlUrl = this.getAttribute('data-kml-url');
+
+            if (this.checked) {
+                const vectorSource = new ol.source.Vector({
+                    url: kmlUrl,
+                    format: new ol.format.KML({ extractStyles: false })
+                });
+
+                const vectorLayer = new ol.layer.Vector({
+                    source: vectorSource,
+                    style: createLabelStyle,
+                    opacity: 1
+                });
+
+                map.addLayer(vectorLayer);
+                kmlLayers.push({ checkbox: this, layer: vectorLayer });
+            } else {
+                const entry = kmlLayers.find(item => item.checkbox === this);
+                if (entry) {
+                    map.removeLayer(entry.layer);
+                    kmlLayers.splice(kmlLayers.indexOf(entry), 1);
+                }
+            }
+        });
+    });
+
+    // Auto-select and load the first checkbox
+    window.addEventListener('DOMContentLoaded', function () {
+        const firstCheckbox = document.querySelector('#kmz-checkboxes input[type="checkbox"]');
+        if (firstCheckbox) {
+            firstCheckbox.checked = true;
+            firstCheckbox.dispatchEvent(new Event('change'));
+        }
+    });
+</script>
+
+
+<script>
+    var bins = [
+        {% for item in bins_with_status %}
+            {
+                "bin_id": "{{ item.bin.bin_id }}",
+                "type": "{{ item.bin.name }}",
+                "name": "{{ item.bin.name_container }}",
+                "location": "{{ item.bin.location }}",
+                "latitude": {{ item.bin.latitude }},
+                "longitude": {{ item.bin.longitude }},
+                "status": "{{ item.status }}",
+                "lifting_frequency": "{{ item.lifting_frequency }}",
+                "first_lifting_time": "{{ item.first_lifting_time }}",
+                "second_lifting_time": "{{ item.second_lifting_time }}",
+                "third_lifting_time": "{{ item.third_lifting_time }}"
+            },
+        {% endfor %}
+    ];
+
+    var map = new ol.Map({
+        target: 'map',
+        layers: [new ol.layer.Tile({ source: new ol.source.OSM() })],
+        view: new ol.View({
+            center: ol.proj.fromLonLat([71.5249, 34.0151]),
+            zoom: 12
+        })
+    });
+
+    
+
+    var vectorSource = new ol.source.Vector();
+    var vectorLayer = new ol.layer.Vector({ source: vectorSource });
+    map.addLayer(vectorLayer);
+
+    var lineSource = new ol.source.Vector();
+    var lineLayer = new ol.layer.Vector({
+        source: lineSource,
+        visible: false
+    });
+    map.addLayer(lineLayer);
+
+    var popup = new ol.Overlay({
+        element: document.getElementById('popup'),
+        positioning: 'bottom-center',
+        stopEvent: false,
+        offset: [0, -10]
+    });
+    map.addOverlay(popup);
+
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        var R = 6371;
+        var dLat = (lat2 - lat1) * Math.PI / 180;
+        var dLon = (lon2 - lon1) * Math.PI / 180;
+        var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
+
+    bins.forEach(function (bin, index) {
+        var currentCoords = ol.proj.fromLonLat([bin.longitude, bin.latitude]);
+        var marker = new ol.Feature({
+            geometry: new ol.geom.Point(currentCoords),
+            bin_id: bin.bin_id,
+            type: bin.type,
+            name: bin.name,
+            location: bin.location,
+            status: bin.status,
+            lifting_frequency: bin.lifting_frequency,
+            first_lifting_time: bin.first_lifting_time,
+            second_lifting_time: bin.second_lifting_time,
+            third_lifting_time: bin.third_lifting_time
+        });
+
+        var fillColor = bin.type === 'container' ? '#FF0000' : '#0000FF';
+
+        marker.setStyle(new ol.style.Style({
+            image: new ol.style.Circle({
+                radius: 7,
+                fill: new ol.style.Fill({ color: fillColor }),
+                stroke: new ol.style.Stroke({ color: '#000000', width: 2 })
+            })
+        }));
+
+        vectorSource.addFeature(marker);
+
+        if (index < bins.length - 1) {
+            var nextBin = bins[index + 1];
+            var nextCoords = ol.proj.fromLonLat([nextBin.longitude, nextBin.latitude]);
+
+            var line = new ol.Feature({
+                geometry: new ol.geom.LineString([currentCoords, nextCoords])
+            });
+
+            line.setStyle(new ol.style.Style({
+                stroke: new ol.style.Stroke({ color: '#000000', width: 2 }),
+                text: new ol.style.Text({
+                    text: calculateDistance(bin.latitude, bin.longitude, nextBin.latitude, nextBin.longitude).toFixed(2) + ' km',
+                    font: '12px Calibri,sans-serif',
+                    fill: new ol.style.Fill({ color: '#FF0000' }),
+                    backgroundFill: new ol.style.Fill({ color: 'rgba(255,255,255,0.7)' }),
+                    offsetY: -10,
+                    padding: [5, 5, 5, 5]
+                })
+            }));
+
+            lineSource.addFeature(line);
+        }
+    });
+
+    map.on('click', function (evt) {
+    popup.setPosition(undefined);
+    document.getElementById('popup').style.display = 'none';
+
+    map.forEachFeatureAtPixel(evt.pixel, function (feature) {
+        if (feature.getGeometry().getType() === 'Point') {
+            var content = `
+                <div>
+                    <span class="close-btn" onclick="hidePopup()">×</span>
+                    <strong><u>Bin Details</u></strong>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                        <tr><td><strong>Bin ID</strong></td><td>${feature.get('bin_id') || 'N/A'}</td></tr>
+                        <tr><td><strong>Type</strong></td><td>${feature.get('type') || 'N/A'}</td></tr>
+                        <tr><td><strong>Name</strong></td><td>${feature.get('name') || 'N/A'}</td></tr>
+                        <tr><td><strong>Location</strong></td><td>${feature.get('location') || 'N/A'}</td></tr>
+                        <tr><td><strong>Status</strong></td><td>${feature.get('status') || 'N/A'}</td></tr>
+                        <tr><td><strong>Lifting Frequency</strong></td><td>${feature.get('lifting_frequency') || 'N/A'}</td></tr>
+                        <tr><td><strong>1st Lifting</strong></td><td>${feature.get('first_lifting_time') || 'N/A'}</td></tr>
+                        <tr><td><strong>2nd Lifting</strong></td><td>${feature.get('second_lifting_time') || 'N/A'}</td></tr>
+                        <tr><td><strong>3rd Lifting</strong></td><td>${feature.get('third_lifting_time') || 'N/A'}</td></tr>
+                    </table>
+                </div>
+            `;
+
+            document.getElementById('popup-content').innerHTML = content;
+            popup.setPosition(feature.getGeometry().getCoordinates());
+            document.getElementById('popup').style.display = 'block';
+        }
+    });
+});
+
+    document.getElementById('hideLinesButton').addEventListener('click', function () {
+        lineLayer.setVisible(false);
+    });
+
+    document.getElementById('showLinesButton').addEventListener('click', function () {
+        lineLayer.setVisible(true);
+    });
+
+    map.on('pointermove', function (evt) {
+        map.getTargetElement().style.cursor = map.hasFeatureAtPixel(evt.pixel) ? 'pointer' : '';
+    });
+
+</script>
+{% endblock %}

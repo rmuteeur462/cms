@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+<body>
+    
+    {% block content %}
+    <h1>Perfoma Tube Entries</h1>
+    
+    <!-- Table Container with Scrollable Area -->
+    <div class="table-responsive">
+        <table id="dataTable" class="table table-bordered table-hover shadow-sm bg-white">
+            <thead class="bg-primary text-white">
+                <tr>
+                    <!-- <th>ID</th> -->
+                    <th>Name of Official</th>
+                    <th>Tube Well ID</th>
+                    <th>Tube Well Functional</th>
+                    <th>Operator Present</th>
+                    <th>Supervisor Present</th>
+                    <th>Bookkeeping Updated</th>
+                    <th>Filtration Plant Functional</th>
+                    <th>SCADA System Functional</th>
+                    <th>Water Quality Device Functional</th>
+                    <th>Operator in Uniform</th>
+                    <th>Mechanical Fault</th>
+                    <th>Pipe Leakage</th>
+                    <th>Maintenance Record Maintained</th>
+                    <th>Registered Connection</th>
+                    <th>Illegal Connection</th>
+                    <th>Complaints Redressal</th>
+                    <th>Location</th>
+                    <th>Bins Clean</th>
+                    <th>Surroundings Clean</th>
+                    <th>Spillage Observed</th>
+                    <th>Waste Lifted Timely</th>
+                    <th>Staff Uniform</th>
+                    <th>Street Littering</th>
+                    <th>Area Sweeping</th>
+                    <th>SWM Consumer Billed</th>
+                    <th>Vehicle Condition</th>
+                    <th>Vehicle Trip Record</th>
+                    <th>Pending Complaints</th>
+                    <th>Staff Attendance</th>
+                    <th>Drain Location</th>
+                    <th>Drain Desiltation</th>
+                    <th>Manhole Covers</th>
+                    <th>Sludge Lifting Timely</th>
+                    <th>Manhole Desiltation</th>
+                    <th>DEWATS Status</th>
+                    <th>Staff Attendance</th>
+                    <th>Staff Present</th>
+                    <th>Staff Wearing Proper Uniform</th>
+                    <th>Total Vehicle in Yard</th>
+                    <th>Layout of Vehicles</th>
+                    <th>Layout and Safety of Store</th>
+                    <th>Vehicle Condition</th>
+                    <th>Firefighting Equipment</th>
+                    <th>Presence of Security Guard</th>
+                    <th>Functionality of Bio Time Attendance Devices</th>
+                    <th>CCTV Cameras</th>
+                    <th>Availability of Oil & Spare Parts</th>
+                    <th>Fuel Register Records</th>
+                    <th>General Cleanliness</th>
+                    <th>Odometer, Temp Fuel Gauge</th>
+                    <th>Sheet Provided</th>
+                    <th>Parking Sheds</th>
+                    <th>Basic Maintenance Tools</th>
+                    <th>Washing Pit</th>
+                    <th>Waste In-Out Record Maintained</th>
+                    <th>Vehicles In-Out Record</th>
+                    <th>Scavengers Activity</th>
+                    <th>Backlog</th>
+                    <th>Maintenance Route</th>
+                    <th>Fumigation Spray Arrangements</th>
+                    <th>Boundary Wall for Control</th>
+                    <th>Leachate Collection</th>
+                    <th>Buffer Zone Plantation</th>
+                    <th>Staff Attendance</th>
+                    <th>Loading Arrangements</th>
+                    <th>Staff Working Station</th>
+                    <th>Fuel SOPs Followed</th>
+                    <th>Fuel Card Swiped</th>
+                    <th>Driver Signature in Fuel Register</th>
+                    <th>Fuel Liters Recorded</th>
+                    <th>Staff on Duty Attendance</th>
+                    <th>Random Check: Households Bills</th>
+                    <th>Random Check: Shops Bills</th>
+                    <th>UC Area Work Quality</th>
+                    <th>Field Staff Duty Hours</th>
+                    <th>Suggestions or Recommendations</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tube in tubes %}
+                <tr>
+                    <!-- <td>{{ tube.id }}</td> -->
+                    <td>{{ tube.name_of_official }}</td>
+                    <td>{{ tube.tube_well_id }}</td>
+                    <td>{{ tube.tube_well_functional }}</td>
+                    <td>{{ tube.operator_present }}</td>
+                    <td>{{ tube.supervisor_present }}</td>
+                    <td>{{ tube.bookkeeping_updated }}</td>
+                    <td>{{ tube.filtration_plant_functional }}</td>
+                    <td>{{ tube.scada_system_functional }}</td>
+                    <td>{{ tube.water_quality_device_functional }}</td>
+                    <td>{{ tube.operator_in_uniform }}</td>
+                    <td>{{ tube.mechanical_fault }}</td>
+                    <td>{{ tube.pipe_leakage }}</td>
+                    <td>{{ tube.maintenance_record_maintained }}</td>
+                    <td>{{ tube.registered_connection }}</td>
+                    <td>{{ tube.illegal_connection }}</td>
+                    <td>{{ tube.complaints_redressal }}</td>
+                    <td>{{ tube.location }}</td>
+                    <td>{{ tube.bins_clean }}</td>
+                    <td>{{ tube.surroundings_clean }}</td>
+                    <td>{{ tube.spillage_observed }}</td>
+                    <td>{{ tube.waste_lifted_timely }}</td>
+                    <td>{{ tube.staff_uniform }}</td>
+                    <td>{{ tube.street_littering }}</td>
+                    <td>{{ tube.area_sweeping }}</td>
+                    <td>{{ tube.swm_consumer_billed }}</td>
+                    <td>{{ tube.vehicle_condition }}</td>
+                    <td>{{ tube.vehicle_trip_record }}</td>
+                    <td>{{ tube.pending_complaints }}</td>
+                    <td>{{ tube.staff_attendance }}</td>
+                    <td>{{ tube.drain_location }}</td>
+                    <td>{{ tube.drain_desiltation }}</td>
+                    <td>{{ tube.manhole_covers }}</td>
+                    <td>{{ tube.sludge_lifting_timely }}</td>
+                    <td>{{ tube.manhole_desiltation }}</td>
+                    <td>{{ tube.dewats_status }}</td>
+                    <td>{{ tube.staff_attendance }}</td>
+                    <td>{{ tube.Staff_present_specify_numbers_for_absentees }}</td>
+                    <td>{{ tube.Staff_wearing_proper_uniform_and_safety_equipment }}</td>
+                    <td>{{ tube.Total_vehicle_in_the_yard }}</td>
+                    <td>{{ tube.Layout_of_vehicles }}</td>
+                    <td>{{ tube.Layout_and_safety_of_store }}</td>
+                    <td>{{ tube.vehicle_condition }}</td>
+                    <td>{{ tube.firefighting_equipment }}</td>
+                    <td>{{ tube.presence_of_security_guard }}</td>
+                    <td>{{ tube.functionality_bio_attendance }}</td>
+                    <td>{{ tube.cctv_cameras }}</td>
+                    <td>{{ tube.availability_oil_spare_parts }}</td>
+                    <td>{{ tube.fuel_register_records }}</td>
+                    <td>{{ tube.general_cleanliness }}</td>
+                    <td>{{ tube.odometer_temp_fuel_gauge }}</td>
+                    <td>{{ tube.sheet_provided }}</td>
+                    <td>{{ tube.parking_sheds }}</td>
+                    <td>{{ tube.basic_maintenance_tools }}</td>
+                    <td>{{ tube.washing_pit }}</td>
+                    <td>{{ tube.waste_in_out_record }}</td>
+                    <td>{{ tube.vehicles_in_out_record }}</td>
+                    <td>{{ tube.scavengers_activity }}</td>
+                    <td>{{ tube.backlog }}</td>
+                    <td>{{ tube.maintenance_route }}</td>
+                    <td>{{ tube.fumigation_spray_arrangements }}</td>
+                    <td>{{ tube.boundary_wall_control }}</td>
+                    <td>{{ tube.leachate_collection }}</td>
+                    <td>{{ tube.buffer_zone_plantation }}</td>
+                    <td>{{ tube.staff_attendance_2 }}</td>
+                    <td>{{ tube.loading_arrangements }}</td>
+                    <td>{{ tube.staff_working_station }}</td>
+                    <td>{{ tube.fuel_sops_followed }}</td>
+                    <td>{{ tube.fuel_card_swiped }}</td>
+                    <td>{{ tube.driver_signature_fuel_register }}</td>
+                    <td>{{ tube.fuel_liters_recorded }}</td>
+                    <td>{{ tube.staff_on_duty_attendance }}</td>
+                    <td>{{ tube.random_check_households_bills }}</td>
+                    <td>{{ tube.random_check_shops_bills }}</td>
+                    <td>{{ tube.uc_area_work_quality }}</td>
+                    <td>{{ tube.field_staff_duty_hours }}</td>
+                    <td>{{ tube.suggestions_recommendations }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endblock %}
+</body>
+</html>

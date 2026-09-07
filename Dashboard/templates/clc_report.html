@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+
+{% block title %}CLC Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800" style="font-weight: bold; font-size: 1.5rem; text-align: center;">
+        CLC Report for {{ report_date }}
+    </h1>
+
+    <!-- Filter Form -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="form-inline mb-3">
+                <div class="form-group mr-3">
+                    <label for="date" class="mr-2">Select Date:</label>
+                    <input type="date" class="form-control" name="date" value="{{ report_date|date:'Y-m-d' }}" required>
+                </div>
+                <button type="submit" class="btn btn-primary mb-2">Filter</button>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Modal Button for Adding CLC Entry -->
+    <button class="btn btn-primary mb-4" data-toggle="modal" data-target="#entryModal">
+        <i class="fas fa-plus-circle"></i> Add New
+    </button>
+    
+    <!-- Data Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">CLC Data</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Sr. No</th>
+                            <th>Official Name</th>
+
+                            <th>Location</th>
+                            <th>UC</th>
+                              <th>NC</th>
+
+                   
+                            <th>Activity</th>
+                            <th>No Of Participants</th>
+                            <th>IEC Material Distribution</th>
+                            <th>Brief Report</th>
+                            <th>Image</th>
+                            <th>Visit Date</th>
+                            <th>Action</th>
+
+                            
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in total_data %}
+                            {% for report in entry.reports %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ report.name_of_official.name }}</td>
+
+                                    <td>{{ entry.location.location_name }}</td>
+                                    <td>{{ report.uc.uc_name }}</td>
+                                    <td>{{ report.nc.nc_name }}</td>
+                                  
+                                    <td>{{ report.activity.name }}</td>
+                                    <td>{{ report.no_of_participants }}</td>
+                                    <td>{{ report.IEC_material_distribution }}</td>
+                                    <td>{{ report.brief_report }}</td>
+                                    <td>
+                                        {% if report.image %}
+                                            <img src="{{ report.image.url }}" alt="CLC Visit Image" width="50" height="50" class="img-thumbnail" data-toggle="modal" data-target="#imageModal{{ forloop.counter }}">
+                                        {% else %}
+                                            No image uploaded
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ report.date }}</td>
+                                    <td>
+                                        <!-- Update Button -->
+                                        <button class="btn btn-warning btn-sm" data-toggle="modal" data-target="#updateCLCModal-{{ report.id }}">
+                                            Update
+                                        </button>
+                                    </td>
+                                </tr>
+                    
+                                <!-- Modal for Enlarged Image -->
+                                {% if report.image %}
+                                    <div class="modal fade" id="imageModal{{ forloop.counter }}" tabindex="-1" role="dialog" aria-labelledby="imageModalLabel{{ forloop.counter }}" aria-hidden="true">
+                                        <div class="modal-dialog" role="document">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="imageModalLabel{{ forloop.counter }}">Full Image</h5>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
+                                                </div>
+                                                <div class="modal-body text-center">
+                                                    <img src="{{ report.image.url }}" alt="Full View" class="img-fluid">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                    
+                                <!-- Modal for Update CLC Report -->
+                                <div class="modal fade" id="updateCLCModal-{{ report.id }}" tabindex="-1" role="dialog" aria-labelledby="updateCLCModalLabel-{{ report.id }}" aria-hidden="true">
+                                    <div class="modal-dialog" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="updateCLCModalLabel-{{ report.id }}">Update CLC Report</h5>
+                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <form method="POST" action="{% url 'update_clc_report' report.id %}" enctype="multipart/form-data">
+                                                    {% csrf_token %}
+
+
+
+                
+                    <!-- Number of Participants -->
+                    <!-- <div class="form-group">
+                        <label for="id_no_of_participants_{{ clc_report.id }}">Number of Participants:</label>
+                        <input type="text" name="no_of_participants" id="id_no_of_participants_{{ clc_report.id }}" class="form-control" value="{{ clc_report.no_of_participants }}">
+                    </div>
+                                                     -->
+                                                    <!-- Brief Report -->
+                                                    <div class="form-group">
+                                                        <label for="id_brief_report_{{ report.id }}">Brief Report:</label>
+                                                        <textarea name="brief_report" id="id_brief_report_{{ report.id }}" class="form-control">{{ report.brief_report }}</textarea>
+                                                    </div>
+                                                    
+                                                    <!-- Image Upload -->
+                                                    <div class="form-group">
+                                                        <label for="id_image_{{ report.id }}">Image:</label>
+                                                        <input type="file" name="image" id="id_image_{{ report.id }}" class="form-control">
+                                                    </div>
+                                                    
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                                        <button type="submit" class="btn btn-primary">Update Report</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center">No CLC reports found for this date.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    
+                </table>
+            </div>
+        </div>
+    </div>
+
+    
+
+    <!-- Modal Structure for Adding CLC Entry -->
+    <div class="modal fade" id="entryModal" tabindex="-1" role="dialog" aria-labelledby="entryModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="entryModalLabel">Add New CLC Entry</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        {% if form.errors %}
+                            <div class="alert alert-danger">
+                                <ul>
+                                    {% for field, errors in form.errors.items %}
+                                        {% for error in errors %}
+                                            <li>{{ field }}: {{ error }}</li>
+                                        {% endfor %}
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script type="text/javascript">
+    $(document).ready(function() {
+        // Trigger when location is selected
+        $('#id_location').change(function() {
+            var location_id = $(this).val();
+            
+            // Fetch UCs based on selected Location
+            if (location_id) {
+                $.ajax({
+                    url: "{% url 'fetch_ucs_by_location' %}",
+                    data: { 'location_id': location_id },
+                    success: function(data) {
+                        $('#id_uc').html('<option value="">Select UC</option>'); // Reset UC dropdown
+                        $.each(data.uc_list, function(index, uc) {
+                            $('#id_uc').append('<option value="' + uc.id + '">' + uc.name + '</option>');
+                        });
+                        $('#id_uc').prop('disabled', false); // Enable UC dropdown
+                        $('#id_nc').html('<option value="">Select NC</option>'); // Reset NC dropdown
+                        $('#id_nc').prop('disabled', true); // Disable NC dropdown
+                    }
+                });
+            } else {
+                $('#id_uc').html('<option value="">Select UC</option>');
+                $('#id_uc').prop('disabled', true);
+                $('#id_nc').html('<option value="">Select NC</option>');
+                $('#id_nc').prop('disabled', true);
+            }
+        });
+    
+        // Trigger when UC is selected
+        $('#id_uc').change(function() {
+            var uc_id = $(this).val();
+            
+            // Fetch NCs based on selected UC
+            if (uc_id) {
+                $.ajax({
+                    url: "{% url 'fetch_ncs_by_uc' %}",
+                    data: { 'uc_id': uc_id },
+                    success: function(data) {
+                        $('#id_nc').html('<option value="">Select NC</option>'); // Reset NC dropdown
+                        $.each(data.nc_list, function(index, nc) {
+                            $('#id_nc').append('<option value="' + nc.id + '">' + nc.name + '</option>');
+                        });
+                        $('#id_nc').prop('disabled', false); // Enable NC dropdown
+                    }
+                });
+            } else {
+                $('#id_nc').html('<option value="">Select NC</option>');
+                $('#id_nc').prop('disabled', true);
+            }
+        });
+    
+        // Trigger when location, UC, or NC is selected to fetch CLC Staff
+        $('#id_location, #id_uc, #id_nc').change(function() {
+            var location_id = $('#id_location').val();
+            var uc_id = $('#id_uc').val();
+            var nc_id = $('#id_nc').val();
+    
+            // Only make the request if at least one of the fields is selected
+            if (location_id || uc_id || nc_id) {
+                $.ajax({
+                    url: "{% url 'fetch_clc_staff' %}",
+                    data: {
+                        'location_id': location_id,
+                        'uc_id': uc_id,
+                        'nc_id': nc_id
+                    },
+                    success: function(data) {
+                        $('#id_name_of_official').html('<option value="">Select Official Name</option>'); // Reset Official dropdown
+                        $.each(data.clc_staff_list, function(index, staff) {
+                            $('#id_name_of_official').append('<option value="' + staff.id + '">' + staff.name + '</option>');
+                        });
+                        $('#id_name_of_official').prop('disabled', false); // Enable Official Name dropdown
+                    }
+                });
+            } else {
+                $('#id_name_of_official').html('<option value="">Select Official Name</option>');
+                $('#id_name_of_official').prop('disabled', true); // Disable Official Name dropdown
+            }
+        });
+    });
+    </script>
+    
+
+{% endblock %}

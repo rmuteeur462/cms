@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container my-5">
+
+    <!-- Page Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+        <h2 class="fw-bold mb-3 mb-md-0">
+            Hotspot History: <span class="text-primary">{{ hotspot.name }}</span>
+        </h2>
+        <a href="{% url 'hotspot_list' %}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left"></i> Back to List
+        </a>
+    </div>
+
+    <!-- Supervisor/Officer Info -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-2">
+            <div class="p-3 border rounded shadow-sm bg-light">
+                <p class="mb-1"><strong>Supervisor:</strong> {{ hotspot.supervisor_name }}</p>
+                <p class="mb-0"><i class="bi bi-telephone"></i> {{ hotspot.supervisor_phone_number }}</p>
+            </div>
+        </div>
+        <div class="col-md-6 mb-2">
+            <div class="p-3 border rounded shadow-sm bg-light">
+                <p class="mb-1"><strong>Officer:</strong> {{ hotspot.officer_name }}</p>
+                <p class="mb-0"><i class="bi bi-telephone"></i> {{ hotspot.officer_phone_number }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Date Filter -->
+    <form method="get" class="row g-3 align-items-end mb-4">
+        <div class="col-md-4">
+            <label for="start_date" class="form-label">Start Date</label>
+            <input type="date" id="start_date" name="start_date" class="form-control" value="{{ request.GET.start_date }}">
+        </div>
+        <div class="col-md-4">
+            <label for="end_date" class="form-label">End Date</label>
+            <input type="date" id="end_date" name="end_date" class="form-control" value="{{ request.GET.end_date }}">
+        </div>
+        <div class="col-md-4">
+            <button type="submit" class="btn btn-primary w-100">
+                <i class="bi bi-search"></i> Filter
+            </button>
+        </div>
+    </form>
+
+    <!-- Analytics Cards -->
+    <div class="row g-3 mb-5 text-center">
+
+
+<!-- Dashboard Stats Cards -->
+<div class="row g-4 mb-5 text-center">
+    <!-- Total Rainfall Events -->
+    <div class="col-12 col-md-6 col-lg-3">
+      <div class="card stat-card shadow-sm border-0 h-100">
+        <div class="card-body border-start border-4 border-warning">
+          <h6 class="text-uppercase text-muted small">Total Rainfall Events</h6>
+          <h2 class="text-warning fw-bold">{{ total_rain_events }}</h2>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Total Urban Flooding Events -->
+    <div class="col-12 col-md-6 col-lg-3">
+      <div class="card stat-card shadow-sm border-0 h-100">
+        <div class="card-body border-start border-4 border-info">
+          <h6 class="text-uppercase text-muted small">Urban Flooding Events</h6>
+          <h2 class="text-info fw-bold">{{ total_urban_events }}</h2>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Average Rain Duration -->
+    <div class="col-12 col-md-6 col-lg-3">
+      <div class="card stat-card shadow-sm border-0 h-100">
+        <div class="card-body border-start border-4 border-success">
+          <h6 class="text-uppercase text-muted small">Avg Rain Duration</h6>
+          <h2 class="text-success fw-bold">{{ avg_rain_duration|default:"N/A" }}</h2>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Average Flooding Duration -->
+    <div class="col-12 col-md-6 col-lg-3">
+      <div class="card stat-card shadow-sm border-0 h-100">
+        <div class="card-body border-start border-4 border-primary">
+          <h6 class="text-uppercase text-muted small">Avg Flooding Duration</h6>
+          <h2 class="text-primary fw-bold">{{ avg_flood_duration|default:"N/A" }}</h2>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Optional Styling -->
+  <style>
+    .stat-card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      border-radius: 0.75rem;
+    }
+    .stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+  
+        <!-- New Cards -->
+        
+        
+    </div>
+
+</div>
+
+    <!-- Event History Table -->
+    <div class="card shadow mb-5">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Event History</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle">
+                    <thead class="table-primary">
+                        <tr>
+                            <th>Sr.No</th>
+                            <th>Rain Start</th>
+                            <th>Rain End</th>
+                            <th>Flood Flooding Start</th>
+                            <th>Flood Flooding End</th>
+                            <th>Rainfall Intensity</th>
+                            <th>Remarks</th>
+                            <th>Before</th>
+                            <th>After</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for event in events %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ event.rain_start_time }}</td>
+                            <td>{{ event.rain_end_time }}</td>
+                            <td>{{ event.urban_start_time }}</td>
+                            <td>{{ event.urban_end_time }}</td>
+                            <td>
+                                {% if event.rainfall_intensity == 'low' %}
+                                    <span class="badge bg-success">{{ event.get_rainfall_intensity_display }}</span>
+                                {% elif event.rainfall_intensity == 'medium' %}
+                                    <span class="badge bg-warning text-dark">{{ event.get_rainfall_intensity_display }}</span>
+                                {% elif event.rainfall_intensity == 'high' %}
+                                    <span class="badge bg-danger">{{ event.get_rainfall_intensity_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ event.remarks }}</td>
+                            <td>
+                                {% if event.before_image %}
+                                    <img src="{{ event.before_image.url }}" class="img-thumbnail" width="80" alt="Before">
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if event.after_image %}
+                                    <img src="{{ event.after_image.url }}" class="img-thumbnail" width="80" alt="After">
+                                {% endif %}
+                            </td>
+                            <td>{{ event.created_at|date:"Y-m-d" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" class="text-center text-muted">No events recorded yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm p-3">
+                <canvas id="floodDurationChart"></canvas>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm p-3">
+                <canvas id="rainfallIntensityChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const floodCtx = document.getElementById('floodDurationChart').getContext('2d');
+new Chart(floodCtx, {
+    type: 'line',
+    data: {
+        labels: {{ flood_labels|safe }},
+        datasets: [{
+            label: 'Avg Flood Duration (minutes)',
+            data: {{ flood_values|safe }},
+            borderColor: 'blue',
+            backgroundColor: 'rgba(0, 0, 255, 0.2)',
+            tension: 0.3,
+            fill: true,
+            pointRadius: 5
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            title: {
+                display: true,
+                text: 'Average Urban Flood Duration per Month',
+                font: { size: 18 }
+
+                
+            }
+        },
+        scales: {
+            y: {
+                title: {
+                    display: true,
+                    text: 'Minutes'
+                },
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+const intensityCtx = document.getElementById('rainfallIntensityChart').getContext('2d');
+new Chart(intensityCtx, {
+    type: 'bar',
+    data: {
+        labels: {{ trend_labels|safe }},
+        datasets: [
+            {
+                label: 'Low Rainfall',
+                data: {{ low_counts|safe }},
+                backgroundColor: 'rgba(0, 128, 0, 0.7)',
+            },
+            {
+                label: 'Medium Rainfall',
+                data: {{ med_counts|safe }},
+                backgroundColor: 'rgba(255, 165, 0, 0.7)',
+            },
+            {
+                label: 'High Rainfall',
+                data: {{ high_counts|safe }},
+                backgroundColor: 'rgba(255, 0, 0, 0.7)',
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            title: {
+                display: true,
+                text: 'Monthly Rainfall Intensity (Stacked)',
+                font: { size: 18 }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return `${context.dataset.label}: ${context.parsed.y} events`;
+                    }
+                }
+            },
+            legend: {
+                position: 'top',
+                labels: { font: { size: 14 } }
+            }
+        },
+        scales: {
+            x: {
+                stacked: true,
+                title: { display: true, text: 'Month/Year' }
+            },
+            y: {
+                stacked: true,
+                beginAtZero: true,
+                title: { display: true, text: 'Event Count' }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,938 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        --danger-gradient: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+        --warning-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        --info-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        --dark-bg: #1a1d29;
+        --card-bg: #2d3142;
+        --card-hover: #363b4e;
+    }
+
+    body {
+        background: #f5f7fa;
+        min-height: 100vh;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .dashboard-container {
+        animation: fadeIn 0.6s ease-in;
+        padding-bottom: 60px;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .dashboard-header {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        animation: slideDown 0.5s ease-out;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .dashboard-header h3 {
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 700;
+        font-size: 2.2rem;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+    }
+
+    .date-filter-form {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .date-input {
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 12px 20px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        outline: none;
+        background: white;
+    }
+
+    .date-input:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .filter-btn {
+        background: var(--primary-gradient);
+        border: none;
+        border-radius: 12px;
+        padding: 12px 30px;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .filter-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    /* Stats Cards */
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 20px;
+        padding: 25px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        animation: scaleIn 0.5s ease-out;
+        animation-fill-mode: both;
+    }
+
+    .stat-card:nth-child(1) { animation-delay: 0.1s; }
+    .stat-card:nth-child(2) { animation-delay: 0.2s; }
+    .stat-card:nth-child(3) { animation-delay: 0.3s; }
+    .stat-card:nth-child(4) { animation-delay: 0.4s; }
+
+    @keyframes scaleIn {
+        from {
+            opacity: 0;
+            transform: scale(0.9);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: var(--primary-gradient);
+    }
+
+    .stat-card.success::before { background: var(--success-gradient); }
+    .stat-card.danger::before { background: var(--danger-gradient); }
+    .stat-card.warning::before { background: var(--warning-gradient); }
+    .stat-card.info::before { background: var(--info-gradient); }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        margin-bottom: 15px;
+        background: var(--primary-gradient);
+        color: white;
+    }
+
+    .stat-card.success .stat-icon { background: var(--success-gradient); }
+    .stat-card.danger .stat-icon { background: var(--danger-gradient); }
+    .stat-card.warning .stat-icon { background: var(--warning-gradient); }
+    .stat-card.info .stat-icon { background: var(--info-gradient); }
+
+    .stat-label {
+        color: #8b92a8;
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2d3142;
+        margin-bottom: 5px;
+    }
+
+    .stat-subtitle {
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    /* Zone Cards */
+    .zone-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+        gap: 25px;
+        margin-bottom: 40px;
+    }
+
+    .zone-card {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        animation: fadeInUp 0.6s ease-out;
+        animation-fill-mode: both;
+    }
+
+    .zone-card:nth-child(1) { animation-delay: 0.1s; }
+    .zone-card:nth-child(2) { animation-delay: 0.2s; }
+    .zone-card:nth-child(3) { animation-delay: 0.3s; }
+    .zone-card:nth-child(4) { animation-delay: 0.4s; }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .zone-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+    }
+
+    .zone-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 25px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    .zone-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        background: var(--primary-gradient);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+    }
+
+    .zone-title {
+        flex: 1;
+    }
+
+    .zone-title h5 {
+        font-weight: 700;
+        color: #2d3142;
+        margin-bottom: 5px;
+        font-size: 1.3rem;
+    }
+
+    .zone-title .date {
+        color: #8b92a8;
+        font-size: 0.85rem;
+    }
+
+    .charts-container {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .chart-wrapper {
+        position: relative;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 15px;
+        transition: all 0.3s ease;
+    }
+
+    .chart-wrapper:hover {
+        background: #f0f2f5;
+        transform: scale(1.02);
+    }
+
+    .chart-wrapper canvas {
+        max-height: 200px;
+        width: 100% !important;
+        height: 200px !important;
+    }
+
+    .chart-info {
+        text-align: center;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 2px solid #e0e0e0;
+    }
+
+    .chart-info strong {
+        color: #2d3142;
+        font-size: 1rem;
+    }
+
+    .chart-info .count {
+        font-size: 1.1rem;
+        font-weight: 700;
+        background: var(--success-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .chart-info .percentage {
+        display: inline-block;
+        background: var(--primary-gradient);
+        color: white;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-left: 8px;
+    }
+
+    /* Overall Chart Section */
+    .overall-chart-section {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        margin-top: 40px;
+        margin-bottom: 40px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        animation: fadeInUp 0.8s ease-out;
+    }
+
+    .overall-chart-section h5 {
+        font-weight: 700;
+        color: #2d3142;
+        font-size: 1.8rem;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+
+    .overall-chart-section .subtitle {
+        text-align: center;
+        color: #8b92a8;
+        font-size: 1rem;
+        margin-bottom: 30px;
+    }
+
+    .chart-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-top: 30px;
+    }
+
+    .chart-stat-item {
+        text-align: center;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 15px;
+        transition: all 0.3s ease;
+    }
+
+    .chart-stat-item:hover {
+        background: #f0f2f5;
+        transform: translateY(-3px);
+    }
+
+    .chart-stat-item strong {
+        display: block;
+        color: #8b92a8;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .chart-stat-item .value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #2d3142;
+    }
+
+    /* Target vs Actual Section */
+    .target-actual-section {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        margin-top: 40px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        animation: fadeInUp 0.9s ease-out;
+    }
+
+    .target-actual-section h3 {
+        font-weight: 700;
+        color: #2d3142;
+        font-size: 1.8rem;
+        margin-bottom: 30px;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        color: #e0e0e0;
+        margin-bottom: 20px;
+    }
+
+    .empty-state h4 {
+        color: #2d3142;
+        margin-bottom: 10px;
+    }
+
+    .empty-state p {
+        color: #8b92a8;
+    }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+        .zone-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .charts-container {
+            grid-template-columns: 1fr;
+        }
+
+        .stats-row {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .dashboard-header h3 {
+            font-size: 1.5rem;
+        }
+
+        .overall-chart-section,
+        .target-actual-section {
+            padding: 25px;
+        }
+
+        .overall-chart-section h5,
+        .target-actual-section h3 {
+            font-size: 1.5rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .stats-row {
+            grid-template-columns: 1fr;
+        }
+        
+        .chart-stats {
+            grid-template-columns: 1fr;
+        }
+
+        .dashboard-header {
+            padding: 20px;
+        }
+
+        .overall-chart-section,
+        .target-actual-section {
+            padding: 20px;
+        }
+    }
+
+    /* Loading Animation */
+    .chart-loading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 200px;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+<div class="dashboard-container container mt-4">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <h3>
+            <i class="fas fa-chart-line"></i>
+            Daily D2D Collection of Solid Waste
+        </h3>
+    
+        <form method="get" class="date-filter-form">
+            <input type="date"
+                   name="date"
+                   value="{{ selected_date|date:'Y-m-d' }}"
+                   class="date-input">
+    
+            <button class="filter-btn" type="submit">
+                <i class="fas fa-filter"></i> Apply Filter
+            </button>
+        </form>
+    
+        <!-- ✅ Single date display (no duplication) -->
+        <div class="mt-2 text-muted">
+            🗓 Data Entry for:
+            <strong>{{ selected_date|date:"F d, Y" }}</strong>
+        </div>
+    </div>
+    
+
+    <!-- Stats Cards -->
+    <div class="stats-row">
+        <div class="stat-card success">
+            <div class="stat-icon">
+                <i class="fas fa-home"></i>
+            </div>
+            <div class="stat-label">Houses Collected</div>
+            <div class="stat-value">{{ overall_data.collected_houses }}</div>
+            <div class="stat-subtitle">of {{ overall_data.total_houses }} Targeted HH</div>
+        </div>
+
+        <div class="stat-card danger">
+            <div class="stat-icon">
+                <i class="fas fa-home"></i>
+            </div>
+            <div class="stat-label">Houses Pending</div>
+            <div class="stat-value">{{ overall_data.not_collected_houses }}</div>
+            <div class="stat-subtitle">{{ overall_data.house_percentage }}% completed</div>
+        </div>
+
+        <div class="stat-card info">
+            <div class="stat-icon">
+                <i class="fas fa-store"></i>
+            </div>
+            <div class="stat-label">Shops Collected</div>
+            <div class="stat-value">{{ overall_data.collected_shops }}</div>
+            <div class="stat-subtitle">of {{ overall_data.total_shops }} Targeted HH</div>
+        </div>
+
+        <div class="stat-card warning">
+            <div class="stat-icon">
+                <i class="fas fa-store"></i>
+            </div>
+            <div class="stat-label">Shops Pending</div>
+            <div class="stat-value">{{ overall_data.not_collected_shops }}</div>
+            <div class="stat-subtitle">{{ overall_data.shop_percentage }}% completed</div>
+        </div>
+    </div>
+
+    <!-- Zone-wise Cards -->
+    {% if location_data %}
+    <div class="zone-grid">
+        {% for data in location_data %}
+        <div class="zone-card">
+            <div class="zone-header">
+                <div class="zone-icon">
+                    <i class="fas fa-map-marker-alt"></i>
+                </div>
+                <div class="zone-title">
+                    <h5>{{ data.location_name }}</h5>
+                    <span class="date">📅 {{ selected_date }}</span>
+                </div>
+            </div>
+
+            <div class="charts-container">
+                <div class="chart-wrapper">
+                    <canvas id="houseChart{{ forloop.counter }}"></canvas>
+                    <div class="chart-info">
+                        <strong>Houses</strong><br>
+                        <span class="count">{{ data.collected_houses }}/{{ data.total_houses }}</span>
+                        <span class="percentage">{{ data.house_percentage }}%</span>
+                    </div>
+                </div>
+
+                <div class="chart-wrapper">
+                    <canvas id="shopChart{{ forloop.counter }}"></canvas>
+                    <div class="chart-info">
+                        <strong>Shops</strong><br>
+                        <span class="count">{{ data.collected_shops }}/{{ data.total_shops }}</span>
+                        <span class="percentage">{{ data.shop_percentage }}%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-inbox"></i>
+        <h4>No Records Found</h4>
+        <p>No collection data available for the selected date.</p>
+    </div>
+    {% endif %}
+
+    <!-- Overall Chart at Bottom -->
+    <div class="overall-chart-section">
+        <h5>📊 Overall Collection Summary</h5>
+        <p class="subtitle">Comprehensive view of all zones • Date: {{ selected_date }}</p>
+        <canvas id="overallChart" height="100"></canvas>
+
+        <div class="chart-stats">
+            <div class="chart-stat-item">
+                <strong>Total Houses</strong>
+                <div class="value">{{ overall_data.collected_houses }}/{{ overall_data.total_houses }}</div>
+            </div>
+            <div class="chart-stat-item">
+                <strong>House Collection Rate</strong>
+                <div class="value">{{ overall_data.house_percentage }}%</div>
+            </div>
+            <div class="chart-stat-item">
+                <strong>Total Shops</strong>
+                <div class="value">{{ overall_data.collected_shops }}/{{ overall_data.total_shops }}</div>
+            </div>
+            <div class="chart-stat-item">
+                <strong>Shop Collection Rate</strong>
+                <div class="value">{{ overall_data.shop_percentage }}%</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Target vs Actual Chart Section -->
+    <div class="target-actual-section">
+        <h3>
+            <i class="fas fa-bullseye"></i>
+            Zone-wise Target HouseHold vs Total HouseHold
+        </h3>
+        <canvas id="targetActualChart" height="100"></canvas>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+<script>
+// Modern Chart Configurations
+Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+Chart.defaults.plugins.legend.labels.usePointStyle = true;
+Chart.defaults.plugins.legend.labels.padding = 15;
+
+// Overall Bar Chart with Animation
+const overallCtx = document.getElementById('overallChart').getContext('2d');
+new Chart(overallCtx, {
+    type: 'bar',
+    data: {
+        labels: ['Houses', 'Shops'],
+        datasets: [
+            {
+                label: 'Collected',
+                data: [{{ overall_data.collected_houses }}, {{ overall_data.collected_shops }}],
+                backgroundColor: ['#4CAF50', '#4CAF50'],
+                borderRadius: 10,
+                borderSkipped: false,
+            },
+            {
+                label: 'Not Collected',
+                data: [{{ overall_data.not_collected_houses }}, {{ overall_data.not_collected_shops }}],
+                borderRadius: 10,
+                borderSkipped: false,
+                backgroundColor: ['#F44336', '#F44336'],
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        animation: {
+            duration: 1500,
+            easing: 'easeInOutQuart'
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)',
+                    drawBorder: false
+                },
+                ticks: {
+                    font: { size: 12, weight: '500' },
+                    color: '#8b92a8'
+                }
+            },
+            x: {
+                grid: { display: false },
+                ticks: {
+                    font: { size: 13, weight: '600' },
+                    color: '#2d3142'
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                position: 'top',
+                labels: {
+                    font: { size: 13, weight: '600' },
+                    color: '#2d3142',
+                    padding: 20
+                }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(45, 49, 66, 0.95)',
+                padding: 12,
+                cornerRadius: 8,
+                titleFont: { size: 14, weight: '600' },
+                bodyFont: { size: 13 }
+            }
+        }
+    }
+});
+
+{% for data in location_data %}
+    // 🏠 Houses Pie Chart
+    const houseCtx{{ forloop.counter }} = document.getElementById('houseChart{{ forloop.counter }}').getContext('2d');
+    new Chart(houseCtx{{ forloop.counter }}, {
+        type: 'pie',
+        data: {
+            labels: ['Collected', 'Not Collected'],
+            datasets: [{
+                data: [{{ data.collected_houses }}, {{ data.not_collected_houses }}],
+                backgroundColor: ['#4CAF50', '#F44336'],
+                borderWidth: 0,
+                hoverOffset: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            animation: {
+                duration: 1500,
+                easing: 'easeInOutQuart'
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        font: { size: 11, weight: '600' },
+                        color: '#2d3142',
+                        padding: 12
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(45, 49, 66, 0.95)',
+                    padding: 10,
+                    cornerRadius: 6
+                },
+                datalabels: {
+                    color: '#fff',
+                    font: {
+                        weight: 'bold',
+                        size: 12
+                    },
+                    formatter: (value, context) => {
+                        const dataArr = context.chart.data.datasets[0].data;
+                        const total = dataArr.reduce((a, b) => a + b, 0);
+                        const percentage = total > 0 ? (value / total * 100).toFixed(1) + '%' : '0%';
+                        return percentage;
+                    },
+                    anchor: 'center',
+                    align: 'center',
+                    offset: 0,
+                    clip: true
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
+
+    // 🏪 Shops Pie Chart
+    const shopCtx{{ forloop.counter }} = document.getElementById('shopChart{{ forloop.counter }}').getContext('2d');
+    new Chart(shopCtx{{ forloop.counter }}, {
+        type: 'pie',
+        data: {
+            labels: ['Collected', 'Not Collected'],
+            datasets: [{
+                data: [{{ data.collected_shops }}, {{ data.not_collected_shops }}],
+                backgroundColor: ['#4CAF50', '#F44336'],
+                borderWidth: 0,
+                hoverOffset: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            animation: {
+                duration: 1500,
+                easing: 'easeInOutQuart'
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        font: { size: 11, weight: '600' },
+                        color: '#2d3142',
+                        padding: 12
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(45, 49, 66, 0.95)',
+                    padding: 10,
+                    cornerRadius: 6
+                },
+                datalabels: {
+                    color: '#fff',
+                    font: {
+                        weight: 'bold',
+                        size: 12
+                    },
+                    formatter: (value, context) => {
+                        const dataArr = context.chart.data.datasets[0].data;
+                        const total = dataArr.reduce((a, b) => a + b, 0);
+                        const percentage = total > 0 ? (value / total * 100).toFixed(1) + '%' : '0%';
+                        return percentage;
+                    },
+                    anchor: 'center',
+                    align: 'center',
+                    offset: 0,
+                    clip: true
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
+{% endfor %}
+
+// Target vs Actual Chart
+const labels = {{ chart_labels|safe }};
+const targetData = {{ chart_targets|safe }};
+const actualData = {{ chart_actuals|safe }};
+
+const targetActualCtx = document.getElementById('targetActualChart').getContext('2d');
+new Chart(targetActualCtx, {
+    type: 'bar',
+    data: {
+        labels: labels,
+        datasets: [
+            {
+                label: 'Target',
+                data: targetData,
+                backgroundColor: '#667eea',
+                borderRadius: 10,
+                borderSkipped: false,
+            },
+            {
+                label: 'Total',
+                data: actualData,
+                backgroundColor: '#4CAF50',
+                borderRadius: 10,
+                borderSkipped: false,
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        animation: {
+            duration: 1500,
+            easing: 'easeInOutQuart'
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)',
+                    drawBorder: false
+                },
+                ticks: {
+                    font: { size: 12, weight: '500' },
+                    color: '#8b92a8'
+                }
+            },
+            x: {
+                grid: { display: false },
+                ticks: {
+                    font: { size: 13, weight: '600' },
+                    color: '#2d3142'
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                position: 'top',
+                labels: {
+                    font: { size: 13, weight: '600' },
+                    color: '#2d3142',
+                    padding: 20
+                }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(45, 49, 66, 0.95)',
+                padding: 12,
+                cornerRadius: 8,
+                titleFont: { size: 14, weight: '600' },
+                bodyFont: { size: 13 }
+            }
+        }
+    }
+});
+</script>
+
+{% endblock %}

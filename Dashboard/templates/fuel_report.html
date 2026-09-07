@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Daily Fuel Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <h1 class="h3 mb-4 text-gray-800 text-center font-weight-bold">Daily Fuel Report for {{ report_date }}</h1>
+
+    <!-- Filter Form -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="form-inline mb-3">
+                <div class="form-group mr-3">
+                    <label for="date" class="mr-2">Select Date:</label>
+                    <input type="date" class="form-control" name="date" value="{{ report_date|date:'Y-m-d' }}" required>
+                </div>
+                <button type="submit" class="btn btn-primary mb-2">Filter</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add/Edit Fuel Entry Button -->
+    <button class="btn btn-primary mb-4" data-toggle="modal" data-target="#fuelEntryModal">
+        <i class="fas fa-plus-circle"></i> Add or Update Fuel Data
+    </button>
+
+    <!-- Data Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Fuel Data</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Sr.No</th>
+                            <th>Location</th>
+                            <th>Total Secondary Trips</th>
+                            <th>Total Primary Trips</th>
+
+                            <th>Total Fuel Top-up (Liters)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in total_data %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ entry.location.location_name }}</td>
+                            <td>{{ entry.lfs_trips_no }}</td>
+                            <td>{{ entry.primary_trips }}</td>
+                            <td>{{ entry.fuel_top_up_liters }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td></td>
+                            <td><strong>Total</strong></td>
+                            <td><strong>{{ totals.lfs_trips_no }}</strong></td>
+                            <td><strong>{{ totals.primary_trips }}</strong></td>
+
+                            <td><strong>{{ totals.fuel_top_up_liters }}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Structure for Adding/Updating Entries -->
+    <div class="modal fade" id="fuelEntryModal" tabindex="-1" role="dialog" aria-labelledby="fuelEntryModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="fuelEntryModalLabel">Add or Update Fuel Data</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form method="post" action="{% url 'daily_fuel_report' %}">
+                        {% csrf_token %}
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                        {% endif %}
+
+                        <div class="form-group">
+                            {{ form.location.label_tag }}
+                            {{ form.location }}
+                        </div>
+
+                        <div class="form-group">
+                            {{ form.date.label_tag }}
+                            {{ form.date }}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.lfs_trips_no.id_for_label }}">Total Secondary Trips</label>
+                            {{ form.lfs_trips_no }}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.primary_trips.id_for_label }}">Total Primary Trips</label>
+                            {{ form.primary_trips }}
+                        </div>
+                        
+
+                        <div class="form-group">
+                            {{ form.fuel_top_up_liters.label_tag }}
+                            {{ form.fuel_top_up_liters }}
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Save Entry</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    $('#fuelEntryModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);  
+        var locationId = button.data('location');
+        var reportDate = button.data('date');
+
+        var modal = $(this);
+        modal.find('.modal-body #id_location').val(locationId);
+        modal.find('.modal-body #id_date').val(reportDate);
+    });
+</script>
+
+{% endblock %}

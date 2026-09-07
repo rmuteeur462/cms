@@ -1,0 +1,638 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container-fluid mt-4">
+
+    <div class="d-flex justify-content-center align-items-center mb-4">
+        <h3 class="fw-bold text-center">District Service Delivery Inspection Dashboard</h3>
+    </div>
+    
+
+
+
+
+        <!-- ================= FACILITY OVERVIEW ================= -->
+           <div class="row g-3 mb-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-building"></i> Facility Overview
+                        <i class="fas fa-info-circle ms-2" data-bs-toggle="tooltip" data-bs-placement="top" 
+                           title="Shows total facilities and inspection coverage. Coverage % indicates what percentage of facilities have been inspected at least once. Target: 100%"></i>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+    
+                        <!-- Major Roads -->
+                        <div class="col-md-3 text-center border-end">
+                            <a href="{% url 'major_road_list' %}" class="text-decoration-none text-dark">
+                                <h6 class="text-muted">
+                                    Major Roads
+                                    <i class="fas fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                       title="DSD.1 - Major roads requiring regular inspection for cleanliness and drainage"></i>
+                                </h6>
+                                <h2 class="text-primary">{{ major_road_count }}</h2>
+                                <!-- <small class="text-success">{{ major_roads_inspected }} inspected ({{ major_road_coverage }}%)</small>
+                                <div class="progress mt-2" style="height: 8px;">
+                                    <div class="progress-bar bg-primary" style="width: {{ major_road_coverage }}%"></div>
+                                </div> -->
+                            </a>
+                        </div>
+    
+                        <!-- Trunk Sewers -->
+                        <div class="col-md-3 text-center border-end">
+                            <a href="{% url 'trunk_sewer_list' %}" class="text-decoration-none text-dark">
+                                <h6 class="text-muted">
+                                    Trunk Sewers
+                                    <i class="fas fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                       title="DSD.2 - Main sewer lines with manholes requiring inspection for blockages, damage, and flow"></i>
+                                </h6>
+                                <h2 class="text-success">{{ trunk_sewer_count }}</h2>
+                                <!-- <small class="text-success">{{ trunk_sewers_inspected }} inspected ({{ trunk_sewer_coverage }}%)</small>
+                                <div class="progress mt-2" style="height: 8px;">
+                                    <div class="progress-bar bg-success" style="width: {{ trunk_sewer_coverage }}%"></div>
+                                </div> -->
+                            </a>
+                        </div>
+    
+                        <!-- Storm Drains -->
+                        <div class="col-md-3 text-center border-end">
+                            <a href="{% url 'storm_drain_list' %}" class="text-decoration-none text-dark">
+                                <h6 class="text-muted">
+                                    Storm Drains
+                                    <i class="fas fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                       title="DSD.3 - Storm water drainage systems requiring inspection for clear entry and exit points"></i>
+                                </h6>
+                                <h2 class="text-warning">{{ storm_drain_count }}</h2>
+                                <!-- <small class="text-success">{{ storm_drains_inspected }} inspected ({{ storm_drain_coverage }}%)</small>
+                                <div class="progress mt-2" style="height: 8px;">
+                                    <div class="progress-bar bg-warning" style="width: {{ storm_drain_coverage }}%"></div>
+                                </div> -->
+                            </a>
+                        </div>
+    
+                        <!-- Ponding Points -->
+                        <div class="col-md-3 text-center">
+                            <a href="{% url 'ponding_points_list' %}" class="text-decoration-none text-dark">
+                                <h6 class="text-muted">
+                                    Ponding Points
+                                    <i class="fas fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                       title="DSD.4 - Areas prone to water accumulation requiring government intervention monitoring"></i>
+                                </h6>
+                                <h2 class="text-danger">{{ ponding_point_count }}</h2>
+                                <!-- <small class="text-success">{{ ponding_points_inspected }} inspected ({{ ponding_point_coverage }}%)</small>
+                                <div class="progress mt-2" style="height: 8px;">
+                                    <div class="progress-bar bg-danger" style="width: {{ ponding_point_coverage }}%"></div>
+                                </div> -->
+                            </a>
+                        </div>
+    
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ================= SUMMARY CARDS ================= -->
+    <div class="row g-3 mb-4">
+
+
+        <div class="col-md-4">
+            <div class="card bg-info text-white shadow">
+                <div class="card-body text-center">
+                    <h6>
+                        <i class="fas fa-map-marker-alt"></i> Total Facilities
+                        <i class="fas fa-info-circle ms-2" data-bs-toggle="tooltip" data-bs-placement="top" 
+                           title="Total number of facilities registered in the system including all roads, sewers, drains, and ponding points"></i>
+                    </h6>
+                    <h2>{{ total_facilities }}</h2>
+                    <small>Registered in system</small>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-md-4">
+            <div class="card bg-primary text-white shadow">
+                <div class="card-body text-center">
+                    <h6>
+                        <i class="fas fa-clipboard-list"></i> Total Inspections
+                        <i class="fas fa-info-circle ms-2" data-bs-toggle="tooltip" data-bs-placement="top" 
+                           title="Total number of inspections conducted across all facility types (Major Roads, Trunk Sewers, Storm Drains, and Ponding Points)"></i>
+                    </h6>
+                    <h2>{{ total_inspections }}</h2>
+                    <small>Across all facilities</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card bg-success text-white shadow">
+                <div class="card-body text-center">
+                    <h6>
+                        <i class="fas fa-check-circle"></i> Overall Compliance
+                        <i class="fas fa-info-circle ms-2" data-bs-toggle="tooltip" data-bs-placement="top" 
+                           title="Percentage of inspections that passed all required criteria. Target: ≥80%. Green (≥75%), Yellow (50-74%), Red (<50%)"></i>
+                    </h6>
+                    <h2>{{ overall_compliance_rate }}%</h2>
+                    <small>Pass rate across all inspections</small>
+                </div>
+            </div>
+        </div>
+
+     
+
+        <!-- <div class="col-md-3">
+            <div class="card bg-warning text-white shadow">
+                <div class="card-body text-center">
+                    <h6>
+                        <i class="fas fa-exclamation-triangle"></i> Issues Found
+                        <i class="fas fa-info-circle ms-2" data-bs-toggle="tooltip" data-bs-placement="top" 
+                           title="Number of inspections where at least one criterion failed. These require immediate attention or maintenance"></i>
+                    </h6>
+                    <h2>{{ total_issues }}</h2>
+                    <small>Require attention</small>
+                </div>
+            </div>
+        </div> -->
+    </div>
+
+    <!-- ================= RECENT ACTIVITY ================= -->
+    <div class="row g-3 mb-4">
+
+        
+        <div class="col-md-3">
+            <div class="card shadow-sm {% if inspection_achievement_rate >= 100 %}border-success{% elif inspection_achievement_rate >= 80 %}border-warning{% else %}border-danger{% endif %}" style="border-width: 2px;">
+                <div class="card-body text-center">
+                    <small class="text-muted">
+                        Actual Inspection vs Schedule Inspection
+                        <i class="fas fa-info-circle" data-bs-toggle="tooltip" data-bs-placement="top" 
+                           title="Expected: {{ working_days }} working days (Dec 1 2025 - Today, excluding Sundays) × {{ total_facilities }} facilities = {{ expected_inspections_total }} inspections. Actual: {{ total_inspections }}"></i>
+                    </small>
+                    <h4 class="text-muted">{{ total_inspections }}/{{ expected_inspections_total }}</h4>
+
+                    <small class="fw-bold {% if inspection_achievement_rate >= 100 %}text-success{% elif inspection_achievement_rate >= 80 %}text-warning{% else %}text-danger{% endif %}">
+                        {{ inspection_achievement_rate }}%
+                    </small>
+                    
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-md-3">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <small class="text-muted">
+                        Inspections (Last 7 Days)
+                        <i class="fas fa-info-circle" data-bs-toggle="tooltip" data-bs-placement="top" 
+                           title="Total inspections conducted in the past 7 days. Use this to monitor weekly inspection activity"></i>
+                    </small>
+                    <h3 class="text-primary">{{ total_last_7_days }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <small class="text-muted">
+                        Inspections (Last 30 Days)
+                        <i class="fas fa-info-circle" data-bs-toggle="tooltip" data-bs-placement="top" 
+                           title="Total inspections conducted in the past 30 days. Helps track monthly performance trends"></i>
+                    </small>
+                    <h3 class="text-success">{{ total_last_30_days }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <small class="text-muted">
+                        Inspections (This Month)
+                        <i class="fas fa-info-circle" data-bs-toggle="tooltip" data-bs-placement="top" 
+                           title="Inspections from the 1st of the current month to today. Use for monthly reporting"></i>
+                    </small>
+                    <h3 class="text-info">{{ total_this_month }}</h3>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+
+    <!-- ================= INSPECTION STATISTICS ================= -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar"></i> Inspection Counts (Actual vs Schedule)
+                        <i class="fas fa-info-circle ms-2" data-bs-toggle="tooltip" data-bs-placement="top" 
+                           title="Shows actual inspections vs expected inspections. Expected = {{ working_days }} working days × facility count. Progress bar color: Green (≥100%), Yellow (80-99%), Red (<80%)"></i>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Major Roads</span>
+                            <strong>{{ major_road_inspections }}/{{ expected_major_road }} ({{ major_road_achievement }}%)</strong>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar {% if major_road_achievement >= 100 %}bg-success{% elif major_road_achievement >= 80 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                 style="width: {{ major_road_percentage }}%">
+                                {{ major_road_inspections }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Trunk Sewers</span>
+                            <strong>{{ trunk_sewer_inspections }}/{{ expected_trunk_sewer }} ({{ trunk_sewer_achievement }}%)</strong>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar {% if trunk_sewer_achievement >= 100 %}bg-success{% elif trunk_sewer_achievement >= 80 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                 style="width: {{ trunk_sewer_percentage }}%">
+                                {{ trunk_sewer_inspections }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Storm Drains</span>
+                            <strong>{{ storm_drain_inspections }}/{{ expected_storm_drain }} ({{ storm_drain_achievement }}%)</strong>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar {% if storm_drain_achievement >= 100 %}bg-success{% elif storm_drain_achievement >= 80 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                 style="width: {{ storm_drain_percentage }}%">
+                                {{ storm_drain_inspections }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Ponding Points</span>
+                            <strong>{{ ponding_point_inspections }}/{{ expected_ponding_point }} ({{ ponding_point_achievement }}%)</strong>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar {% if ponding_point_achievement >= 100 %}bg-success{% elif ponding_point_achievement >= 80 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                 style="width: {{ ponding_point_percentage }}%">
+                                {{ ponding_point_inspections }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-check-double"></i> Compliance Rates
+                        <i class="fas fa-info-circle ms-2" data-bs-toggle="tooltip" data-bs-placement="top" 
+                           title="Pass/Fail rates for each facility type. Major Roads: Both criteria must pass. Trunk Sewers: All 7 criteria must pass. Storm Drains: Both criteria must pass. Ponding Points: Government attempt criterion"></i>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>
+                                Major Roads
+                                <i class="fas fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                   title="Pass Criteria: Free from garbage/rubble = Yes AND Dry & clean = Yes"></i>
+                            </span>
+                            <strong>{{ major_road_pass_rate }}%</strong>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar {% if major_road_pass_rate >= 75 %}bg-success{% elif major_road_pass_rate >= 50 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                 style="width: {{ major_road_pass_rate }}%">
+                                {{ major_road_pass }}/{{ major_road_inspections }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>
+                                Trunk Sewers
+                                <i class="fas fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                   title="Pass Criteria: All 7 conditions must be Yes - Manhole covered, Free from damage, No sediment, No sewage outflow, No bad odor, No blockage, Fast water flow"></i>
+                            </span>
+                            <strong>{{ trunk_sewer_pass_rate }}%</strong>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar {% if trunk_sewer_pass_rate >= 75 %}bg-success{% elif trunk_sewer_pass_rate >= 50 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                 style="width: {{ trunk_sewer_pass_rate }}%">
+                                {{ trunk_sewer_pass }}/{{ trunk_sewer_inspections }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>
+                                Storm Drains
+                                <i class="fas fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                   title="Pass Criteria: Entry clear = Yes AND Exit clear = Yes"></i>
+                            </span>
+                            <strong>{{ storm_drain_pass_rate }}%</strong>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar {% if storm_drain_pass_rate >= 75 %}bg-success{% elif storm_drain_pass_rate >= 50 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                 style="width: {{ storm_drain_pass_rate }}%">
+                                {{ storm_drain_pass }}/{{ storm_drain_inspections }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>
+                                Ponding Points
+                                <i class="fas fa-question-circle" data-bs-toggle="tooltip" data-bs-placement="top" 
+                                   title="Pass Criteria: Any attempt by government = Yes"></i>
+                            </span>
+                            <strong>{{ ponding_point_pass_rate }}%</strong>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar {% if ponding_point_pass_rate >= 75 %}bg-success{% elif ponding_point_pass_rate >= 50 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                 style="width: {{ ponding_point_pass_rate }}%">
+                                {{ ponding_point_pass }}/{{ ponding_point_inspections }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= ZONE PERFORMANCE ================= -->
+    <!-- <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-map"></i> Top 5 Zones by Inspections
+                        <i class="fas fa-info-circle ms-2" data-bs-toggle="tooltip" data-bs-placement="top" 
+                           title="Zones ranked by total inspection count. MR=Major Roads, TS=Trunk Sewers, SD=Storm Drains, PP=Ponding Points. Use to identify most active zones"></i>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Zone</th>
+                                <th class="text-center">MR</th>
+                                <th class="text-center">TS</th>
+                                <th class="text-center">SD</th>
+                                <th class="text-center">PP</th>
+                                <th class="text-center">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for zone in zone_stats %}
+                            <tr>
+                                <td><strong>{{ zone.name }}</strong></td>
+                                <td class="text-center">{{ zone.major_road_inspections }}</td>
+                                <td class="text-center">{{ zone.trunk_sewer_inspections }}</td>
+                                <td class="text-center">{{ zone.storm_drain_inspections }}</td>
+                                <td class="text-center">{{ zone.ponding_point_inspections }}</td>
+                                <td class="text-center"><strong>{{ zone.total }}</strong></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">No data available</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-trophy"></i> Top 5 Zones by Compliance
+                        <i class="fas fa-info-circle ms-2" data-bs-toggle="tooltip" data-bs-placement="top" 
+                           title="Zones ranked by compliance rate. Shows percentage of inspections that passed all criteria. Green (≥75%), Yellow (50-74%), Red (<50%). Learn from high-performing zones"></i>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Zone</th>
+                                <th class="text-center">Inspections</th>
+                                <th class="text-center">Compliance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for zone in zone_compliance %}
+                            <tr>
+                                <td><strong>{{ zone.name }}</strong></td>
+                                <td class="text-center">{{ zone.total_inspections }}</td>
+                                <td class="text-center">
+                                    <span class="badge {% if zone.compliance_rate >= 75 %}bg-success{% elif zone.compliance_rate >= 50 %}bg-warning{% else %}bg-danger{% endif %}">
+                                        {{ zone.compliance_rate|floatformat:1 }}%
+                                    </span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center">No data available</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div> -->
+
+    <!-- ================= ISSUES & AVERAGES ================= -->
+    <!-- <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-circle"></i> Issues by Category
+                        <i class="fas fa-info-circle ms-2" data-bs-toggle="tooltip" data-bs-placement="top" 
+                           title="Count of inspections where at least one criterion failed. High numbers indicate areas needing maintenance focus or training"></i>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Major Roads</span>
+                            <span class="badge bg-primary">{{ major_road_issues }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Trunk Sewers</span>
+                            <span class="badge bg-success">{{ trunk_sewer_issues }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Storm Drains</span>
+                            <span class="badge bg-warning">{{ storm_drain_issues }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Ponding Points</span>
+                            <span class="badge bg-danger">{{ ponding_point_issues }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calculator"></i> Average Inspections per Facility
+                        <i class="fas fa-info-circle ms-2" data-bs-toggle="tooltip" data-bs-placement="top" 
+                           title="Average number of times each facility has been inspected. Formula: Total Inspections ÷ Total Facilities. Target: ≥2.0 ensures regular monitoring"></i>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Major Roads</span>
+                            <span class="badge bg-primary">{{ avg_major_road }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Trunk Sewers</span>
+                            <span class="badge bg-success">{{ avg_trunk_sewer }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Storm Drains</span>
+                            <span class="badge bg-warning">{{ avg_storm_drain }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Ponding Points</span>
+                            <span class="badge bg-danger">{{ avg_ponding_point }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div> -->
+
+    <!-- ================= RECENT INSPECTIONS ================= -->
+    <!-- <div class="row g-3 mb-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clock"></i> Recent Inspections
+                        <i class="fas fa-info-circle ms-2" data-bs-toggle="tooltip" data-bs-placement="top" 
+                           title="Latest 3 inspections from each facility type. Shows facility name, zone, date, and inspector name for audit trail and verification"></i>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary"><i class="fas fa-road"></i> Major Roads</h6>
+                            <ul class="list-group mb-3">
+                                {% for inspection in recent_major_roads %}
+                                <li class="list-group-item">
+                                    <strong>{{ inspection.facility_name }}</strong> - {{ inspection.zone }}<br>
+                                    <small class="text-muted">{{ inspection.inspection_date }} | {{ inspection.emp_name|default:"N/A" }}</small>
+                                </li>
+                                {% empty %}
+                                <li class="list-group-item">No recent inspections</li>
+                                {% endfor %}
+                            </ul>
+
+                            <h6 class="text-success"><i class="fas fa-water"></i> Trunk Sewers</h6>
+                            <ul class="list-group">
+                                {% for inspection in recent_trunk_sewers %}
+                                <li class="list-group-item">
+                                    <strong>{{ inspection.facility_name }}</strong> - {{ inspection.zone }}<br>
+                                    <small class="text-muted">{{ inspection.inspection_date }} | {{ inspection.emp_name|default:"N/A" }}</small>
+                                </li>
+                                {% empty %}
+                                <li class="list-group-item">No recent inspections</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+
+                        <div class="col-md-6">
+                            <h6 class="text-warning"><i class="fas fa-tint"></i> Storm Drains</h6>
+                            <ul class="list-group mb-3">
+                                {% for inspection in recent_storm_drains %}
+                                <li class="list-group-item">
+                                    <strong>{{ inspection.facility_name }}</strong> - {{ inspection.zone }}<br>
+                                    <small class="text-muted">{{ inspection.inspection_date }} | {{ inspection.emp_name|default:"N/A" }}</small>
+                                </li>
+                                {% empty %}
+                                <li class="list-group-item">No recent inspections</li>
+                                {% endfor %}
+                            </ul>
+
+                            <h6 class="text-danger"><i class="fas fa-exclamation-triangle"></i> Ponding Points</h6>
+                            <ul class="list-group">
+                                {% for inspection in recent_ponding_points %}
+                                <li class="list-group-item">
+                                    <strong>{{ inspection.facility_name }}</strong> - {{ inspection.zone }}<br>
+                                    <small class="text-muted">{{ inspection.inspection_date }} | {{ inspection.emp_name|default:"N/A" }}</small>
+                                </li>
+                                {% empty %}
+                                <li class="list-group-item">No recent inspections</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> -->
+
+</div>
+
+<!-- Font Awesome Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<!-- Initialize Bootstrap Tooltips -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize all tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl, {
+            html: true,
+            trigger: 'hover focus'
+        });
+    });
+});
+</script>
+
+<style>
+/* Custom tooltip styling */
+.tooltip-inner {
+    max-width: 300px;
+    text-align: left;
+    padding: 8px 12px;
+    font-size: 13px;
+}
+
+/* Info icon hover effect */
+[data-bs-toggle="tooltip"] {
+    cursor: help;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+[data-bs-toggle="tooltip"]:hover {
+    opacity: 1;
+}
+</style>
+
+{% endblock %}

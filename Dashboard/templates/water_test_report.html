@@ -1,0 +1,340 @@
+{% extends 'base.html' %}
+{% block title %}Water Test Report{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4 text-center">💧 Water Test Report</h2>
+
+    <!-- 📅 Selected Date Range -->
+    <div class="alert alert-info text-center fw-semibold py-2">
+        Showing data from <span class="text-primary">{{ from_date }}</span> to <span class="text-primary">{{ to_date }}</span>
+    </div>
+
+    <!-- Filter Form -->
+    <form method="get" class="row g-3 mb-4">
+        <div class="col-md-3">
+            <label class="form-label fw-semibold">From Date</label>
+            <input type="date" name="from_date" value="{{ from_date }}" class="form-control">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label fw-semibold">To Date</label>
+            <input type="date" name="to_date" value="{{ to_date }}" class="form-control">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label fw-semibold">Output</label>
+            <select name="output" class="form-select">
+                {% for val, label in output_choices %}
+                    <option value="{{ val }}" {% if val == selected_output %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label fw-semibold">Location Type</label>
+            <select name="location_type" class="form-select">
+                {% for val, label in location_type_choices %}
+                    <option value="{{ val }}" {% if val == selected_location_type %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label fw-semibold">Location</label>
+            <select name="location" class="form-select">
+                <option value="-----">-----</option>
+                {% for loc in locations %}
+                    <option value="{{ loc.id }}" {% if loc.id|stringformat:"s" == selected_location %}selected{% endif %}>
+                        {{ loc.location_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-12 text-end">
+            <button type="submit" class="btn btn-primary mt-3 px-4">Filter</button>
+        </div>
+    </form>
+
+    <!-- CSV Download Button -->
+    <div class="text-end mb-3">
+        <button id="downloadCSV" class="btn btn-success">Download CSV</button>
+    </div>
+
+    <!-- Totals Summary -->
+    <h5 class="mt-4 mb-3 fw-bold">Totals Summary</h5>
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm border-0">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">Total Tests</h6>
+                    <h3 class="fw-bold text-primary">{{ totals.total_tests }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm border-0">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">Average pH</h6>
+                    <h3 class="fw-bold text-success">{{ totals.avg_ph }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm border-0">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">Average Temperature (°C)</h6>
+                    <h3 class="fw-bold text-warning">{{ totals.avg_temperature }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm border-0">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">Avg Dissolved O₂ (mg/L)</h6>
+                    <h3 class="fw-bold text-info">{{ totals.avg_dissolved_oxygen }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <!-- <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="waterTestTable" class="table table-bordered table-hover shadow-sm bg-white align-middle">
+                    <thead class="bg-primary text-white text-center">
+                        <tr>
+                            <th>#</th>
+                            <th>Date</th>
+                            <th>Zone</th>
+                            <th>UC</th>
+                            <th>Tube Well</th>
+                            <th>Location Type</th>
+                            <th>Output</th>
+                            <th>Temperature (°C)</th>
+                            <th>pH</th>
+                            <th>Electrical Conductivity (µS/cm)</th>
+                            <th>Dissolved O₂ (mg/L)</th>
+                            <th>TSS (mg/L)</th>
+                            <th>Turbidity (NTU)</th>
+                            <th>TDS (mg/L)</th>
+                            <th>Resistivity (Ω·cm)</th>
+                            <th>Salinity (mg/L)</th>
+                            <th>Coliform</th>
+                            <th>Longitude</th>
+                            <th>Latitude</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for test in water_tests %}
+                            <tr class="text-center">
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ test.date }}</td>
+                                <td>{{ test.location.location_name }}</td>
+                                <td>{{ test.uc.uc_name }}</td>
+                                <td>{{ test.tubewell.tubewell_name }}</td>
+                                <td>{{ test.location_type }}</td>
+                                <td>
+                                    {% if test.output == 'safe' %}
+                                        <span class="badge bg-success">Safe</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Unsafe</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ test.temperature_c }}</td>
+                                <td>{{ test.ph }}</td>
+                                <td>{{ test.electrical_conductivity_uc_cm }}</td>
+                                <td>{{ test.dissolved_oxygen_mg_l }}</td>
+                                <td>{{ test.tss_mg_l }}</td>
+                                <td>{{ test.turbidity_ntu }}</td>
+                                <td>{{ test.tds_mg_l }}</td>
+                                <td>{{ test.resistivity_ojm_cm }}</td>
+                                <td>{{ test.salinity_mg_l }}</td>
+                                <td>{{ test.coliform }}</td>
+                                <td>{{ test.longitude }}</td>
+                                <td>{{ test.latitude }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="19" class="text-center text-muted">No records found for the selected filters.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div> -->
+
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="waterTestTable" class="table table-bordered table-hover shadow-sm bg-white align-middle">
+                    <thead class="bg-primary text-white text-center">
+                        <tr>
+                            <th>#</th>
+                            <th>Test Date</th>
+                            <th>Zone</th>
+                            <th>UC</th>
+                            <th>Tube Well</th>
+                            <th>Location Type</th>
+                            <th>Output</th>
+                            <th>
+                                Temperature (°C)<br>
+                                <small class="text-dark">(24 – 30)</small>
+                            </th>
+                            <th>
+                                pH<br>
+                                <small class="text-dark">(6.5 – 9.2)</small>
+                            </th>
+                            <th>
+                                Electrical Conductivity (µS/cm)<br>
+                                <small class="text-dark">(50 – 800)</small>
+                            </th>
+                            <th>
+                                Dissolved O₂ (mg/L)<br>
+                                <small class="text-dark">(6.5 – 8)</small>
+                            </th>
+                            <th>
+                                TSS (mg/L)<br>
+                                <small class="text-dark">(0 – 5)</small>
+                            </th>
+                            <th>
+                                Turbidity (NTU)<br>
+                                <small class="text-dark">(0 – 5)</small>
+                            </th>
+                            <th>
+                                TDS (mg/L)<br>
+                                <small class="text-dark">(0 – 1000)</small>
+                            </th>
+                            <th>
+                                Resistivity (Ω·cm)<br>
+                                <small class="text-dark">(0 – 18.5)</small>
+                            </th>
+                            <th>
+                                Salinity (mg/L)<br>
+                                <small class="text-dark">(0 – 600)</small>
+                            </th>
+                            <th>Coliform</th>
+                            <th>Longitude</th>
+                            <th>Latitude</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for test in water_tests %}
+                            <tr class="text-center">
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ test.date }}</td>
+                                <td>{{ test.location.location_name }}</td>
+                                <td>{{ test.uc.uc_name }}</td>
+                                <td>{{ test.tubewell.tubewell_name }}</td>
+                                <td>{{ test.location_type }}</td>
+                                <td>
+                                    {% if test.output == 'safe' %}
+                                        <span class="badge bg-success">Safe</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Unsafe</span>
+                                    {% endif %}
+                                </td>
+    
+                                <!-- ✅ WHO Standard Ranges -->
+                                <td style="background-color: {% if test.temperature_c >= 24 and test.temperature_c <= 30 %}#d4edda{% else %}#f8d7da{% endif %};">
+                                    {{ test.temperature_c }}
+                                </td>
+    
+                                <td style="background-color: {% if test.ph >= 6.5 and test.ph <= 9.2 %}#d4edda{% else %}#f8d7da{% endif %};">
+                                    {{ test.ph }}
+                                </td>
+    
+                                <td style="background-color: {% if test.electrical_conductivity_uc_cm >= 50 and test.electrical_conductivity_uc_cm <= 800 %}#d4edda{% else %}#f8d7da{% endif %};">
+                                    {{ test.electrical_conductivity_uc_cm }}
+                                </td>
+    
+                                <td style="background-color: {% if test.dissolved_oxygen_mg_l >= 6.5 and test.dissolved_oxygen_mg_l <= 8 %}#d4edda{% else %}#f8d7da{% endif %};">
+                                    {{ test.dissolved_oxygen_mg_l }}
+                                </td>
+    
+                                <td style="background-color: {% if test.tss_mg_l >= 0 and test.tss_mg_l <= 5 %}#d4edda{% else %}#f8d7da{% endif %};">
+                                    {{ test.tss_mg_l }}
+                                </td>
+    
+                                <td style="background-color: {% if test.turbidity_ntu >= 0 and test.turbidity_ntu <= 5 %}#d4edda{% else %}#f8d7da{% endif %};">
+                                    {{ test.turbidity_ntu }}
+                                </td>
+    
+                                <td style="background-color: {% if test.tds_mg_l >= 0 and test.tds_mg_l <= 1000 %}#d4edda{% else %}#f8d7da{% endif %};">
+                                    {{ test.tds_mg_l }}
+                                </td>
+    
+                                <td style="background-color: {% if test.resistivity_ojm_cm >= 0 and test.resistivity_ojm_cm <= 18.5 %}#d4edda{% else %}#f8d7da{% endif %};">
+                                    {{ test.resistivity_ojm_cm }}
+                                </td>
+    
+                                <td style="background-color: {% if test.salinity_mg_l >= 0 and test.salinity_mg_l <= 600 %}#d4edda{% else %}#f8d7da{% endif %};">
+                                    {{ test.salinity_mg_l }}
+                                </td>
+    
+                                <td>{{ test.coliform }}</td>
+                                <td>{{ test.longitude }}</td>
+                                <td>{{ test.latitude }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="19" class="text-center text-muted">
+                                    No records found for the selected filters.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+    
+                <!-- Optional: WHO legend below table -->
+                <div class="mt-2 text-center">
+                    <span class="badge bg-success">Within WHO Range</span>
+                    <span class="badge bg-danger">Outside WHO Range</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+<script>
+$(document).ready(function () {
+    const table = $('#waterTestTable').DataTable({
+        pageLength: 25,
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+        ordering: true,
+        searching: true,
+        responsive: true,
+    });
+
+    $('#downloadCSV').click(function () {
+        let csvRows = [];
+        const headers = [];
+        $('#waterTestTable thead th').each(function () {
+            headers.push($(this).text().trim());
+        });
+        csvRows.push(headers.join(','));
+
+        table.rows({ search: 'applied' }).every(function () {
+            const row = this.nodes().to$().find('td').map(function() {
+                let text = $(this).text().trim();
+                return '"' + text.replace(/"/g, '""') + '"';
+            }).get();
+            csvRows.push(row.join(','));
+        });
+
+        const csvString = csvRows.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'water_test_report.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Complaint Summary Report
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Total Complaints: <strong>{{ total_complaints }}</strong></h2>
+
+    <h2 class="mb-4">Daily Complaint Summary ({{ report_date }})</h2>
+
+    <!-- Filter Form -->
+<form method="get" class="mb-4">
+    <div class="form-row">
+        <div class="col-md-4 mb-3">
+            <label for="date">Select Date:</label>
+            <input 
+                type="date" 
+                id="date" 
+                name="date" 
+                class="form-control" 
+                value="{{ report_date|date:'Y-m-d' }}">
+        </div>
+        <div class="col-md-4 mb-3">
+            <label for="location">Select Location:</label>
+            <select id="location" name="location" class="form-control">
+                <option value="">All Locations</option>
+                {% for location in locations %}
+                    <option value="{{ location.id }}" {% if location.id|stringformat:"s" == location_filter %}selected{% endif %}>
+                        {{ location.location_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4 mb-3 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </div>
+    </div>
+</form>
+
+<!-- Complaint Summary Table -->
+<div class="table-responsive mt-4">
+    <h4>Summary of Resolved and Pending Complaints</h4>
+    <table class="table table-bordered table-striped" style="border: 2px solid #343a40;">
+        <thead class="thead-dark">
+            <tr>
+                <th>Location</th>
+                <th>Complaints Received</th>
+                <th>Complaints Resolved</th>
+                <th>Complaints Pending</th>
+                <th>Source Breakdown</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if complaint_summary %}
+                {% for item in complaint_summary %}
+                    <tr>
+                        <!-- Main row for location totals, spans source rows -->
+                        <td rowspan="{{ item.source_summary|length|add:'1' }}">
+                            <strong>{{ item.location.location_name }}</strong>
+                        </td>
+                        <td rowspan="{{ item.source_summary|length|add:'1' }}">
+                            <strong>{{ item.total_complaints }}</strong>
+                        </td>
+                        <td rowspan="{{ item.source_summary|length|add:'1' }}">
+                            <strong>{{ item.resolved_complaints }}</strong>
+                        </td>
+                        <td rowspan="{{ item.source_summary|length|add:'1' }}">
+                            <strong>{{ item.pending_complaints }}</strong>
+                        </td>
+                        <td> <!-- Empty to align source breakdown in next rows --> </td>
+                    </tr>
+
+                    <!-- Source breakdown for each location -->
+                    {% for source, counts in item.source_summary.items %}
+                        <tr>
+                            <td>
+                                <strong>{{ source }}</strong><br>
+                                <span>Total: {{ counts.total }}</span><br>
+                                <span>Resolved: {{ counts.resolved }}</span><br>
+                                <span>Pending: {{ counts.pending }}</span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% endfor %}
+
+                <!-- Overall Totals Row -->
+                <tr class="table-info">
+                    <td><strong>Overall Total</strong></td>
+                    <td><strong>{{ total_complaints }}</strong></td>
+                    <td><strong>{{ total_resolved }}</strong></td>
+                    <td><strong>{{ total_pending }}</strong></td>
+                    <td>-</td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="5" class="text-center">
+                        <strong>No complaint data available for the selected date and location.</strong>
+                    </td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<div class="table-responsive mt-4">
+    <h4>Summary of Complaints by Source</h4>
+    <table class="table table-bordered table-striped" style="border: 2px solid #343a40;">
+        <thead class="thead-dark">
+            <tr>
+                <th>Complaint Source</th>
+                <th>Complaints Received</th>
+                <th>Complaints Resolved</th>
+                <th>Complaints Pending</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if source_summary %}
+                {% for source, counts in source_summary.items %}
+                    <tr>
+                        <td><strong>{{ source }}</strong></td>
+                        <td><strong>{{ counts.total }}</strong></td>
+                        <td><strong>{{ counts.resolved }}</strong></td>
+                        <td><strong>{{ counts.pending }}</strong></td>
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="4" class="text-center">
+                        <strong>No complaint source data available for the selected date.</strong>
+                    </td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+
+
+<div class="table-responsive mt-4">
+    <h4>Summary of Complaints by Type</h4>
+    <table class="table table-bordered table-striped" style="border: 2px solid #343a40;">
+        <thead class="thead-dark">
+            <tr>
+                <th>Complaint Type</th>
+                <th>Complaints Received</th>
+                <th>Complaints Resolved</th>
+                <th>Complaints Pending</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if type_summary %}
+                {% for complaint_type, counts in type_summary.items %}
+                    <tr>
+                        <td><strong>{{ complaint_type }}</strong></td>
+                        <td><strong>{{ counts.total }}</strong></td>
+                        <td><strong>{{ counts.resolved }}</strong></td>
+                        <td><strong>{{ counts.pending }}</strong></td>
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="4" class="text-center">
+                        <strong>No complaint type data available for the selected date.</strong>
+                    </td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+    <!-- Complaint Summary Chart -->
+    <div class="mt-5">
+        <canvas id="complaintStatusChart"></canvas>
+    </div>
+
+</div>
+
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Prepare data for chart
+    const labels = [
+        {% for summary in complaint_summary %}
+            "{{ summary.location.location_name }}",
+        {% endfor %}
+    ];
+
+    const totalData = [
+        {% for summary in complaint_summary %}
+            {{ summary.total_complaints }},
+        {% endfor %}
+    ];
+
+    const resolvedData = [
+        {% for summary in complaint_summary %}
+            {{ summary.resolved_complaints }},
+        {% endfor %}
+    ];
+
+    const pendingData = [
+        {% for summary in complaint_summary %}
+            {{ summary.pending_complaints }},
+        {% endfor %}
+    ];
+
+    // Render the chart
+    const ctx = document.getElementById('complaintStatusChart').getContext('2d');
+    const complaintStatusChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Total Complaints',
+                    data: totalData,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',  // Light blue
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Resolved',
+                    data: resolvedData,
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)', 
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Pending',
+                    data: pendingData,
+                    backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Complaints'
+                    }
+                }
+            },
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Complaint Status by Location'
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

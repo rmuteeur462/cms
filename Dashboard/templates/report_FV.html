@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1 class="h3 mb-4 text-gray-800 text-center font-weight-bold">Field Visit Report Generator</h1>
+
+<!-- Filter Form -->
+<form method="get" action="{% url 'generate_field_visit_report' %}" style="margin-bottom: 20px;">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+        </div>
+        <div class="card-body">
+            <div class="form-row">
+                <!-- Date Filters -->
+                <div class="form-group col-md-4">
+                    <label for="start_date">From Date:</label>
+                    <input type="date" id="start_date" name="start_date" value="{{ start_date }}" class="form-control">
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="end_date">To Date:</label>
+                    <input type="date" id="end_date" name="end_date" value="{{ end_date }}" class="form-control">
+                </div>
+
+                <!-- Location Filter -->
+                <div class="form-group col-md-4">
+                    <label for="location">Location:</label>
+                    <select name="location" id="location" class="form-control">
+                        <option value="">-- All Locations --</option>
+                        {% for location in locations %}
+                            <option value="{{ location.location_name }}" {% if location.location_name == location_filter %}selected{% endif %}>
+                                {{ location.location_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Designation Filter -->
+                <div class="form-group col-md-4">
+                    <label for="designation">Designation:</label>
+                    <select name="designation" id="designation" class="form-control">
+                        <option value="">-- All Designations --</option>
+                        {% for designation in designations %}
+                            <option value="{{ designation.designation }}" {% if designation.designation == designation_filter %}selected{% endif %}>
+                                {{ designation.designation }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="form-group col-md-12 text-left">
+                    <button type="submit" class="btn btn-primary">Generate Report</button>
+                </div>
+
+                <div class="form-group col-md-12 text-right">
+                    <button type="button" class="btn btn-success" id="downloadCSV">Download CSV</button>
+                </div>
+
+                <!-- PDF Download Button -->
+<div class="form-group col-md-12 text-right">
+    <button type="button" class="btn btn-danger" id="downloadPDF">Download PDF</button>
+</div>
+
+            
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Field Visit Report Table -->
+{% if field_visit_reports %}
+    <h3>Field Visit Reports</h3>
+    
+    <table class="table table-bordered table-hover shadow-sm bg-white" id="reportTable">
+        <thead class="bg-primary text-white">
+            <tr>
+                <th>SR No</th>  <!-- Added SR No Column -->
+                <th>Official Name</th>
+                <th>Designation</th>
+                <th>Location</th>
+
+                <th>Visit Area</th>
+                <th>Brief Report</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for report in field_visit_reports %}
+                <tr>
+                    <td>{{ forloop.counter }}</td> <!-- Show Serial Number -->
+                    <td>{{ report.name_of_official.name }}</td>
+                    <td>{{ report.name_of_official.designation }}</td>
+                    <td>{{ report.location.location_name }}</td>
+
+                    <td>{{ report.visit_area }}</td>
+                    <td>{{ report.brief_report }}</td>
+                    <td>{{ report.date }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot class="bg-light font-weight-bold">
+            <tr>
+                <td colspan="7">Total Field Visits: {{ totals.total_reports }}</td>
+            </tr>
+        </tfoot>
+    </table>
+
+{% else %}
+    <p>No field visit data found for the selected criteria.</p>
+{% endif %}
+
+<!-- JavaScript for CSV download -->
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.21/jspdf.plugin.autotable.min.js"></script>
+
+
+<script>
+    document.getElementById('downloadCSV').addEventListener('click', function() {
+        var table = document.getElementById('reportTable');
+        var rows = Array.from(table.querySelectorAll('tr'));
+        var csvContent = '';
+
+        rows.forEach(function(row) {
+            var cells = Array.from(row.querySelectorAll('th, td'));
+            var rowData = cells.map(function(cell) {
+                return '"' + cell.textContent.trim().replace(/"/g, '""') + '"'; // Escape quotes in CSV
+            }).join(',');
+            csvContent += rowData + '\n';
+        });
+
+        var link = document.createElement('a');
+        link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+        link.download = 'field_visit_report.csv';
+        link.click();
+    });
+
+    // JavaScript for PDF download
+    document.getElementById('downloadPDF').addEventListener('click', function () {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const table = document.getElementById('reportTable');
+    const rows = Array.from(table.querySelectorAll('tr'));
+
+    const imagePath = 'http://wod.wsspeshawar.org.pk:4002/static/logo/khan.png';
+
+    // Optional: Get date range if applicable
+    const startDate = document.getElementById('start_date')?.value || 'N/A';
+    const endDate = document.getElementById('end_date')?.value || 'N/A';
+
+    // Add header image (centered)
+    doc.addImage(imagePath, 'PNG', -4, 5, 220, 30); // Full-width image
+
+    // Add colored header background
+    doc.setFillColor(0, 123, 255);
+    doc.rect(10, 40, 190, 20, 'F');
+
+    // Add report title
+    doc.setFontSize(16);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.text("Field Visit Report", 80, 47); // Adjust x to center
+
+    // Optional: Add date range
+    doc.setFontSize(12);
+    doc.text(`From: ${startDate}  To: ${endDate}`, 75, 55);
+
+    // Extract headers
+    let header = [];
+    const headerCells = rows[0].querySelectorAll('th');
+    headerCells.forEach(cell => {
+        header.push(cell.textContent.trim());
+    });
+
+    // Extract table data
+    let content = [];
+    rows.slice(1).forEach(row => {
+        const rowData = [];
+        row.querySelectorAll('td').forEach(cell => {
+            rowData.push(cell.textContent.trim());
+        });
+        content.push(rowData);
+    });
+
+    // Draw table
+    doc.autoTable({
+        head: [header],
+        body: content,
+        startY: 65,
+        styles: {
+            fontSize: 10,
+        },
+        headStyles: {
+            fillColor: [0, 123, 255],
+            textColor: 255,
+            fontStyle: 'bold'
+        }
+    });
+
+    doc.save('field_visit_report.pdf');
+});
+</script>
+
+{% endblock %}

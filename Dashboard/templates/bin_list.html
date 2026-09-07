@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+Bin Management System
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800" style="font-weight: bold; font-size: 1.5rem; text-align: center;">
+        Containers & Moqas Data
+    </h1>
+
+    {% if messages %}
+        <div class="alert alert-dismissible">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="form mb-3" onsubmit="showLoader()">
+                <div class="row">
+                    <!-- Location Filter -->
+                    <div class="col-md-3 mb-3">
+                        <label for="location">Location:</label>
+                        <select name="location" id="locationFilter" class="form-control">
+                            <option value="">All Locations</option>
+                            {% for location in locations %}
+                                <option value="{{ location.location_name }}" {% if location.location_name == location_filter %}selected{% endif %}>
+                                    {{ location.location_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Category Filter -->
+                    <div class="col-md-3 mb-3">
+                        <label for="category">Category:</label>
+                        <select name="category" id="categoryFilter" class="form-control">
+                            <option value="">All Categories</option>
+                            {% for category in categories %}
+                                <option value="{{ category.category }}" {% if category.category == category_filter %}selected{% endif %}>
+                                    {{ category.category }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Capacity Filter -->
+                    <div class="col-md-3 mb-3">
+                        <label for="capacity">Capacity:</label>
+                        <select name="capacity" id="capacityFilter" class="form-control">
+                            <option value="">All Capacities</option>
+                            {% for capacity in capacities %}
+                                <option value="{{ capacity.capacity }}" {% if capacity.capacity == capacity_filter %}selected{% endif %}>
+                                    {{ capacity.capacity }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+             <!-- Bin Type Filter -->
+<div class="col-md-3 mb-3">
+    <label for="bin_type">Bin Type:</label>
+    <select name="bin_type" id="binTypeFilter" class="form-control">
+        <option value="">All Types</option>
+        {% for key, value in bin_types %}
+            <option value="{{ key }}" {% if key == bin_type_filter %}selected{% endif %}>
+                {{ value }}
+            </option>
+        {% endfor %}
+    </select>
+</div>
+       
+
+
+                    <!-- Day Frequency Filter -->
+<div class="col-md-3 mb-3">
+    <label for="day_frequency">Days:</label>
+    <div id="dayFilter" class="form-control" style="height: auto; padding: 10px;">
+        {% for day in days %}
+            <div class="form-check">
+                <input 
+                    class="form-check-input" 
+                    type="checkbox" 
+                    name="days" 
+                    id="day_{{ forloop.counter }}" 
+                    value="{{ day.name }}" 
+                    {% if day.name in day_filter %}checked{% endif %}>
+                <label class="form-check-label" for="day_{{ forloop.counter }}">
+                    {{ day.name }}
+                </label>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+
+
+
+
+
+                </div>
+
+
+                <div class="row">
+                    <div class="col text-right">
+                        <button type="submit" class="btn btn-primary">Filter</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bin List Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Bin List</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="binTable" class="table table-bordered table-hover shadow-sm bg-white">
+                    <thead class="bg-primary text-white">
+                        <tr>
+                            <th>Sr. No</th>
+                            <th>Bin ID</th>
+                            <th>Bin Name</th>
+                            <th>Bin Type</th>
+                            <th>Location</th>
+                            <th>UC</th>
+                            <th>Category</th>
+                            <th>Capacity</th>
+                            <th>Lifting Schedule</th>
+                            <th>Lifting Frequency</th>
+                            <th>Days</th>
+                            <th>Map</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bin in bins %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ bin.bin_id }}</td>
+                                <td>{{ bin.name_container }}</td>
+                                <td>{{ bin.name }}</td>
+                                <td>{{ bin.location }}</td>
+                                <td>{{ bin.uc }}</td>
+                                <td>{{ bin.category }}</td>
+                                <td>{{ bin.capacity }}</td>
+                                <td>{{ bin.lifting_schedule }}</td>
+                                <td>{{ bin.lifting_frequency }}</td>
+                                <td>
+                                    {% if bin.days.all %}
+                                        {{ bin.days.all|join:", " }}
+                                    {% else %}
+                                        No days assigned
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if bin.latitude and bin.longitude %}
+                                        <a href="https://www.google.com/maps?q={{ bin.latitude }},{{ bin.longitude }}" target="_blank">View on Map</a>
+                                    {% else %}
+                                        No coordinates available
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'update_bin' bin.id %}" class="btn btn-sm btn-warning">Edit</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div id="loader" class="loader" style="display:none;"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        $(document).ready(function() {
+            $('#binTable').DataTable({
+                "paging": true,
+                "searching": true,
+                "info": true,
+                "ordering": true,
+                "pageLength": 10,
+                "lengthMenu": [5, 10, 25, 50, 100],
+                "language": {
+                    "search": "Search:",
+                }
+            });
+        });
+
+        function showLoader() {
+            document.getElementById("loader").style.display = "flex";
+        }
+    </script>
+{% endblock %}

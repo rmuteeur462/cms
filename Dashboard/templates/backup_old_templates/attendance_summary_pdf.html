@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Attendance Summary - {{ selected_date }}</title>
+  
+  <!-- Bootstrap CSS -->
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
+  
+  <style>
+    /* Smaller font sizes */
+body {
+  font-size: 8pt !important;
+  margin: 5px 10px !important;
+  color: #000;
+  font-family: Arial, Helvetica, sans-serif;  /* Changed font here */
+  -webkit-print-color-adjust: exact;
+}
+
+
+h1 {
+  font-size: 10pt !important;
+  margin: 0 !important; /* ← remove vertical space */
+  letter-spacing: 1px !important;
+  text-transform: uppercase;
+  text-align: center;
+  font-weight: bold;
+}
+
+table {
+  font-size: 7pt !important;
+  margin-bottom: 4px !important;
+  border-collapse: collapse !important;
+  width: 100% !important;
+  page-break-inside: avoid;
+}
+
+/* Blue header styling */
+table thead th {
+  background-color: #007BFF !important; /* Bootstrap blue */
+  color: rgb(0, 0, 0) !important;            /* White text for contrast */
+  font-weight: bold !important;
+}
+
+
+th, td {
+  padding: 2px 4px !important;
+  border: 1px solid #444 !important;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.header-logo {
+  margin-bottom: 4px !important;
+  gap: 5px !important;
+}
+
+.header-logo img {
+  max-height: 30px !important;
+}
+
+.footer {
+  font-size: 6pt !important;
+  bottom: 2px !important;
+  padding: 0 5px !important;
+}
+.table-responsive {
+  overflow: visible !important;
+  margin: 0 !important; /* ← remove any space between h1 and table */
+  padding: 0 !important;
+}
+/* Make sure each table's rows do not break page */
+tr, tbody {
+  page-break-inside: avoid;
+}
+
+/* Reduce spacing around hr */
+hr {
+  margin: 4px 0 !important;
+  border-top: 1px solid #444 !important;
+}
+
+/* Remove excess table-responsive overflow */
+.table-responsive {
+  overflow: visible !important;
+}
+
+/* Optional: print media adjustments */
+@media print {
+  body {
+    margin: 5mm !important;
+  }
+  h1 {
+    font-size: 9pt !important;
+  }
+  table {
+    font-size: 6pt !important;
+  }
+  th, td {
+    padding: 1px 3px !important;
+  }
+  .footer {
+    font-size: 5pt !important;
+    bottom: 2mm !important;
+  }
+}
+  </style>
+</head>
+<body>
+
+  <div class="header-logo">
+    <img src="D:\1) WSSP CURRENT RUNNING SOFTWARE\WSSP Dashboard_running\static\logo\khan.png" alt="Logo" />
+    <div class="header-text">
+      <h1>{{ location_display }} Daily Progress Report - {{ selected_date }}</h1>
+    </div>
+  </div>
+
+  <hr />
+  
+
+  <!-- <h3>Fuel Totals ({{ selected_date }})</h3>
+<ul>
+  <li>LFS Trips: {{ fuel_totals.lfs_trips_no }}</li>
+  <li>Primary Trips: {{ fuel_totals.primary_trips }}</li>
+  <li>Fuel Top-Up (liters): {{ fuel_totals.fuel_top_up_liters }}</li>
+</ul> -->
+
+<!-- <h4>Fuel Data by Location</h4>
+<table border="1" cellspacing="0" cellpadding="5">
+    <thead>
+        <tr>
+            <th>Location</th>
+            <th>LFS Trips</th>
+            <th>Primary Trips</th>
+            <th>Fuel Top-Up (Liters)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for loc in fuel_data_per_location %}
+        <tr>
+            <td>{{ loc.location }}</td>
+            <td>{{ loc.lfs_trips_no }}</td>
+            <td>{{ loc.primary_trips }}</td>
+            <td>{{ loc.fuel_top_up_liters }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+    <tfoot>
+        <tr>
+            <th>Total</th>
+            <th>{{ fuel_totals.lfs_trips_no }}</th>
+            <th>{{ fuel_totals.primary_trips }}</th>
+            <th>{{ fuel_totals.fuel_top_up_liters }}</th>
+        </tr>
+    </tfoot>
+</table> -->
+
+
+  <h1>Attendance</h1>
+  <div class="table-responsive">
+    <table class="table table-striped table-bordered">
+      <thead>
+        <tr>
+          <th style="width: 50px;">S.No</th>
+          <th style="text-align: left;">Department</th>
+          <th style="width: 60px;">Present</th>
+          <th style="width: 60px;">Absent</th>
+          <th style="width: 60px;">Leave</th>
+          <th style="width: 60px;">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for department in department_summary_all_locations %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td style="text-align: left;">{{ department.employee_name__department }}</td>
+            <td>{{ department.total_present }}</td>
+            <td>{{ department.total_absent }}</td>
+            <td>{{ department.total_leave }}</td>
+            <td>{{ department.total_present|add:department.total_absent|add:department.total_leave }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6">No records found.</td></tr>
+        {% endfor %}
+       <tr>
+        <td colspan="2"><strong>Total</strong></td>
+        <td><strong>{{ overall_totals.total_present }}</strong></td>
+        <td><strong>{{ overall_totals.total_absent }}</strong></td>
+        <td><strong>{{ overall_totals.total_leave }}</strong></td>
+        <td><strong>{{ overall_totals.total_present|add:overall_totals.total_absent|add:overall_totals.total_leave }}</strong></td>
+      </tr>
+
+      </tbody>
+    </table>
+  </div>
+
+  <h1>Fleet</h1>
+<div class="table-responsive">
+  <table class="table table-striped table-bordered">
+    <thead>
+      <tr>
+        <th style="width: 50px;">S.No</th>
+        <th style="text-align: left;">Status</th>
+        <th>Parked</th>
+        <th>Field Operation</th>
+        <th>Minor Repair</th>
+        <th>Major Repair</th>
+     <th><strong>Total</strong></th>
+
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="table-success">
+        <td>1</td>
+        <td style="text-align: left;">Functional</td>
+        <td>{{ total_functional_parked }}</td>
+        <td>{{ total_functional_field_operation }}</td>
+        <td>--</td>
+        <td>--</td>
+     <td><strong>{{ total_functional_parked|add:total_functional_field_operation }}</strong></td>
+
+      </tr>
+      <tr class="table-danger">
+        <td>2</td>
+        <td style="text-align: left;">Non-Functional</td>
+        <td>--</td>
+        <td>--</td>
+        <td>{{ total_non_functional_minor_repair }}</td>
+        <td>{{ total_non_functional_major_repair }}</td>
+        <td><strong>{{ total_non_functional_minor_repair|add:total_non_functional_major_repair }}</strong></td>
+      </tr>
+        <tr class="table-info">
+      <td colspan="2"><strong>Total</strong></td>
+      <td><strong>{{ total_functional_parked }}</strong></td>
+      <td><strong>{{ total_functional_field_operation }}</strong></td>
+      <td><strong>{{ total_non_functional_minor_repair }}</strong></td>
+      <td><strong>{{ total_non_functional_major_repair }}</strong></td>
+      <td><strong>{{ total_fleet }}</strong></td>
+    </tr>
+
+    </tbody>
+  </table>
+</div>
+
+
+
+  <h1>Fuel & Trips</h1>
+<div class="table-responsive">
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th style="width: 40px;">S.No</th>
+        <th style="text-align: left;">Location</th>
+        <th>Secondary Trips</th>
+        <th>Primary Trips</th>
+        <th>Fuel Top-Up (Liters)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for loc in fuel_data_per_location reversed %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td style="text-align: left;">{{ loc.location }}</td>
+          <td>{{ loc.lfs_trips_no }}</td>
+          <td>{{ loc.primary_trips }}</td>
+          <td>{{ loc.fuel_top_up_liters }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+      <th colspan="2"><strong>Total</strong></th>
+      <th><strong>{{ fuel_totals.lfs_trips_no }}</strong></th>
+      <th><strong>{{ fuel_totals.primary_trips }}</strong></th>
+      <th><strong>{{ fuel_totals.fuel_top_up_liters }}</strong></th>
+    </tr>
+
+    </tfoot>
+  </table>
+</div>
+
+
+
+  <h1>Field Visits Conducted</h1>
+  <div class="table-responsive">
+    <table class="table table-striped table-bordered">
+      <thead>
+        <tr>
+         <th style="width: 50px;">S.No</th>
+          <th style="text-align: left;">Designation</th>
+          <th>Total Visits</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for designation in designation_counts %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td style="text-align: left;">{{ designation.name_of_official__designation }}</td>
+            <td><strong>{{ designation.total }}</strong></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="3">No data available for the selected date.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <h1>Water Supply</h1>
+<div class="table-responsive">
+  <table class="table table-striped table-bordered">
+    <thead>
+      <tr>
+        <th style="width: 50px;">S.No</th>
+        <th style="text-align: left;">Key Performance Indicators</th>
+        <th>Details</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td style="text-align: left;">Registration of New Connections</td><td><strong>{{ total_new_connections }}</strong></td></tr>
+      <tr><td>2</td><td style="text-align: left;">Water Tests Conducted</td><td><strong>{{ total_tests }}</strong></td></tr>
+      <tr><td>3</td><td style="text-align: left;">Tube Wells Operational</td><td><strong>{{ total_functional }}</strong></td></tr>
+      <tr><td>4</td><td style="text-align: left;">Tube Wells Non-Operational</td><td><strong>{{ total_non_operational }}</strong></td></tr>
+      <tr><td>5</td><td style="text-align: left;">Tube Wells Non-Functional</td><td><strong>{{ total_non_functional }}</strong></td></tr>
+      <tr><td>6</td><td style="text-align: left;">Total Tubewells</td><td><strong>{{ total_tubewells }}</strong></td></tr>
+      <tr><td>7</td><td style="text-align: left;">Filtration Plants Functional</td><td><strong>{{ total_functional_filtration }}</strong></td></tr>
+      <tr><td>8</td><td style="text-align: left;">Filtration Plants Non-Functional</td><td><strong>{{ total_non_functional_filtration }}</strong></td></tr>
+    </tbody>
+  </table>
+</div>
+
+
+
+
+        <!-- <tr><td>7</td><td>Fuel Top Up (Liters)</td><td>{{ total_fuel }}</td></tr> -->
+        <!-- <tr><td>8</td><td>Primary Vehicle Trips</td><td>{{ total_primary_trip }}</td></tr> -->
+
+
+<h1>Sanitation</h1>
+<div class="table-responsive">
+  <table class="table table-striped table-bordered">
+    <thead>
+      <tr>
+        <th style="width: 50px;">S.No</th>
+        <th style="text-align: left;">Key Performance Indicators</th>
+        <th>Details</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td style="text-align: left;">Containers Lifted</td><td><strong>{{ total_lifted_containers }}</strong></td></tr>
+      <tr><td>2</td><td style="text-align: left;">Moqas Cleared</td><td><strong>{{ total_lifted_moqas }}</strong></td></tr>
+      <tr><td>3</td><td style="text-align: left;">Waste Dumped at LFS (Tons)</td><td><strong>{{ total_waste_dumped_at_lfs }}</strong></td></tr>
+      <tr><td>4</td><td style="text-align: left;">Waste Locally Dumped (Tons)</td><td><strong>{{ total_waste_locally_dumped }}</strong></td></tr>
+      <tr><td>5</td><td style="text-align: left;">LFS Trips</td><td><strong>{{ total_lfs_trips }}</strong></td></tr>
+      <tr><td>6</td><td style="text-align: left;">Local Dumping Trips</td><td><strong>{{ total_local_dumping_trips }}</strong></td></tr>
+      <tr><td>7</td><td style="text-align: left;">Primary Waste Collection (Tons)</td><td><strong>{{ total_primary_waste_collection }}</strong></td></tr>
+      <tr><td>8</td><td style="text-align: left;">Door to Door Collection</td><td><strong>{{ total_door_to_door_collection }}</strong></td></tr>
+      <tr><td>9</td><td style="text-align: left;">Replacement of Manhole Covers</td><td><strong>{{ total_replacement_of_manhole_covers }}</strong></td></tr>
+      <tr><td>10</td><td style="text-align: left;">Cleaning De-siltation of Manhole</td><td><strong>{{ total_cleaning_de_siltation_of_manhole }}</strong></td></tr>
+      <tr><td>11</td><td style="text-align: left;">Cleaning De-siltation of Drain Sewers (Km)</td><td><strong>{{ total_cleaning_de_siltation_of_drain_sewers }}</strong></td></tr>
+      <tr><td>12</td><td style="text-align: left;">Fumigation Sprays</td><td><strong>{{ total_fumigation_sprays }}</strong></td></tr>
+      <tr><td>13</td><td style="text-align: left;">IR Spray</td><td><strong>{{ total_ir_spray }}</strong></td></tr>
+    </tbody>
+  </table>
+</div>
+
+
+
+  <h1>Complaints Management System (CMC)</h1>
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped">
+      <thead>
+        <tr>
+          <th style="width: 50px;">S.No</th>
+          <th style="text-align: left;">Type</th>
+          <th>Received</th>
+          <th>Resolved</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if type_summary %}
+          {% for complaint_type, counts in type_summary.items %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td style="text-align: left;">{{ complaint_type }}</td>
+              <td><strong>{{ counts.total }}</strong></td>
+              <td><strong>{{ counts.resolved }}</strong></td>
+            </tr>
+          {% endfor %}
+          <tr>
+          <td><strong>#</strong></td>
+          <td><strong>Total</strong></td>
+          <td><strong>{{ total_received }}</strong></td>
+          <td><strong>{{ total_resolved }}</strong></td>
+        </tr>
+
+        {% else %}
+          <tr><td colspan="4">No complaint type data available for the selected date.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <h1>Citizen Liaison Cell</h1>
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped">
+      <thead>
+        <tr>
+          <th style="width: 50px;">S.No</th>
+          <th style="text-align: left;">Key Performance Indicators</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for activity in activity_summary %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td style="text-align: left;">{{ activity.activity__name }}</td>
+            <td><strong>{{ activity.total_reports }}</strong></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="3">No activity data available for the selected date.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+
+  <h1>Media</h1>
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped">
+      <thead>
+        <tr>
+          <th style="width: 50px;">S.No</th>
+          <th style="text-align: left;">Platform</th>
+          <!-- <th>Post Type</th> -->
+          <th>Total Posts</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if media_summary %}
+          {% for summary in media_summary %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td style="text-align: left;">{{ summary.platform_name }}</td>
+              <!-- <td>{{ summary.post_type_name }}</td> -->
+              <td><strong>{{ summary.total_posts }}</strong></td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr><td colspan="4">No media data available for the selected date.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+  
+  
+  <h1>Revenue</h1>
+<div class="table-responsive">
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th style="width: 40px;">S.No</th>
+        <th style="text-align: left;">Location</th>
+        <th>Recovery Day (Water Supply)</th>
+        <th>Recovery Day (Solid Waste Management)</th>
+        <th>Total Recovery of Day</th>
+        <th>Bill Paid Day (Water Supply)</th>
+        <th>Bill Paid Day (Solid Waste Management)</th>
+        <th>Number of Bills Paid</th>
+        <th>Total Revenue Amount of Day</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for summary in total_revenue_summary reversed %}
+        {% if summary.location.location_name != "Headoffice" %}
+         <tr>
+        <td>{{ forloop.counter }}</td>
+        <td style="text-align: left;">{{ summary.location.location_name }}</td>
+        <td><strong>{{ summary.total_recovery_day_water_supply }}</strong></td>
+        <td><strong>{{ summary.total_recovery_day_solid_waste_management }}</strong></td>
+        <td><strong>{{ summary.total_recovery_of_day }}</strong></td>
+        <td><strong>{{ summary.total_bill_paid_day_water_supply }}</strong></td>
+        <td><strong>{{ summary.total_bill_paid_day_solid_waste_management }}</strong></td>
+        <td><strong>{{ summary.total_number_of_bills_paid }}</strong></td>
+        <td><strong>{{ summary.total_billed_amount_total }}</strong></td>
+      </tr>
+
+        {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+
+  <div class="footer">
+    <span>({{ location_display }} Daily Progress Report - {{ selected_date }}) WSSP Dashboard Generated Report</span>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,819 @@
+{% extends "base.html" %}
+
+{% block title %}Daily Progress Report{% endblock %}
+
+{% block content %}
+
+<style>
+    .badge-success { background-color: #28a745; }
+    .badge-danger { background-color: #dc3545; }
+    .badge-warning { background-color: #ffc107; }
+
+    th { white-space: nowrap; }
+
+    .text-muted {
+        font-size: 18px;
+    }
+
+    /* ── Dark text & strong borders applied during PDF capture ── */
+    .pdf-capture #report-content,
+    .pdf-capture #report-content p,
+    .pdf-capture #report-content h2,
+    .pdf-capture #report-content td,
+    .pdf-capture #report-content th,
+    .pdf-capture #report-content span,
+    .pdf-capture #report-content label,
+    .pdf-capture #report-content .footer-item {
+        color: #000 !important;
+    }
+    .pdf-capture #report-content .text-muted {
+        color: #333 !important;
+    }
+    .pdf-capture #report-content .report-footer {
+        color: #000 !important;
+        background: #f0f0f0 !important;
+        border-top: 2px solid #000 !important;
+    }
+    /* Bold visible borders on every table cell */
+    .pdf-capture #report-content table,
+    .pdf-capture #report-content table th,
+    .pdf-capture #report-content table td {
+        border: 2px solid #000 !important;
+        border-collapse: collapse !important;
+    }
+    .pdf-capture #report-content thead th {
+        background-color: #d0d0d0 !important;
+        color: #000 !important;
+        font-weight: 700 !important;
+    }
+    /* Zebra stripe for readability */
+    .pdf-capture #report-content tbody tr:nth-child(even) td,
+    .pdf-capture #report-content tbody tr:nth-child(even) th {
+        background-color: #f7f7f7 !important;
+    }
+
+    /* ── PDF Download Button ── */
+    .pdf-download-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background-color: #c0392b;
+        color: #fff;
+        border: none;
+        padding: 9px 20px;
+        border-radius: 5px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background 0.2s;
+    }
+    .pdf-download-btn:hover {
+        background-color: #a93226;
+        color: #fff;
+        text-decoration: none;
+    }
+    .pdf-download-btn svg {
+        flex-shrink: 0;
+    }
+
+    /* ── Report Footer ── */
+    .report-footer {
+        margin-top: 30px;
+        padding: 16px 20px;
+        border-top: 2px solid #dee2e6;
+        background: #f8f9fa;
+        border-radius: 0 0 6px 6px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 13.5px;
+        color: #555;
+        gap: 8px;
+    }
+    .report-footer .footer-item strong {
+        color: #222;
+    }
+
+    /* Loading overlay while generating PDF */
+    #pdf-loading-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.45);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        color: #fff;
+        font-size: 18px;
+        font-weight: 600;
+        gap: 14px;
+    }
+    #pdf-loading-overlay.active { display: flex; }
+    .pdf-spinner {
+        width: 46px; height: 46px;
+        border: 5px solid rgba(255,255,255,0.3);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+<!-- Loading overlay -->
+<div id="pdf-loading-overlay">
+    <div class="pdf-spinner"></div>
+    <span>Generating PDF, please wait…</span>
+</div>
+
+<div id="report-content" class="container">
+
+    <!-- ══ Heading with report date ══ -->
+    <h2 class="mb-1 text-center font-weight-bold">
+        Daily Data Entry Status
+    </h2>
+    <p class="text-center text-muted mb-3" style="font-size:16px;">
+        Report Date:&nbsp;<strong>{{ selected_date|date:"d F Y" }}</strong>
+    </p>
+
+    <!-- ══ Filter + Download row ══ -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between mb-3 no-print">
+        <form method="get" class="form-inline">
+            <label class="mr-2">Select Date:</label>
+            <input type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}" class="form-control mr-2">
+            <button type="submit" class="btn btn-primary mr-2">Filter</button>
+        </form>
+
+        <button class="pdf-download-btn" onclick="downloadAsPDF()">
+            <!-- PDF icon -->
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="12" y1="18" x2="12" y2="12"/>
+                <line x1="9" y1="15" x2="15" y2="15"/>
+            </svg>
+            Download PDF
+        </button>
+    </div>
+
+    {% load custom_tags %}
+
+    <div class="table-responsive">
+        <table class="table table-bordered text-center">
+
+            <thead class="thead-primary">
+                <tr>
+                    <th>#</th>
+                    <th class="text-left">Module / Zone</th>
+                    {% for loc in locations %}
+                        <th>{{ loc.location_name }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+
+            <tbody>
+
+                <!-- EMPLOYEE -->
+                <tr>
+                    <th>1</th>
+                    <th class="text-left">Employee Status</th>
+                    {% for loc in locations %}
+                        {% with r=report_dict|get_item:loc.id %}
+                        <td>
+                            {% if r.employee == "—" %}
+                                <span class="text-muted">—</span>
+                            {% elif r.employee %}
+                                <span class="badge badge-success">✔</span>
+                            {% else %}
+                                <span class="badge badge-danger">✘</span>
+                            {% endif %}
+                        </td>
+                        {% endwith %}
+                    {% endfor %}
+                </tr>
+
+                <!-- VEHICLE -->
+                <tr>
+                    <th>2</th>
+                    <th class="text-left">Vehicle Status</th>
+                    {% for loc in locations %}
+                        {% with r=report_dict|get_item:loc.id %}
+                        <td>
+                            {% if r.vehicle == "—" %}
+                                <span class="text-muted">—</span>
+                            {% elif r.vehicle %}
+                                <span class="badge badge-success">✔</span>
+                            {% else %}
+                                <span class="badge badge-danger">✘</span>
+                            {% endif %}
+                        </td>
+                        {% endwith %}
+                    {% endfor %}
+                </tr>
+
+                <!-- TRIPS -->
+                <tr>
+                    <th>2.1</th>
+                    <th class="text-left">Vehicle Trips Status</th>
+                    {% for loc in locations %}
+                        {% with r=report_dict|get_item:loc.id %}
+                        <td>
+                            {% if r.trip == "—" %}
+                                <span class="text-muted">—</span>
+                            {% elif r.trip %}
+                                <span class="badge badge-success">✔</span>
+                            {% else %}
+                                <span class="badge badge-danger">✘</span>
+                            {% endif %}
+                        </td>
+                        {% endwith %}
+                    {% endfor %}
+                </tr>
+
+                <!-- FUEL -->
+                <tr>
+                    <th>2.3</th>
+                    <th class="text-left">Vehicle Fuel Status</th>
+                    {% for loc in locations %}
+                        {% with r=report_dict|get_item:loc.id %}
+                        <td>
+                            {% if r.fuel == "—" %}
+                                <span class="text-muted">—</span>
+                            {% elif r.fuel %}
+                                <span class="badge badge-success">✔</span>
+                            {% else %}
+                                <span class="badge badge-danger">✘</span>
+                            {% endif %}
+                        </td>
+                        {% endwith %}
+                    {% endfor %}
+                </tr>
+
+                <!-- FIELD VISIT -->
+                <tr>
+                    <th>3</th>
+                    <th class="text-left">Field Visit Status</th>
+                    {% for loc in locations %}
+                        {% with r=report_dict|get_item:loc.id %}
+                        <td>
+                            {% if r.field_visit == "—" %}
+                                <span class="text-muted">—</span>
+                            {% elif r.field_visit %}
+                                <span class="badge badge-success">✔</span>
+                            {% else %}
+                                <span class="badge badge-danger">✘</span>
+                            {% endif %}
+                        </td>
+                        {% endwith %}
+                    {% endfor %}
+                </tr>
+
+                <!-- TUBEWELL -->
+                <tr>
+                    <th>4</th>
+                    <th class="text-left">TubeWell Status</th>
+                    {% for loc in locations %}
+                        {% with r=report_dict|get_item:loc.id %}
+                        <td>
+                            {% if r.tubewell == "—" %}
+                                <span class="text-muted">—</span>
+                            {% elif r.tubewell %}
+                                <span class="badge badge-success">✔</span>
+                            {% else %}
+                                <span class="badge badge-danger">✘</span>
+                            {% endif %}
+                        </td>
+                        {% endwith %}
+                    {% endfor %}
+                </tr>
+
+                <!-- FILTER -->
+                <tr>
+                    <th>4.1</th>
+                    <th class="text-left">Filter Status</th>
+                    {% for loc in locations %}
+                        {% with r=report_dict|get_item:loc.id %}
+                        <td>
+                            {% if r.filter == "—" %}
+                                <span class="text-muted">—</span>
+                            {% elif r.filter %}
+                                <span class="badge badge-success">✔</span>
+                            {% else %}
+                                <span class="badge badge-danger">✘</span>
+                            {% endif %}
+                        </td>
+                        {% endwith %}
+                    {% endfor %}
+                </tr>
+
+                <!-- COMPLAINT -->
+                <tr>
+                    <th>5</th>
+                    <th class="text-left">Complaint Status</th>
+                    {% for loc in locations %}
+                        {% with r=report_dict|get_item:loc.id %}
+                        <td>
+                            {% if r.complaint == "—" %}
+                                <span class="text-muted">—</span>
+                            {% elif r.complaint %}
+                                <span class="badge badge-success">✔</span>
+                            {% else %}
+                                <span class="badge badge-danger">✘</span>
+                            {% endif %}
+                        </td>
+                        {% endwith %}
+                    {% endfor %}
+                </tr>
+
+                <!-- CLC -->
+                <tr>
+                    <th>6</th>
+                    <th class="text-left">CLC Visit Status</th>
+                    {% for loc in locations %}
+                        {% with r=report_dict|get_item:loc.id %}
+                        <td>
+                            {% if r.clc == "—" %}
+                                <span class="text-muted">—</span>
+                            {% elif r.clc %}
+                                <span class="badge badge-success">✔</span>
+                            {% else %}
+                                <span class="badge badge-danger">✘</span>
+                            {% endif %}
+                        </td>
+                        {% endwith %}
+                    {% endfor %}
+                </tr>
+
+                <!-- REVENUE -->
+                <tr>
+                    <th>7</th>
+                    <th class="text-left">Revenue Status</th>
+                    <td colspan="{{ locations|length }}" class="text-center">
+                        {% if revenue %}
+                            📅 {{ revenue.date }}
+                        {% else %}
+                            No Data
+                        {% endif %}
+                    </td>
+                </tr>
+
+                <!-- POSTS -->
+                <tr>
+                    <th>8</th>
+                    <th class="text-left">Media Post Status</th>
+                    <td colspan="{{ locations|length }}" class="text-center">
+                        📝 {{ total_posts|default:0 }}
+                    </td>
+                </tr>
+
+                <!-- BIN -->
+                <tr>
+                    <th>9</th>
+                    <th class="text-left">Bin Status</th>
+                    {% for loc in locations %}
+                        {% with r=report_dict|get_item:loc.id %}
+                        <td>
+                            {% if r.bin == "—" %}
+                                <span class="text-muted">—</span>
+                            {% elif r.bin %}
+                                <span class="badge badge-success">✔</span>
+                            {% else %}
+                                <span class="badge badge-danger">✘</span>
+                            {% endif %}
+                        </td>
+                        {% endwith %}
+                    {% endfor %}
+                </tr>
+
+                <!-- 9.1 Primary Waste Collection -->
+                <tr>
+                    <th>9.1</th>
+                    <th class="text-left">Primary Waste Collection</th>
+                    {% for loc in locations %}
+                        {% with data=report_dict|get_item:loc.id %}
+                        {% with san=data.sanitation %}
+                        <td class="text-center">
+                            {% if data.sanitation == "—" %}
+                                <span class="text-muted">—</span>
+                            {% elif san %}
+                                {% if san.primary_waste_collection_tons is None %}
+                                    <span class="badge badge-danger">✘</span>
+                                {% elif san.primary_waste_collection_tons > 0 %}
+                                    <span class="badge badge-success">✔</span>
+                                {% else %}
+                                    <span class="badge badge-warning">⭐</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge badge-danger">✘</span>
+                            {% endif %}
+                        </td>
+                        {% endwith %}{% endwith %}
+                    {% endfor %}
+                </tr>
+
+                <!-- 9.2 Waste Locally Dumped -->
+                <tr>
+                    <th>9.2</th>
+                    <th class="text-left">Waste Locally Dumped</th>
+                    {% for loc in locations %}
+                        {% with data=report_dict|get_item:loc.id %}
+                        {% with san=data.sanitation %}
+                        <td class="text-center">
+                            {% if data.sanitation == "—" %}
+                                <span class="text-muted">—</span>
+                            {% elif san %}
+                                {% if san.waste_locally_dumped_tons is None %}
+                                    <span class="badge badge-danger">✘</span>
+                                {% elif san.waste_locally_dumped_tons > 0 %}
+                                    <span class="badge badge-success">✔</span>
+                                {% else %}
+                                    <span class="badge badge-warning">⭐</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge badge-danger">✘</span>
+                            {% endif %}
+                        </td>
+                        {% endwith %}{% endwith %}
+                    {% endfor %}
+                </tr>
+
+                <!-- 9.3 Local Dumping Trips -->
+                <tr>
+                    <th>9.3</th>
+                    <th class="text-left">Local Dumping Trips</th>
+                    {% for loc in locations %}
+                        {% with data=report_dict|get_item:loc.id %}
+                        {% with san=data.sanitation %}
+                        <td class="text-center">
+                            {% if data.sanitation == "—" %}
+                                <span class="text-muted">—</span>
+                            {% elif san %}
+                                {% if san.local_dumping_trips_no is None %}
+                                    <span class="badge badge-danger">✘</span>
+                                {% elif san.local_dumping_trips_no > 0 %}
+                                    <span class="badge badge-success">✔</span>
+                                {% else %}
+                                    <span class="badge badge-warning">⭐</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge badge-danger">✘</span>
+                            {% endif %}
+                        </td>
+                        {% endwith %}{% endwith %}
+                    {% endfor %}
+                </tr>
+
+                <!-- 9.4 Waste Dumped at LFS -->
+                <tr>
+                    <th>9.4</th>
+                    <th class="text-left">Waste Dumped at LFS</th>
+                    {% for loc in locations %}
+                        {% with data=report_dict|get_item:loc.id %}
+                        {% with san=data.sanitation %}
+                        <td class="text-center">
+                            {% if data.sanitation == "—" %}
+                                <span class="text-muted">—</span>
+                            {% elif san %}
+                                {% if san.waste_dumped_at_lfs_tons is None %}
+                                    <span class="badge badge-danger">✘</span>
+                                {% elif san.waste_dumped_at_lfs_tons > 0 %}
+                                    <span class="badge badge-success">✔</span>
+                                {% else %}
+                                    <span class="badge badge-warning">⭐</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge badge-danger">✘</span>
+                            {% endif %}
+                        </td>
+                        {% endwith %}{% endwith %}
+                    {% endfor %}
+                </tr>
+
+                <!-- 9.5 LFS Trips -->
+                <tr>
+                    <th>9.5</th>
+                    <th class="text-left">LFS Trips</th>
+                    {% for loc in locations %}
+                        {% with data=report_dict|get_item:loc.id %}
+                        {% with san=data.sanitation %}
+                        <td class="text-center">
+                            {% if data.sanitation == "—" %}
+                                <span class="text-muted">—</span>
+                            {% elif san %}
+                                {% if san.lfs_trips_no is None %}
+                                    <span class="badge badge-danger">✘</span>
+                                {% elif san.lfs_trips_no > 0 %}
+                                    <span class="badge badge-success">✔</span>
+                                {% else %}
+                                    <span class="badge badge-warning">⭐</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge badge-danger">✘</span>
+                            {% endif %}
+                        </td>
+                        {% endwith %}{% endwith %}
+                    {% endfor %}
+                </tr>
+
+                <!-- 9.6 Door to Door -->
+                <tr>
+                    <th>9.6</th>
+                    <th class="text-left">Door to Door Collection</th>
+                    {% for loc in locations %}
+                        {% with data=report_dict|get_item:loc.id %}
+                        {% with san=data.sanitation %}
+                        <td class="text-center">
+                            {% if data.sanitation == "—" %}
+                                <span class="text-muted">—</span>
+                            {% elif san %}
+                                {% if san.door_to_door_solid_waste_collection_no is None %}
+                                    <span class="badge badge-danger">✘</span>
+                                {% elif san.door_to_door_solid_waste_collection_no > 0 %}
+                                    <span class="badge badge-success">✔</span>
+                                {% else %}
+                                    <span class="badge badge-warning">⭐</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge badge-danger">✘</span>
+                            {% endif %}
+                        </td>
+                        {% endwith %}{% endwith %}
+                    {% endfor %}
+                </tr>
+
+                <!-- 13.7 Manholes Cleaning -->
+                <tr>
+                    <th>13.7</th>
+                    <th class="text-left">Manholes Cleaning</th>
+                    {% for loc in locations %}
+                        {% with data=report_dict|get_item:loc.id %}
+                        {% with san=data.sanitation %}
+                        <td class="text-center">
+                            {% if data.sanitation == "—" %}
+                                <span class="text-muted">—</span>
+                            {% elif san %}
+                                {% if san.cleaning_de_siltation_of_manholes is None %}
+                                    <span class="badge badge-danger">✘</span>
+                                {% elif san.cleaning_de_siltation_of_manholes > 0 %}
+                                    <span class="badge badge-success">✔</span>
+                                {% else %}
+                                    <span class="badge badge-warning">⭐</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge badge-danger">✘</span>
+                            {% endif %}
+                        </td>
+                        {% endwith %}{% endwith %}
+                    {% endfor %}
+                </tr>
+
+                <!-- 13.8 Drain Cleaning -->
+                <tr>
+                    <th>13.8</th>
+                    <th class="text-left">Drain Cleaning</th>
+                    {% for loc in locations %}
+                        {% with data=report_dict|get_item:loc.id %}
+                        {% with san=data.sanitation %}
+                        <td class="text-center">
+                            {% if data.sanitation == "—" %}
+                                <span class="text-muted">—</span>
+                            {% elif san %}
+                                {% if san.cleaning_de_siltation_of_drain_sewars_km is None %}
+                                    <span class="badge badge-danger">✘</span>
+                                {% elif san.cleaning_de_siltation_of_drain_sewars_km > 0 %}
+                                    <span class="badge badge-success">✔</span>
+                                {% else %}
+                                    <span class="badge badge-warning">⭐</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge badge-danger">✘</span>
+                            {% endif %}
+                        </td>
+                        {% endwith %}{% endwith %}
+                    {% endfor %}
+                </tr>
+
+                <!-- 13.9 Replacement of Manhole Covers -->
+                <tr>
+                    <th>13.9</th>
+                    <th class="text-left">Replacement of Manhole Covers</th>
+                    {% for loc in locations %}
+                        {% with data=report_dict|get_item:loc.id %}
+                        {% with san=data.sanitation %}
+                        <td class="text-center">
+                            {% if data.sanitation == "—" %}
+                                <span class="text-muted">—</span>
+                            {% elif san %}
+                                {% if san.replacement_of_manhole_covers is None %}
+                                    <span class="text-muted" style="font-size:12px;">Not a daily activity</span>
+                                {% elif san.replacement_of_manhole_covers > 0 %}
+                                    <span class="badge badge-success">✔</span>
+                                {% else %}
+                                    <span class="badge badge-warning">Not a daily activity</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted" style="font-size:12px;">Not a daily activity</span>
+                            {% endif %}
+                        </td>
+                        {% endwith %}{% endwith %}
+                    {% endfor %}
+                </tr>
+
+                <!-- 13.10 Fumigation Sprays -->
+                <tr>
+                    <th>13.10</th>
+                    <th class="text-left">Fumigation Sprays</th>
+                    {% for loc in locations %}
+                        {% with data=report_dict|get_item:loc.id %}
+                        {% with san=data.sanitation %}
+                        <td class="text-center">
+                            {% if data.sanitation == "—" %}
+                                <span class="text-muted">—</span>
+                            {% elif san %}
+                                {% if san.fumigation_sprays_no is None %}
+                                    <span class="text-muted" style="font-size:12px;">Not a daily activity</span>
+                                {% elif san.fumigation_sprays_no > 0 %}
+                                    <span class="badge badge-success">✔</span>
+                                {% else %}
+                                    <span class="badge badge-warning">Not a daily activity</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted" style="font-size:12px;">Not a daily activity</span>
+                            {% endif %}
+                        </td>
+                        {% endwith %}{% endwith %}
+                    {% endfor %}
+                </tr>
+
+                <!-- 13.11 IR Spray -->
+                <tr>
+                    <th>13.11</th>
+                    <th class="text-left">IR Spray</th>
+                    {% for loc in locations %}
+                        {% with data=report_dict|get_item:loc.id %}
+                        {% with san=data.sanitation %}
+                        <td class="text-center">
+                            {% if data.sanitation == "—" %}
+                                <span class="text-muted">—</span>
+                            {% elif san %}
+                                {% if san.ir_spray_no is None %}
+                                    <span class="text-muted" style="font-size:12px;">Not a daily activity</span>
+                                {% elif san.ir_spray_no > 0 %}
+                                    <span class="badge badge-success">✔</span>
+                                {% else %}
+                                    <span class="badge badge-warning">Not a daily activity</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted" style="font-size:12px;">Not a daily activity</span>
+                            {% endif %}
+                        </td>
+                        {% endwith %}{% endwith %}
+                    {% endfor %}
+                </tr>
+
+                <!-- 13.12 Rate Killing -->
+                <tr>
+                    <th>13.12</th>
+                    <th class="text-left">Rate Killing</th>
+                    {% for loc in locations %}
+                        {% with data=report_dict|get_item:loc.id %}
+                        {% with san=data.sanitation %}
+                        <td class="text-center">
+                            {% if data.sanitation == "—" %}
+                                <span class="text-muted">—</span>
+                            {% elif san %}
+                                {% if san.rate_killing_no is None %}
+                                    <span class="text-muted" style="font-size:12px;">Not a daily activity</span>
+                                {% elif san.rate_killing_no > 0 %}
+                                    <span class="badge badge-success">✔</span>
+                                {% else %}
+                                    <span class="badge badge-warning">Not a daily activity</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted" style="font-size:12px;">Not a daily activity</span>
+                            {% endif %}
+                        </td>
+                        {% endwith %}{% endwith %}
+                    {% endfor %}
+                </tr>
+
+                <!-- 13.13 Dog Catching -->
+                <tr>
+                    <th>13.13</th>
+                    <th class="text-left">Dog Catching</th>
+                    {% for loc in locations %}
+                        {% with data=report_dict|get_item:loc.id %}
+                        {% with san=data.sanitation %}
+                        <td class="text-center">
+                            {% if data.sanitation == "—" %}
+                                <span class="text-muted">—</span>
+                            {% elif san %}
+                                {% if san.dog_catching_no is None %}
+                                    <span class="text-muted" style="font-size:12px;">Not a daily activity</span>
+                                {% elif san.dog_catching_no > 0 %}
+                                    <span class="badge badge-success">✔</span>
+                                {% else %}
+                                    <span class="badge badge-warning">Not a daily activity</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted" style="font-size:12px;">Not a daily activity</span>
+                            {% endif %}
+                        </td>
+                        {% endwith %}{% endwith %}
+                    {% endfor %}
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ══ Report Footer ══ -->
+    <div class="report-footer">
+        <div class="footer-item">
+            📋 <strong>Report Date:</strong>&nbsp;{{ selected_date|date:"d F Y" }}
+        </div>
+        <div class="footer-item">
+            🖨️ <strong>Downloaded On:</strong>&nbsp;<span id="download-date"></span>
+        </div>
+        <div class="footer-item" style="color:#888;">
+            Daily Data Entry Status Report — Generated by System
+        </div>
+    </div>
+
+</div>
+
+<!-- jsPDF + html2canvas from CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+    // Fill today's date in the footer on page load
+    function formatDate(d) {
+        var months = ["January","February","March","April","May","June",
+                      "July","August","September","October","November","December"];
+        return d.getDate() + " " + months[d.getMonth()] + " " + d.getFullYear()
+               + "  " + d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    }
+    document.getElementById("download-date").textContent = formatDate(new Date());
+
+    async function downloadAsPDF() {
+        // Update download timestamp
+        var now = new Date();
+        document.getElementById("download-date").textContent = formatDate(now);
+
+        // Show loading overlay
+        var overlay = document.getElementById("pdf-loading-overlay");
+        overlay.classList.add("active");
+
+        // Hide button & filter during capture so they don't appear in PDF
+        var hideEls = document.querySelectorAll(".no-print");
+        hideEls.forEach(function(el){ el.style.visibility = "hidden"; });
+
+        // Apply PDF-optimised styles (dark text, bold borders)
+        document.body.classList.add("pdf-capture");
+
+        try {
+            var reportEl = document.getElementById("report-content");
+
+            var canvas = await html2canvas(reportEl, {
+                scale: 2,           // higher resolution
+                useCORS: true,
+                logging: false,
+                backgroundColor: "#ffffff"
+            });
+
+            var imgData = canvas.toDataURL("image/png");
+            var { jsPDF } = window.jspdf;
+
+            // A4 landscape for wide tables
+            var pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+
+            var pageW = pdf.internal.pageSize.getWidth();
+            var pageH = pdf.internal.pageSize.getHeight();
+            var imgW = pageW;
+            var imgH = (canvas.height * imgW) / canvas.width;
+
+            var yPos = 0;
+            var remainH = imgH;
+
+            // Multi-page support: slice image across pages
+            while (remainH > 0) {
+                pdf.addImage(imgData, "PNG", 0, -yPos, imgW, imgH);
+                remainH -= pageH;
+                yPos += pageH;
+                if (remainH > 0) pdf.addPage();
+            }
+
+            pdf.save("Daily_Progress_Report_{{ selected_date|date:'Y-m-d' }}.pdf");
+        } finally {
+            hideEls.forEach(function(el){ el.style.visibility = ""; });
+            document.body.classList.remove("pdf-capture");
+            overlay.classList.remove("active");
+        }
+    }
+</script>
+
+{% endblock %}

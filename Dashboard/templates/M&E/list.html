@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <h2 class="mb-3">Visit Evaluations Report</h2>
+
+    <a href="{% url 'visit_evaluation_create' %}" class="btn btn-primary mb-3">
+        ➕ Add New
+    </a>
+
+    <!-- =============================== -->
+    <!-- 🔎 SEARCH INPUT (JavaScript) -->
+    <!-- =============================== -->
+
+    <div class="mb-3">
+        <input type="text"
+               id="tableSearch"
+               class="form-control"
+               placeholder="🔍 Search anything (Employee, Location, UC, Date, Score...)">
+    </div>
+
+    <!-- =============================== -->
+    <!-- TABLE -->
+    <!-- =============================== -->
+
+    <div class="table-responsive">
+
+        <table class="table table-bordered table-hover" id="evaluationTable">
+
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Employee</th>
+                    <th>Date</th>
+                    <th>Location(s)</th>
+                    <th>UC(s)</th>
+                    <th>Status</th>
+                    <th>Score</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for eval in evaluations %}
+                <tr>
+
+                    <td>{{ eval.id }}</td>
+
+                    <!-- Employee -->
+                    <td>
+                        {{ eval.visit_schedule.employee.name }}
+                    </td>
+
+                    <!-- Date -->
+                    <td>
+                        {{ eval.visit_schedule.visit_date }}
+                    </td>
+
+                    <!-- Locations -->
+                    <td>
+                        {% for loc in eval.visit_schedule.locations.all %}
+                            <span class="badge bg-info text-dark">
+                                {{ loc.location_name }}
+                            </span>
+                        {% empty %}
+                            -
+                        {% endfor %}
+                    </td>
+
+                    <!-- UCs -->
+                    <td>
+                        {% for uc in eval.visit_schedule.ucs.all %}
+                            <span class="badge bg-warning text-dark">
+                                {{ uc.uc_name }}
+                            </span>
+                        {% empty %}
+                            -
+                        {% endfor %}
+                    </td>
+
+                    <!-- Status -->
+                    <td>
+                        {% if eval.status == "completed" %}
+                            <span class="badge bg-success">Completed</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Draft</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- Score -->
+                    <td>
+                        {{ eval.overall_obtained_score }}
+                        /
+                        {{ eval.overall_total_score }}
+                    </td>
+
+                    <!-- Actions -->
+                    <td>
+
+                        <a href="{% url 'visit_evaluation_detail' eval.id %}"
+                           class="btn btn-sm btn-info">
+                            👁 View
+                        </a>
+                    
+                        <a href="{% url 'visit_evaluation_update' eval.id %}"
+                           class="btn btn-sm btn-warning">
+                            ✏ Edit
+                        </a>
+                    
+                        <a href="{% url 'visit_evaluation_delete' eval.id %}"
+                           class="btn btn-sm btn-danger">
+                            🗑 Delete
+                        </a>
+                    
+                    </td>
+
+                </tr>
+
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center">
+                        No Records Found
+                    </td>
+                </tr>
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+<!-- ====================================== -->
+<!-- 🔥 JAVASCRIPT SEARCH (Live Filter) -->
+<!-- ====================================== -->
+
+<script>
+
+document.getElementById("tableSearch").addEventListener("keyup", function () {
+
+    let filter = this.value.toLowerCase();
+    let rows = document.querySelectorAll("#evaluationTable tbody tr");
+
+    rows.forEach(row => {
+
+        let text = row.textContent.toLowerCase();
+
+        if (text.includes(filter)) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+
+    });
+
+});
+
+</script>
+
+{% endblock %}

@@ -1,0 +1,161 @@
+{% load static %}
+
+<!-- Move internal CSS outside of the HTML structure -->
+<style>
+    #accordionSidebar {
+        width: 230px !important; /* Ensure sidebar width is increased */
+    }
+
+    .collapse-header {
+        font-weight: bold;
+        color: #0b33b4; /* Change this to your desired color */
+    }
+    
+    .collapse-item {
+        color: #212529; /* Default link color */
+    }
+
+    .collapse-item:hover {
+        background-color: #f1f1f1; /* Highlight on hover */
+        color: #0b33b4; /* Change color on hover */
+    }
+
+    .logo {
+        width: 140px; /* Define logo size in CSS */
+        height: auto; 
+    }
+
+    .active {
+        background-color: rgba(255, 255, 255, 0.1); /* Active link background color */
+    }
+  
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.logo {
+    width: 140px;
+    height: auto;
+    animation: bounce 3s infinite ease-in-out;
+}
+
+.info-icon2 {
+    font-size: 18px;
+    animation: blink-animation 1.5s infinite alternate, cubic-bezier(0.6, -0.28, 0.735, 0.045) infinite;
+}
+
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        gsap.from(".logo", { opacity: 0, scale: 0.5, duration: 1.5, ease: "power3.out" });
+        gsap.to(".logo", { y: -10, repeat: -1, yoyo: true, duration: 1.5, ease: "power1.inOut" });
+    });
+</script>
+
+<ul class="navbar-nav bg-primary sidebar sidebar-dark accordion" id="accordionSidebar" style="background: linear-gradient(180deg, rgba(25, 118, 210, 1) 0%, rgb(21, 64, 112) 100%);">
+
+<br>
+<br>
+    <!-- Sidebar - Brand -->
+    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{% url 'home' %}">
+        <div class="sidebar-brand-icon">
+            <img src="{% static 'logo/file.png' %}" alt="Logo" class="logo info-icon2"> <!-- Adjust the size as needed -->
+        </div>
+    </a>
+
+    <br>
+    
+
+
+    <!-- Nav Item - Dashboard -->
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'home' %}">
+            <i class="fas fa-fw fa-tachometer-alt info-icon2"></i>
+            <span><strong>Dashboard</strong></span>
+        </a>
+    </li>
+
+   
+   
+   <!-- Nav Item - Complaint Status -->
+<li class="nav-item">
+    <a class="nav-link" href="#" data-toggle="collapse" data-target="#CompCollapse" aria-expanded="false" aria-controls="CompCollapse">
+        <i class="fas fa-fw fa-exclamation-triangle info-icon2"></i>
+        <span><strong>Complaint Status</strong></span>
+    </a>
+    
+    <div id="CompCollapse" class="collapse" aria-labelledby="headingOne" data-parent="#accordionSidebar">
+        <div class="bg-light py-2 collapse-inner rounded">
+            <h6 class="collapse-header">Options:</h6>
+            <a class="collapse-item" href="{% url 'complaint_management_report' %}">Add Complaint</a>
+            <a class="collapse-item" href="{% url 'complaint_management_view' %}">View Complaint</a>
+            <a class="collapse-item" href="{% url 'resolved_complaint_list' %}">Complaint Feedback</a>
+            {% if request.user.is_superuser %}
+            <a class="collapse-item" href="{% url 'complaints_by_user' %}">Complaints by User</a>                
+            <a class="collapse-item" href="{% url 'complaint_report' %}">Complaints Log Report</a>                
+
+        {% endif %}
+
+            <a class="collapse-item" href="{% url 'C_report_generator' %}">Detail Report</a>
+        </div>
+    </div>
+</li>
+
+
+    
+
+        
+
+
+    
+    
+    
+
+    
+    <!-- Change Password Button -->
+    
+
+    
+
+    <hr class="">
+
+
+       <!-- Django Admin Button -->
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'admin:index' %}">
+        <i class="fas fa-fw fa-cogs info-icon2"></i>  <!-- You can choose any icon you like -->
+        <span><strong>Admin Panel</strong></span>
+    </a>
+</li>
+
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'password_change' %}">
+            <!-- Icon for Change Password -->
+            <i class="fas fa-fw fa-key info-icon2"></i> <!-- Key icon for Change Password -->
+            <span><strong>Change Password</strong></span>
+        </a>
+    </li>
+    
+
+
+
+    <!-- Nav Item - Logout -->
+    <li class="nav-item">
+        <form method="post" action="{% url 'logout' %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="nav-link btn btn-link" >
+                <i class="fas fa-fw fa-sign-out-alt info-icon2"></i>
+                <span><strong>Logout</strong></span>
+            </button>
+        </form>
+    </li>
+    
+</ul>

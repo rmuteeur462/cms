@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1 class="h3 mb-4 text-gray-800" style="font-weight: bold; font-size: 1.5rem; text-align: center;">
+    Attendance Report Generator
+</h1>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+    </div>
+    <div class="card-body">
+        <form method="get" action="{% url 'total_attendance_report' %}">  
+            <div class="form-row mb-3">
+                <!-- Date Filters -->
+                <div class="form-group col-md-6">
+                    <label for="start_date">Start Date:</label>
+                    <input type="date" id="start_date" name="start_date" value="{{ start_date }}" class="form-control" required>
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="end_date">End Date:</label>
+                    <input type="date" id="end_date" name="end_date" value="{{ end_date }}" class="form-control" required>
+                </div>
+
+                <!-- Location Filter -->
+                <div class="form-group col-md-4">
+                    <label for="location">Location:</label>
+                    <select name="location" id="locationFilter" class="form-control">
+                        <option value="">-- All Locations --</option>
+                        {% for location in locations %}
+                            <option value="{{ location.location_name }}" {% if location.location_name == location_filter %}selected{% endif %}>
+                                {{ location.location_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- UC Filter -->
+                <div class="form-group col-md-4">
+                    <label for="uc">Sub Location:</label>
+                    <select name="uc" id="ucFilter" class="form-control">
+                        <option value="">-- All Sub Locations --</option>
+                        {% for uc in ucs %}
+                            <option value="{{ uc.uc_name }}" {% if uc.uc_name == uc_filter %}selected{% endif %}>
+                                {{ uc.uc_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Attendance Status Filter -->
+                <!-- <div class="form-group col-md-4">
+                    <label for="attendance_status">Attendance Status:</label>
+                    <select name="attendance_status" id="attendance_status" class="form-control">
+                        <option value="">-- All Statuses --</option>
+                        <option value="present" {% if attendance_status == 'present' %}selected{% endif %}>Present</option>
+                        <option value="absent" {% if attendance_status == 'absent' %}selected{% endif %}>Absent</option>
+                        <option value="leave" {% if attendance_status == 'leave' %}selected{% endif %}>Leave</option>
+                    </select>
+                </div> -->
+
+                <!-- Submit Button -->
+                <div class="form-group col-md-6 text-left">
+                    <button type="submit" class="btn btn-primary">Generate Report</button>
+                </div>
+
+                <!-- Download CSV Button -->
+                <div class="form-group col-md-6 text-right">
+                    <button type="button" id="downloadCsvBtn" class="btn btn-success">Download CSV</button>
+                </div>
+
+                <!-- Download PDF Button -->
+                <div class="form-group col-md-6 text-right">
+                    <button type="button" id="downloadPdfBtn" class="btn btn-danger">Download PDF</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<table class="table table-bordered table-hover shadow-sm bg-white">
+    <thead class="bg-primary text-white">
+        <tr>
+            <th>#</th>
+
+            <th>Employee ID</th>
+            <th>Name</th>
+            <th>Location</th>
+            <th>Sub Location</th>
+            <th>Department</th>
+            <th>Present</th>
+            <th>Absent</th>
+            <th>Leave</th>
+            <th>Total Days</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for data in attendance_data %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+
+       
+                <td>{{ data.employee_id }}</td>
+                <td>{{ data.name }}</td>
+                <td>{{ data.location }}</td>
+                <td>{{ data.uc }}</td>
+                <td>{{ data.department }}</td>
+                <td>{{ data.present }}</td>
+                <td>{{ data.absent }}</td>
+                <td>{{ data.leave }}</td>
+                <td>{{ data.total_days }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.21/jspdf.plugin.autotable.min.js"></script>
+
+<script>
+    document.getElementById('locationFilter').addEventListener('change', function() {
+        const location = this.value;
+        const url = "{% url 'uc-list' %}?location=" + location;  // Ensure 'uc-list' is the correct name for your URL route
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                const ucSelect = document.getElementById('ucFilter');
+                ucSelect.innerHTML = '<option value="">-- Select UC --</option>';  // Clear current options
+                data.ucs.forEach(uc => {
+                    const option = document.createElement('option');
+                    option.value = uc.uc_name;
+                    option.textContent = uc.uc_name;
+                    ucSelect.appendChild(option);
+                });
+            });
+    });
+
+    document.getElementById("downloadCsvBtn").addEventListener("click", function() {
+        const rows = document.querySelectorAll("table tbody tr");
+        let csvData = [];
+
+        // Get headers
+        const headers = [];
+        document.querySelectorAll("table thead th").forEach(th => {
+            headers.push('"' + th.innerText.trim().replace(/"/g, '""') + '"'); // Escape quotes
+        });
+        csvData.push(headers.join(","));
+
+        // Get table rows
+        rows.forEach(row => {
+            const rowData = [];
+            row.querySelectorAll("td").forEach(cell => {
+                rowData.push('"' + cell.innerText.trim().replace(/"/g, '""') + '"');
+            });
+            csvData.push(rowData.join(","));
+        });
+
+        const csvString = csvData.join("\n");
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "attendance_summary.csv";
+        link.click();
+    });
+
+
+ 
+    
+    document.getElementById('downloadPdfBtn').addEventListener('click', function() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Image path (use the appropriate URL where the image is served)
+    const imagePath = 'http://wod.wsspeshawar.org.pk:4002/static/logo/khan.png';
+
+    // Add image to the top of the PDF (adjust position as needed)
+    doc.addImage(imagePath, 'PNG', -4, 5, 220, 30);
+
+    // Add heading below the image
+    const heading = "Attendance Report"; // Customize your heading text
+    doc.setFontSize(16); // Set font size for the heading
+    doc.setFont("helvetica", "bold"); // Set the font style to bold
+    doc.text(heading, 86, 65); // Position of the heading (x, y)
+
+    // Table headers (without serial number)
+    const headers = ['Emp ID', 'Name', 'Location', 'UC', 'Department', 'Present', 'Absent', 'Leave', 'Total Days'];
+    const rows = [];
+
+    // Extract rows from the table without adding serial number
+    document.querySelectorAll("table tbody tr").forEach((row) => {
+        const rowData = [];
+        row.querySelectorAll("td").forEach((cell) => {
+            rowData.push(cell.innerText.trim());
+        });
+        rows.push(rowData); // Add row data without serial number
+    });
+
+    // Adjust font size for table headers and body
+    doc.setFontSize(12); // Set a larger font size for the table content (default size is small)
+
+    // Adjust the startY position and margin to remove excess space at the top
+    doc.autoTable({
+        head: [headers], // Table headers
+        body: rows, // Table body (no serial number)
+        startY: 70, // Start table closer to the heading (adjust as necessary)
+        headStyles: {
+            fontSize: 8, // Adjust font size for header
+            fontStyle: 'bold', // Set header text to bold
+            halign: 'center', // Center align headers
+            fillColor: [0, 123, 255] // Set header background color (blue)
+        },
+        bodyStyles: {
+            fontSize: 8, // Adjust body font size
+            halign: 'center', // Center align table cells
+            valign: 'middle' // Vertical alignment of content
+        },
+        theme: 'striped', // Adds striped rows for better readability
+        margin: { top: 10 }, // Reduced top margin to minimize extra space
+    });
+
+    // Save the PDF
+    doc.save('emp-attendance-report.pdf');
+});
+
+
+
+
+
+</script>
+
+{% endblock %}

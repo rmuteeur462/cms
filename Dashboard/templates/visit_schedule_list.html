@@ -1,0 +1,780 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- SheetJS for Excel export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+<style>
+    .today-row {
+        background-color: #fff3cd !important;
+        font-weight: 600;
+        border-left: 4px solid #ffc107;
+    }
+
+    .today-badge {
+        display: inline-block;
+        background: #ffc107;
+        color: #000;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 1px 6px;
+        border-radius: 10px;
+        margin-left: 5px;
+        vertical-align: middle;
+    }
+
+    #searchInput {
+        border-radius: 20px;
+        padding-left: 15px;
+        border: 1px solid #ced4da;
+        transition: box-shadow 0.2s;
+    }
+
+    #searchInput:focus {
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+        outline: none;
+    }
+
+    .btn-excel {
+        background-color: #1d6f42;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 6px 16px;
+        cursor: pointer;
+        font-size: 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: background 0.2s;
+    }
+
+    .btn-excel:hover {
+        background-color: #155233;
+        color: white;
+    }
+
+    .search-count {
+        font-size: 13px;
+        color: #6c757d;
+        margin-left: 8px;
+    }
+
+    .table-responsive {
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    .table thead th {
+        background-color: #0d6efd;
+        color: white;
+        white-space: nowrap;
+    }
+
+    tr.hidden-row {
+        display: none;
+    }
+
+    /* ── Modal Tab Buttons ── */
+    .modal-tab-bar {
+        display: flex;
+        gap: 8px;
+        padding: 14px 16px 0;
+        border-bottom: 2px solid #dee2e6;
+        background: #f8f9fa;
+        flex-wrap: wrap;
+    }
+
+    .modal-tab-btn {
+        padding: 8px 18px;
+        border: 2px solid transparent;
+        border-bottom: none;
+        border-radius: 8px 8px 0 0;
+        background: #e9ecef;
+        color: #495057;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s, border-color 0.15s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        position: relative;
+        bottom: -2px;
+    }
+
+    .modal-tab-btn:hover {
+        background: #dee2e6;
+        color: #212529;
+    }
+
+    .modal-tab-btn.active {
+        background: #ffffff;
+        color: #0d6efd;
+        border-color: #dee2e6 #dee2e6 #ffffff;
+        border-bottom: 2px solid #ffffff;
+    }
+
+    .modal-tab-btn .tab-icon {
+        font-size: 15px;
+    }
+
+    /* ── Tab Panels ── */
+    .modal-tab-panel {
+        display: none;
+        padding: 18px 4px 4px;
+        animation: fadeInPanel 0.2s ease;
+    }
+
+    .modal-tab-panel.active {
+        display: block;
+    }
+
+    @keyframes fadeInPanel {
+        from { opacity: 0; transform: translateY(4px); }
+        to   { opacity: 1; transform: translateY(0);   }
+    }
+
+    /* UC Polygon Name Label */
+    .uc-polygon-label {
+        background: rgba(0, 80, 200, 0.85);
+        color: white;
+        font-weight: 700;
+        font-size: 12px;
+        border: none;
+        border-radius: 5px;
+        padding: 3px 10px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        white-space: nowrap;
+    }
+
+    .uc-polygon-label::before {
+        display: none;
+    }
+
+    /* Map Fullscreen */
+    .map-fullscreen {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        z-index: 9999 !important;
+        border-radius: 0 !important;
+    }
+
+    .map-fullscreen #map_,
+    .map-fullscreen > div[id^="map_"] {
+        height: 100vh !important;
+    }
+</style>
+
+<!-- ===================== MAIN CONTAINER ===================== -->
+<div class="container mt-4">
+
+    <!-- Header: Title + Current Date -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0">M&E Visit Schedule</h3>
+        <div>
+            <span class="fw-bold">Date:</span>
+            <span id="currentDate"></span>
+        </div>
+    </div>
+
+    <!-- Date Filter Form -->
+    <form method="get" class="mb-4">
+        <div class="row g-2">
+            <div class="col-md-3">
+                <label class="form-label">From Date</label>
+                <input type="date" name="from_date" value="{{ from_date }}" class="form-control">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">To Date</label>
+                <input type="date" name="to_date" value="{{ to_date }}" class="form-control">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Filter</button>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <a href="{% url 'visit_schedule_list' %}" class="btn btn-secondary w-100">Reset</a>
+            </div>
+        </div>
+    </form>
+
+    <!-- Search Bar + Excel Download -->
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+        <div class="d-flex align-items-center">
+            <input type="text" id="searchInput" class="form-control"
+                   placeholder="🔍 Search..." style="width: 300px;">
+            <span class="search-count" id="searchCount"></span>
+        </div>
+        <button class="btn-excel" onclick="exportToExcel()">
+            📥 Download Excel
+        </button>
+    </div>
+
+    <!-- Schedule Table -->
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover mb-0" id="scheduleTable">
+            <thead>
+                <tr>
+                    <th>S.No</th>
+                    <th>Visit Date</th>
+                    <th>Visit Day</th>
+                    <th>Emp ID</th>
+                    <th>Name</th>
+                    <th>Designation</th>
+                    <th>Remarks</th>
+                    <th>Visited Zones</th>
+                    <th>Visited UCs</th>
+                    <th>Visited Roads</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="scheduleBody">
+                {% for schedule in schedules %}
+                <tr data-date="{{ schedule.visit_date|date:'Y-m-d' }}">
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ schedule.visit_date }}</td>
+                    <td>{{ schedule.visit_date|date:"l" }}</td>
+                    <td>{{ schedule.employee.employee_id }}</td>
+                    <td>{{ schedule.employee.name }}</td>
+                    <td>{{ schedule.employee.designation }}</td>
+                    <td>{{ schedule.remarks }}</td>
+            
+                    {% if schedule.show_details %}
+                        {% if schedule.visited_closed %}
+                            <!-- Past dates → show only "Visited" -->
+                            <td colspan="4" class="text-success text-center fw-bold">Visite Close</td>
+                        {% else %}
+                            <!-- Today → show Zones, UCs, Roads, and button -->
+                            <td>
+                                {% for loc in schedule.locations.all %}
+                                    {{ loc.location_name }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </td>
+                            <td>
+                                {% for uc in schedule.ucs.all %}
+                                    {{ uc.uc_name }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </td>
+                            <td>{{ schedule.visit_roads }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#assetModal{{ schedule.id }}">
+                                    View Detail
+                                </button>
+                            </td>
+                        {% endif %}
+                    {% else %}
+                        <!-- Future dates → hide everything -->
+                        <td colspan="4" class="text-danger text-center">
+                            Will be visible at 7:00 AM on visit date
+                        </td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="11" class="text-center">No schedules found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+<!-- ===================== END MAIN CONTAINER ===================== -->
+
+
+<!-- ===================== MODALS ===================== -->
+{% for schedule in schedules %}
+<div class="modal fade" id="assetModal{{ schedule.id }}" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+
+            <!-- Modal Header -->
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">UC Details — {{ schedule.visit_date }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <!-- ── TAB BUTTONS ── -->
+            <div class="modal-tab-bar" id="tabBar_{{ schedule.id }}">
+                <button class="modal-tab-btn active"
+                        onclick="switchTab('{{ schedule.id }}', 'emp', this)">
+                    <span class="tab-icon">👤</span> Employee Details
+                </button>
+                <button class="modal-tab-btn"
+                        onclick="switchTab('{{ schedule.id }}', 'tube', this)">
+                    <span class="tab-icon">💧</span> Tubewell Details
+                </button>
+                <button class="modal-tab-btn"
+                        onclick="switchTab('{{ schedule.id }}', 'bin', this)">
+                    <span class="tab-icon">🗑️</span> Bin Details
+                </button>
+                <button class="modal-tab-btn"
+                        onclick="switchTab('{{ schedule.id }}', 'map', this)">
+                    <span class="tab-icon">🗺️</span> UC Map
+                </button>
+            </div>
+
+            <!-- ── MODAL BODY ── -->
+            <div class="modal-body">
+
+                <!-- Selected UCs (always visible as context) -->
+                <div class="mb-2">
+                    <strong>Selected UCs:</strong>
+                    {% for uc in schedule.ucs.all %}
+                        <span class="badge bg-primary ms-1">{{ uc.uc_name }}</span>
+                    {% empty %}
+                        <span class="text-muted">No UC Assigned</span>
+                    {% endfor %}
+                </div>
+
+                <hr class="mt-1 mb-3">
+
+                <!-- ── PANEL: Employees ── -->
+                <div class="modal-tab-panel active" id="panel_{{ schedule.id }}_emp">
+                    <h5 class="mb-3">👤 Employees</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped table-sm">
+                            <thead class="table-success">
+                                <tr>
+                                    <th>#</th>
+                                    <!-- <th>Photo</th> -->
+                                    <th>Employee ID</th>
+                                    <th>Name</th>
+                                    <th>Father Name</th>
+                                    <th>Designation</th>
+                                    <th>Department</th>
+                                    <th>Acting Role</th>
+                                    <th>Zone</th>
+                                    <th>UC</th>
+                                    <th>CNIC</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for emp in schedule.uc_employees %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <!-- <td>
+                                        {% if emp.profile_image %}
+                                            <img src="{{ emp.profile_image.url }}" width="40" height="40" style="border-radius:50%;">
+                                        {% else %}
+                                            <span class="text-muted">No Image</span>
+                                        {% endif %}
+                                    </td> -->
+                                    <td>{{ emp.employee_id }}</td>
+                                    <td>{{ emp.name }}</td>
+                                    <td>{{ emp.father_name }}</td>
+                                    <td>{{ emp.designation }}</td>
+                                    <td>{{ emp.department }}</td>
+                                    <td>{{ emp.acting_role }}</td>
+                                    <td>{{ emp.location }}</td>
+                                    <td>{{ emp.uc }}</td>
+                                    <td>{{ emp.cnic }}</td>
+                                    <td>
+                                        {% if emp.status %}
+                                            <span class="badge bg-success">{{ emp.status }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="12" class="text-center text-muted">No Employees Found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- END Employees Panel -->
+
+                <!-- ── PANEL: Tubewells ── -->
+                <div class="modal-tab-panel" id="panel_{{ schedule.id }}_tube">
+                    <h5 class="mb-3">💧 Tubewells</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped table-sm">
+                            <thead class="table-info">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Tubewell ID</th>
+                                    <th>Name</th>
+                                    <th>Location</th>
+                                    <th>UC</th>
+                                    <th>SCADA</th>
+                                    <th>Flow Meter</th>
+                                    <th>PESCO ID</th>
+                                    <th>Connection No</th>
+                                    <th>Average Discharge</th>
+                                    <th>Latitude</th>
+                                    <th>Longitude</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for t in schedule.uc_tubewells %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ t.tubewell_id }}</td>
+                                    <td>{{ t.tubewell_name }}</td>
+                                    <td>{{ t.location }}</td>
+                                    <td>{{ t.uc }}</td>
+                                    <td>
+                                        {% if t.scada == "yes" %}
+                                            <span class="badge bg-success">Yes</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">No</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if t.flow_meter == "yes" %}
+                                            <span class="badge bg-success">Yes</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">No</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ t.pesco_id }}</td>
+                                    <td>{{ t.tubewell_no_connection }}</td>
+                                    <td>{{ t.average_discharge }}</td>
+                                    <td>{{ t.latitude }}</td>
+                                    <td>{{ t.longitude }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="12" class="text-center text-muted">No Tubewells Found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- END Tubewells Panel -->
+
+                <!-- ── PANEL: Bins ── -->
+                <div class="modal-tab-panel" id="panel_{{ schedule.id }}_bin">
+                    <h5 class="mb-3">🗑️ Bins</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped table-sm">
+                            <thead class="table-danger">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Bin ID</th>
+                                    <th>Type</th>
+                                    <th>Container Name</th>
+                                    <th>Location</th>
+                                    <th>UC</th>
+                                    <th>Category</th>
+                                    <th>Capacity</th>
+                                    <th>Latitude</th>
+                                    <th>Longitude</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for b in schedule.uc_bins %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ b.bin_id }}</td>
+                                    <td>{{ b.name }}</td>
+                                    <td>{{ b.name_container }}</td>
+                                    <td>{{ b.location }}</td>
+                                    <td>{{ b.uc }}</td>
+                                    <td>{{ b.category }}</td>
+                                    <td>{{ b.capacity }}</td>
+                                    <td>{{ b.latitude }}</td>
+                                    <td>{{ b.longitude }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="10" class="text-center text-muted">No Bins Found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- END Bins Panel -->
+
+                <!-- ── PANEL: UC Map ── -->
+                <div class="modal-tab-panel" id="panel_{{ schedule.id }}_map">
+                    <h5 class="mb-3">🗺️ UC Boundary Map</h5>
+                    <div id="mapWrapper_{{ schedule.id }}"
+                         style="position: relative; border-radius: 10px; overflow: hidden;">
+
+                        <div id="mapLabel_{{ schedule.id }}"
+                             style="position: absolute; top: 10px; left: 50px; z-index: 1000;
+                                    background: rgba(255,255,255,0.92); padding: 5px 12px;
+                                    border-radius: 6px; font-weight: 700; font-size: 13px;
+                                    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+                                    max-width: 300px; white-space: nowrap;
+                                    overflow: hidden; text-overflow: ellipsis;">
+                            📍 {% for uc in schedule.ucs.all %}{{ uc.uc_name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                        </div>
+
+                        <button id="fsBtn_{{ schedule.id }}"
+                                onclick="toggleMapFullscreen('{{ schedule.id }}')"
+                                style="position: absolute; top: 10px; right: 10px; z-index: 1000;
+                                       background: white; border: 2px solid #aaa; border-radius: 6px;
+                                       padding: 4px 10px; cursor: pointer; font-size: 13px;
+                                       box-shadow: 0 2px 6px rgba(0,0,0,0.2); font-weight: 600;">
+                            ⛶ Full Screen
+                        </button>
+
+                        <div id="map_{{ schedule.id }}" style="height: 400px;"></div>
+                    </div>
+                </div>
+                <!-- END Map Panel -->
+
+            </div>
+            <!-- END modal-body -->
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endfor %}
+<!-- ===================== END MODALS ===================== -->
+
+
+<!-- ===================== LEAFLET JS ===================== -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+/* ── Tab Switcher ── */
+function switchTab(scheduleId, tab, clickedBtn) {
+    // Deactivate all panels and buttons for this modal
+    document.querySelectorAll('#panel_' + scheduleId + '_emp, ' +
+                               '#panel_' + scheduleId + '_tube, ' +
+                               '#panel_' + scheduleId + '_bin, ' +
+                               '#panel_' + scheduleId + '_map')
+            .forEach(function (p) { p.classList.remove('active'); });
+
+    document.querySelectorAll('#tabBar_' + scheduleId + ' .modal-tab-btn')
+            .forEach(function (b) { b.classList.remove('active'); });
+
+    // Activate the selected panel + button
+    var panel = document.getElementById('panel_' + scheduleId + '_' + tab);
+    if (panel) panel.classList.add('active');
+    if (clickedBtn) clickedBtn.classList.add('active');
+
+    // If the map tab was clicked, initialise / invalidate the map
+    if (tab === 'map') {
+        initOrRefreshMap(scheduleId);
+    }
+}
+
+/* ── Map Initialisation ── */
+document.addEventListener("DOMContentLoaded", function () {
+
+    window.mapInstances = {};
+
+    {% for schedule in schedules %}
+    (function () {
+        var scheduleId = "{{ schedule.id }}";
+        var modalEl = document.getElementById("assetModal" + scheduleId);
+        if (!modalEl) return;
+
+        var ucCoords = [
+            {% for uc in schedule.ucs.all %}
+            `{{ uc.coordinates|default:"" }}`{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        var ucNames = [
+            {% for uc in schedule.ucs.all %}
+            `{{ uc.uc_name|default:"" }}`{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        // Store coords/names on the window so initOrRefreshMap can access them
+        window['ucCoords_' + scheduleId] = ucCoords;
+        window['ucNames_' + scheduleId]  = ucNames;
+
+        // Reset active tab to Employee whenever the modal opens
+        modalEl.addEventListener("show.bs.modal", function () {
+            var firstBtn = document.querySelector('#tabBar_' + scheduleId + ' .modal-tab-btn');
+            switchTab(scheduleId, 'emp', firstBtn);
+        });
+
+    })();
+    {% endfor %}
+
+});
+
+function initOrRefreshMap(scheduleId) {
+    var mapEl = document.getElementById("map_" + scheduleId);
+    if (!mapEl) return;
+
+    // Already built — just invalidate + refit
+    if (window.mapInstances && window.mapInstances[scheduleId]) {
+        setTimeout(function () {
+            window.mapInstances[scheduleId].map.invalidateSize();
+            var polys = window.mapInstances[scheduleId].polygons;
+            if (polys.length > 0) {
+                var group = L.featureGroup(polys);
+                window.mapInstances[scheduleId].map.fitBounds(group.getBounds(), { padding: [40, 40] });
+            }
+        }, 50);
+        return;
+    }
+
+    var ucCoords = window['ucCoords_' + scheduleId] || [];
+    var ucNames  = window['ucNames_'  + scheduleId] || [];
+
+    var map = L.map("map_" + scheduleId);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    var allPolygons = [];
+
+    ucCoords.forEach(function (coordText, idx) {
+        if (!coordText || coordText.trim() === "") return;
+
+        var latlngs = [];
+        coordText.trim().split("\n").forEach(function (line) {
+            var parts = line.trim().split(",");
+            if (parts.length >= 2) {
+                var lng = parseFloat(parts[0]);
+                var lat = parseFloat(parts[1]);
+                if (!isNaN(lat) && !isNaN(lng)) latlngs.push([lat, lng]);
+            }
+        });
+
+        if (latlngs.length > 2) {
+            var polygon = L.polygon(latlngs, {
+                color: "blue", weight: 2, fillOpacity: 0.3
+            }).addTo(map);
+
+            polygon.bindTooltip(ucNames[idx] || ("UC " + (idx + 1)), {
+                permanent: true, direction: "center", className: "uc-polygon-label"
+            }).openTooltip();
+
+            allPolygons.push(polygon);
+        }
+    });
+
+    setTimeout(function () {
+        map.invalidateSize();
+        if (allPolygons.length > 0) {
+            map.fitBounds(L.featureGroup(allPolygons).getBounds(), { padding: [40, 40] });
+        } else {
+            map.setView([34.0, 71.4], 12);
+        }
+    }, 50);
+
+    window.mapInstances[scheduleId] = { map: map, polygons: allPolygons };
+}
+</script>
+
+<!-- ===================== PAGE SCRIPTS ===================== -->
+<script>
+
+    /* --- Current Date Display --- */
+    const dateElement = document.getElementById("currentDate");
+    if (dateElement) {
+        const today = new Date();
+        dateElement.textContent = today.toLocaleDateString(undefined, {
+            year: "numeric", month: "long", day: "numeric"
+        });
+    }
+
+    /* --- Today Row Highlight --- */
+    const todayStr = new Date().toISOString().split('T')[0];
+    document.querySelectorAll('#scheduleBody tr[data-date]').forEach(function (row) {
+        if (row.dataset.date === todayStr) {
+            row.classList.add('today-row');
+            const dateCell = row.cells[1];
+            if (dateCell) dateCell.innerHTML += '<span class="today-badge">TODAY</span>';
+        }
+    });
+
+    /* --- Live Search --- */
+    const searchInput = document.getElementById('searchInput');
+    const searchCount = document.getElementById('searchCount');
+    const tbody = document.getElementById('scheduleBody');
+
+    searchInput.addEventListener('input', function () {
+        const query = this.value.trim().toLowerCase();
+        const rows = tbody.querySelectorAll('tr');
+        let visible = 0;
+        rows.forEach(function (row) {
+            const match = !query || row.textContent.toLowerCase().includes(query);
+            row.classList.toggle('hidden-row', !match);
+            if (match && row.cells.length > 1) visible++;
+        });
+        searchCount.textContent = query ? `${visible} result(s) found` : '';
+    });
+
+    /* --- Map Fullscreen Toggle --- */
+    function toggleMapFullscreen(scheduleId) {
+        var wrapper = document.getElementById("mapWrapper_" + scheduleId);
+        var btn     = document.getElementById("fsBtn_"      + scheduleId);
+        var mapDiv  = document.getElementById("map_"        + scheduleId);
+        var isFs    = wrapper.classList.contains("map-fullscreen");
+
+        if (!isFs) {
+            wrapper.classList.add("map-fullscreen");
+            mapDiv.style.height = "100vh";
+            btn.innerHTML = "✕ Exit Full Screen";
+        } else {
+            wrapper.classList.remove("map-fullscreen");
+            mapDiv.style.height = "400px";
+            btn.innerHTML = "⛶ Full Screen";
+        }
+
+        if (window.mapInstances && window.mapInstances[scheduleId]) {
+            setTimeout(function () {
+                window.mapInstances[scheduleId].map.invalidateSize();
+                var polys = window.mapInstances[scheduleId].polygons;
+                if (polys.length > 0) {
+                    var group = L.featureGroup(polys);
+                    window.mapInstances[scheduleId].map.fitBounds(group.getBounds(), { padding: [40, 40] });
+                }
+            }, 100);
+        }
+    }
+
+    /* --- Excel Export --- */
+    function exportToExcel() {
+        const table = document.getElementById('scheduleTable');
+        const headers = [];
+        table.querySelectorAll('thead th').forEach(function (th) {
+            headers.push(th.textContent.trim());
+        });
+
+        const data = [headers];
+        table.querySelectorAll('#scheduleBody tr:not(.hidden-row)').forEach(function (row) {
+            if (row.cells.length <= 1) return;
+            const rowData = [];
+            Array.from(row.cells).forEach(function (cell) {
+                rowData.push(cell.textContent.replace(/TODAY/g, '').trim());
+            });
+            while (rowData.length < headers.length) rowData.push('');
+            data.push(rowData);
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        ws['!cols'] = headers.map(function () { return { wch: 18 }; });
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Visit Schedule');
+        const date = new Date().toISOString().split('T')[0];
+        XLSX.writeFile(wb, `Visit_Schedule_${date}.xlsx`);
+    }
+
+</script>
+<!-- ===================== END PAGE SCRIPTS ===================== -->
+
+{% endblock %}

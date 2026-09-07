@@ -1,0 +1,368 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="container mt-4" style="max-width: 1200px;">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+        <h4 class="mb-0">Visit Evaluation Detail</h4>
+        <div class="d-flex gap-2">
+            <a href="{% url 'visit_evaluation_list' %}" class="btn btn-secondary btn-sm">🔙 Back</a>
+            <button class="btn btn-success btn-sm" onclick="downloadExcel()">📥 Download Excel</button>
+        </div>
+    </div>
+
+    <!-- Overall Score -->
+    <div class="alert alert-primary d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <strong>Overall Score:</strong>
+            {{ evaluation.overall_obtained_score }} / {{ evaluation.overall_total_score }}
+        </div>
+        <span class="badge {% if evaluation.status == 'completed' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+            {{ evaluation.status|capfirst }}
+        </span>
+    </div>
+
+    <!-- Visit Schedule -->
+    <div class="card mb-3">
+        <div class="card-header fw-semibold">📅 Visit Schedule</div>
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-sm-6">
+                    <small class="text-muted d-block">Employee</small>
+                    {{ evaluation.visit_schedule.employee.name }}
+                </div>
+                <div class="col-sm-6">
+                    <small class="text-muted d-block">Visit Date</small>
+                    {{ evaluation.visit_schedule.visit_date }}
+                </div>
+                <div class="col-sm-6">
+                    <small class="text-muted d-block">Roads</small>
+                    {{ evaluation.visit_schedule.visit_roads|default:"-" }}
+                </div>
+                <div class="col-sm-6">
+                    <small class="text-muted d-block">Remarks</small>
+                    {{ evaluation.visit_schedule.remarks|default:"-" }}
+                </div>
+                <div class="col-sm-6">
+                    <small class="text-muted d-block">Locations</small>
+                    {% for loc in evaluation.visit_schedule.locations.all %}
+                        <span class="badge bg-info text-dark">{{ loc.name }}</span>
+                    {% endfor %}
+                </div>
+                <div class="col-sm-6">
+                    <small class="text-muted d-block">UCs</small>
+                    {% for uc in evaluation.visit_schedule.ucs.all %}
+                        <span class="badge bg-warning text-dark">{{ uc.name }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. Containers -->
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between fw-semibold">
+            <span>🗑️ Containers / Moqas</span>
+            <span class="text-primary">{{ evaluation.containers_obtained_score }} / {{ evaluation.containers_total_score }}</span>
+        </div>
+        <div class="card-body">
+            <div class="row g-2 mb-2">
+                <div class="col-6 col-sm-3">
+                    <small class="text-muted d-block">Total Containers</small>
+                    {{ evaluation.total_containers }}
+                </div>
+                <div class="col-6 col-sm-3">
+                    <small class="text-muted d-block">Not Lifted</small>
+                    {{ evaluation.containers_not_lifted }}
+                </div>
+                <div class="col-6 col-sm-3">
+                    <small class="text-muted d-block">Not Managed</small>
+                    {{ evaluation.containers_not_managed }}
+                </div>
+                <div class="col-6 col-sm-3">
+                    <small class="text-muted d-block">Total Moqas</small>
+                    {{ evaluation.total_moqas }}
+                </div>
+                <div class="col-6 col-sm-3">
+                    <small class="text-muted d-block">Moqas Not Cleaned</small>
+                    {{ evaluation.moqas_not_cleaned }}
+                </div>
+            </div>
+            {% if evaluation.containers_remarks %}
+                <p class="text-muted mb-2"><small><strong>Remarks:</strong> {{ evaluation.containers_remarks }}</small></p>
+            {% endif %}
+            <div class="d-flex gap-2 flex-wrap">
+                {% if evaluation.containers_picture_1 %}<img src="{{ evaluation.containers_picture_1.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.containers_picture_2 %}<img src="{{ evaluation.containers_picture_2.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.containers_picture_3 %}<img src="{{ evaluation.containers_picture_3.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.containers_picture_4 %}<img src="{{ evaluation.containers_picture_4.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.containers_picture_5 %}<img src="{{ evaluation.containers_picture_5.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.containers_picture_6 %}<img src="{{ evaluation.containers_picture_6.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.containers_picture_7 %}<img src="{{ evaluation.containers_picture_7.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.containers_picture_8 %}<img src="{{ evaluation.containers_picture_8.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.containers_picture_9 %}<img src="{{ evaluation.containers_picture_9.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.containers_picture_10 %}<img src="{{ evaluation.containers_picture_10.url }}" width="120" class="rounded border">{% endif %}
+
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Drains -->
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between fw-semibold">
+            <span>🚧 Drains &amp; Manholes</span>
+            <span class="text-primary">{{ evaluation.drains_obtained_score }} / {{ evaluation.drains_total_score }}</span>
+        </div>
+        <div class="card-body">
+            <div class="row g-2 mb-2">
+                <div class="col-6 col-sm-3">
+                    <small class="text-muted d-block">Drains Scheduled</small>
+                    {{ evaluation.drains_scheduled }}
+                </div>
+                <div class="col-6 col-sm-3">
+                    <small class="text-muted d-block">Drains Clean</small>
+                    {{ evaluation.drains_clean }}
+                </div>
+                <div class="col-6 col-sm-3">
+                    <small class="text-muted d-block">Manholes Scheduled</small>
+                    {{ evaluation.manholes_scheduled }}
+                </div>
+                <div class="col-6 col-sm-3">
+                    <small class="text-muted d-block">Manholes Clean</small>
+                    {{ evaluation.manholes_clean }}
+                </div>
+            </div>
+            {% if evaluation.drains_remarks %}
+                <p class="text-muted mb-2"><small><strong>Remarks:</strong> {{ evaluation.drains_remarks }}</small></p>
+            {% endif %}
+            <div class="d-flex gap-2 flex-wrap">
+                {% if evaluation.drains_picture_1 %}<img src="{{ evaluation.drains_picture_1.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.drains_picture_2 %}<img src="{{ evaluation.drains_picture_2.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.drains_picture_3 %}<img src="{{ evaluation.drains_picture_3.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.drains_picture_4 %}<img src="{{ evaluation.drains_picture_4.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.drains_picture_5 %}<img src="{{ evaluation.drains_picture_5.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.drains_picture_6 %}<img src="{{ evaluation.drains_picture_6.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.drains_picture_7 %}<img src="{{ evaluation.drains_picture_7.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.drains_picture_8 %}<img src="{{ evaluation.drains_picture_8.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.drains_picture_9 %}<img src="{{ evaluation.drains_picture_9.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.drains_picture_10 %}<img src="{{ evaluation.drains_picture_10.url }}" width="120" class="rounded border">{% endif %}
+
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Roads -->
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between fw-semibold">
+            <span>🛣️ Roads / Streets</span>
+            <span class="text-primary">{{ evaluation.roads_obtained_score }} / {{ evaluation.roads_total_score }}</span>
+        </div>
+        <div class="card-body">
+            <div class="row g-2 mb-2">
+                <div class="col-6 col-sm-3">
+                    <small class="text-muted d-block">Roads Scheduled</small>
+                    {{ evaluation.roads_scheduled }}
+                </div>
+                <div class="col-6 col-sm-3">
+                    <small class="text-muted d-block">Roads Clean</small>
+                    {{ evaluation.roads_clean }}
+                </div>
+                <div class="col-6 col-sm-3">
+                    <small class="text-muted d-block">Streets Scheduled</small>
+                    {{ evaluation.streets_scheduled }}
+                </div>
+                <div class="col-6 col-sm-3">
+                    <small class="text-muted d-block">Streets Clean</small>
+                    {{ evaluation.streets_clean }}
+                </div>
+            </div>
+            {% if evaluation.roads_remarks %}
+                <p class="text-muted mb-2"><small><strong>Remarks:</strong> {{ evaluation.roads_remarks }}</small></p>
+            {% endif %}
+            <div class="d-flex gap-2 flex-wrap">
+                {% if evaluation.roads_picture_1 %}<img src="{{ evaluation.roads_picture_1.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.roads_picture_2 %}<img src="{{ evaluation.roads_picture_2.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.roads_picture_3 %}<img src="{{ evaluation.roads_picture_3.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.roads_picture_4 %}<img src="{{ evaluation.roads_picture_4.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.roads_picture_5 %}<img src="{{ evaluation.roads_picture_5.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.roads_picture_6 %}<img src="{{ evaluation.roads_picture_6.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.roads_picture_7 %}<img src="{{ evaluation.roads_picture_7.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.roads_picture_8 %}<img src="{{ evaluation.roads_picture_8.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.roads_picture_9 %}<img src="{{ evaluation.roads_picture_8.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.roads_picture_10 %}<img src="{{ evaluation.roads_picture_10.url }}" width="120" class="rounded border">{% endif %}
+
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. D2D -->
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between fw-semibold">
+            <span>🚪 Door to Door</span>
+            <span class="text-primary">{{ evaluation.d2d_obtained_score }} / {{ evaluation.d2d_total_score }}</span>
+        </div>
+        <div class="card-body">
+            <div class="row g-2 mb-2">
+                <div class="col-6 col-sm-4">
+                    <small class="text-muted d-block">Streets D2D</small>
+                    {{ evaluation.streets_scheduled_d2d }}
+                </div>
+                <div class="col-6 col-sm-4">
+                    <small class="text-muted d-block">Houses D2D</small>
+                    {{ evaluation.houses_scheduled_d2d }}
+                </div>
+                <div class="col-6 col-sm-4">
+                    <small class="text-muted d-block">Streets Verified</small>
+                    {{ evaluation.streets_verified_d2d }}
+                </div>
+            </div>
+            {% if evaluation.d2d_remarks %}
+                <p class="text-muted mb-2"><small><strong>Remarks:</strong> {{ evaluation.d2d_remarks }}</small></p>
+            {% endif %}
+            <div class="d-flex gap-2 flex-wrap">
+                {% if evaluation.d2d_picture_1 %}<img src="{{ evaluation.d2d_picture_1.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.d2d_picture_2 %}<img src="{{ evaluation.d2d_picture_2.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.d2d_picture_3 %}<img src="{{ evaluation.d2d_picture_3.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.d2d_picture_4 %}<img src="{{ evaluation.d2d_picture_4.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.d2d_picture_5 %}<img src="{{ evaluation.d2d_picture_5.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.d2d_picture_6 %}<img src="{{ evaluation.d2d_picture_6.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.d2d_picture_7 %}<img src="{{ evaluation.d2d_picture_7.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.d2d_picture_8 %}<img src="{{ evaluation.d2d_picture_8.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.d2d_picture_9 %}<img src="{{ evaluation.d2d_picture_9.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.d2d_picture_10 %}<img src="{{ evaluation.d2d_picture_10.url }}" width="120" class="rounded border">{% endif %}
+
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. Tubewells -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between fw-semibold">
+            <span>💧 Tube Wells</span>
+            <span class="text-primary">{{ evaluation.tubewell_obtained_score }} / {{ evaluation.tubewell_total_score }}</span>
+        </div>
+        <div class="card-body">
+            <div class="row g-2 mb-2">
+                <div class="col-6 col-sm-4">
+                    <small class="text-muted d-block">Total Tubewells</small>
+                    {{ evaluation.total_tubewells }}
+                </div>
+                <div class="col-6 col-sm-4">
+                    <small class="text-muted d-block">Visited</small>
+                    {{ evaluation.tubewells_visited }}
+                </div>
+                <div class="col-6 col-sm-4">
+                    <small class="text-muted d-block">Satisfactory</small>
+                    {{ evaluation.tubewells_satisfactory }}
+                </div>
+            </div>
+            <div class="d-flex flex-wrap gap-2 mb-2">
+                <span class="badge {% if evaluation.record %}bg-success{% else %}bg-secondary{% endif %}">Record: {% if evaluation.record %}Yes{% else %}No{% endif %}</span>
+                <span class="badge {% if evaluation.uniform %}bg-success{% else %}bg-secondary{% endif %}">Uniform: {% if evaluation.uniform %}Yes{% else %}No{% endif %}</span>
+                <span class="badge {% if evaluation.functional_time %}bg-success{% else %}bg-secondary{% endif %}">Functional Time: {% if evaluation.functional_time %}Yes{% else %}No{% endif %}</span>
+                <span class="badge {% if evaluation.leaks %}bg-danger{% else %}bg-secondary{% endif %}">Leaks: {% if evaluation.leaks %}Yes{% else %}No{% endif %}</span>
+            </div>
+            {% if evaluation.tubewell_remarks %}
+                <p class="text-muted mb-2"><small><strong>Remarks:</strong> {{ evaluation.tubewell_remarks }}</small></p>
+            {% endif %}
+            <div class="d-flex gap-2 flex-wrap">
+                {% if evaluation.tubewell_picture_1 %}<img src="{{ evaluation.tubewell_picture_1.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.tubewell_picture_2 %}<img src="{{ evaluation.tubewell_picture_2.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.tubewell_picture_3 %}<img src="{{ evaluation.tubewell_picture_3.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.tubewell_picture_4 %}<img src="{{ evaluation.tubewell_picture_4.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.tubewell_picture_5 %}<img src="{{ evaluation.tubewell_picture_5.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.tubewell_picture_6 %}<img src="{{ evaluation.tubewell_picture_6.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.tubewell_picture_7 %}<img src="{{ evaluation.tubewell_picture_7.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.tubewell_picture_8 %}<img src="{{ evaluation.tubewell_picture_8.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.tubewell_picture_9 %}<img src="{{ evaluation.tubewell_picture_9.url }}" width="120" class="rounded border">{% endif %}
+                {% if evaluation.tubewell_picture_10 %}<img src="{{ evaluation.tubewell_picture_10.url }}" width="120" class="rounded border">{% endif %}
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Excel Download -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+function downloadExcel() {
+    var wb = XLSX.utils.book_new();
+
+    var summaryData = [
+        ["Visit Evaluation Report"],
+        [],
+        ["Employee",    "{{ evaluation.visit_schedule.employee.name }}"],
+        ["Visit Date",  "{{ evaluation.visit_schedule.visit_date }}"],
+        ["Status",      "{{ evaluation.status|capfirst }}"],
+        [],
+        ["Section",      "Obtained", "Total"],
+        ["Containers",   {{ evaluation.containers_obtained_score }}, {{ evaluation.containers_total_score }}],
+        ["Drains",       {{ evaluation.drains_obtained_score }},     {{ evaluation.drains_total_score }}],
+        ["Roads",        {{ evaluation.roads_obtained_score }},      {{ evaluation.roads_total_score }}],
+        ["D2D",          {{ evaluation.d2d_obtained_score }},        {{ evaluation.d2d_total_score }}],
+        ["Tubewell",     {{ evaluation.tubewell_obtained_score }},   {{ evaluation.tubewell_total_score }}],
+        ["Overall",      {{ evaluation.overall_obtained_score }},    {{ evaluation.overall_total_score }}],
+    ];
+
+    var detailData = [
+        ["Field", "Value"],
+        ["── CONTAINERS ──", ""],
+        ["Total Containers",      {{ evaluation.total_containers }}],
+        ["Not Lifted",            {{ evaluation.containers_not_lifted }}],
+        ["Not Managed",           {{ evaluation.containers_not_managed }}],
+        ["Total Moqas",           {{ evaluation.total_moqas }}],
+        ["Moqas Not Cleaned",     {{ evaluation.moqas_not_cleaned }}],
+        ["Score",                 "{{ evaluation.containers_obtained_score }} / {{ evaluation.containers_total_score }}"],
+        ["Remarks",               "{{ evaluation.containers_remarks|default:'-'|escapejs }}"],
+        ["── DRAINS ──", ""],
+        ["Drains Scheduled",      {{ evaluation.drains_scheduled }}],
+        ["Drains Clean",          {{ evaluation.drains_clean }}],
+        ["Manholes Scheduled",    {{ evaluation.manholes_scheduled }}],
+        ["Manholes Clean",        {{ evaluation.manholes_clean }}],
+        ["Score",                 "{{ evaluation.drains_obtained_score }} / {{ evaluation.drains_total_score }}"],
+        ["Remarks",               "{{ evaluation.drains_remarks|default:'-'|escapejs }}"],
+        ["── ROADS ──", ""],
+        ["Roads Scheduled",       {{ evaluation.roads_scheduled }}],
+        ["Roads Clean",           {{ evaluation.roads_clean }}],
+        ["Streets Scheduled",     {{ evaluation.streets_scheduled }}],
+        ["Streets Clean",         {{ evaluation.streets_clean }}],
+        ["Score",                 "{{ evaluation.roads_obtained_score }} / {{ evaluation.roads_total_score }}"],
+        ["Remarks",               "{{ evaluation.roads_remarks|default:'-'|escapejs }}"],
+        ["── D2D ──", ""],
+        ["Streets D2D",           {{ evaluation.streets_scheduled_d2d }}],
+        ["Houses D2D",            {{ evaluation.houses_scheduled_d2d }}],
+        ["Streets Verified",      {{ evaluation.streets_verified_d2d }}],
+        ["Score",                 "{{ evaluation.d2d_obtained_score }} / {{ evaluation.d2d_total_score }}"],
+        ["Remarks",               "{{ evaluation.d2d_remarks|default:'-'|escapejs }}"],
+        ["── TUBEWELLS ──", ""],
+        ["Total Tubewells",       {{ evaluation.total_tubewells }}],
+        ["Visited",               {{ evaluation.tubewells_visited }}],
+        ["Satisfactory",          {{ evaluation.tubewells_satisfactory }}],
+        ["Record",                "{% if evaluation.record %}Yes{% else %}No{% endif %}"],
+        ["Uniform",               "{% if evaluation.uniform %}Yes{% else %}No{% endif %}"],
+        ["Functional Time",       "{% if evaluation.functional_time %}Yes{% else %}No{% endif %}"],
+        ["Leaks",                 "{% if evaluation.leaks %}Yes{% else %}No{% endif %}"],
+        ["Score",                 "{{ evaluation.tubewell_obtained_score }} / {{ evaluation.tubewell_total_score }}"],
+        ["Remarks",               "{{ evaluation.tubewell_remarks|default:'-'|escapejs }}"],
+        ["── OVERALL ──", ""],
+        ["Overall Score",         "{{ evaluation.overall_obtained_score }} / {{ evaluation.overall_total_score }}"],
+        ["Status",                "{{ evaluation.status|capfirst }}"],
+    ];
+
+    var ws1 = XLSX.utils.aoa_to_sheet(summaryData);
+    ws1["!cols"] = [{wch:20},{wch:12},{wch:10}];
+    XLSX.utils.book_append_sheet(wb, ws1, "Summary");
+
+    var ws2 = XLSX.utils.aoa_to_sheet(detailData);
+    ws2["!cols"] = [{wch:24},{wch:22}];
+    XLSX.utils.book_append_sheet(wb, ws2, "Full Details");
+
+    XLSX.writeFile(wb, "Visit_Evaluation_{{ evaluation.visit_schedule.visit_date }}.xlsx");
+}
+</script>
+
+{% endblock %}

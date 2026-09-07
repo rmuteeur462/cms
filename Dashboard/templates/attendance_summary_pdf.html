@@ -1,0 +1,281 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Daily Progress Report - {{ selected_date }}</title>
+  <style>
+    @page {
+      size: A4 landscape;
+      margin: 10mm;
+    }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 8pt; color: #000; }
+    table { border-collapse: collapse; }
+    .panel-title-cell {
+      text-align: center; font-weight: bold; font-size: 8pt;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      padding: 3px 2px; background-color: #ffffff;
+    }
+    .data-th {
+      background-color: #ffffff; font-weight: bold; text-align: center;
+      padding: 2px 5px; font-size: 7pt; white-space: nowrap;
+    }
+    .data-td { padding: 2px 5px; font-size: 7pt; text-align: center; }
+    .kpi-col { text-align: left; }
+    .bold { font-weight: bold; }
+    .no-data { text-align: center; font-style: italic; padding: 6px; }
+    .system-note { text-align: center; font-style: italic; font-size: 7pt; color: #444; padding-top: 6px; }
+  </style>
+</head>
+<body>
+
+  <!-- ===== Header ===== -->
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td width="70%" align="center" style="font-size:15pt; font-weight:bold; font-style:italic; text-decoration:underline; text-transform:uppercase;">
+        Daily Progress Report
+      </td>
+      <td width="30%" align="right" style="font-size:10pt; font-weight:bold; white-space:nowrap;">
+        DATE: {{ selected_date }}
+      </td>
+    </tr>
+  </table>
+  <br/>
+
+  <!-- ===== Main 3-column layout table ===== -->
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+
+      <!-- LEFT COLUMN -->
+      <td width="34%" valign="top">
+
+        <table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000">
+          <tr><td class="panel-title-cell" style="border-bottom:1px solid #000;">Water Supply</td></tr>
+          <tr><td>
+            <table width="100%" cellpadding="3" cellspacing="0" border="1" bordercolor="#444444">
+              <tr>
+                <th class="data-th" width="10%">#</th>
+                <th class="data-th kpi-col" width="65%">Key Performance Indicators</th>
+                <th class="data-th" width="25%">Details</th>
+              </tr>
+              <tr><td class="data-td">1</td><td class="data-td kpi-col">Registration of New Connections</td><td class="data-td bold">{{ total_new_connections|default:"0" }}</td></tr>
+              <tr><td class="data-td">2</td><td class="data-td kpi-col">Water Tests Conducted</td><td class="data-td bold">{{ total_tests|default:"0" }}</td></tr>
+              <tr><td class="data-td">3</td><td class="data-td kpi-col">Tube Wells Operational</td><td class="data-td bold">{{ total_functional|default:"0" }}</td></tr>
+              <tr><td class="data-td">4</td><td class="data-td kpi-col">Tube Wells Non-Operational</td><td class="data-td bold">{{ total_non_operational|default:"0" }}</td></tr>
+              <tr><td class="data-td">5</td><td class="data-td kpi-col">Tube Wells Non-Functional</td><td class="data-td bold">{{ total_non_functional|default:"0" }}</td></tr>
+              <tr><td class="data-td">6</td><td class="data-td kpi-col">Total Tubewells</td><td class="data-td bold">{{ total_tubewells|default:"0" }}</td></tr>
+              <tr><td class="data-td">7</td><td class="data-td kpi-col">Filtration Plants Functional</td><td class="data-td bold">{{ total_functional_filtration|default:"0" }}</td></tr>
+              <tr><td class="data-td">8</td><td class="data-td kpi-col">Filtration Plants Non-Functional</td><td class="data-td bold">{{ total_non_functional_filtration|default:"0" }}</td></tr>
+            </table>
+          </td></tr>
+        </table>
+        <br/>
+
+        <table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000">
+          <tr><td class="panel-title-cell" style="border-bottom:1px solid #000;">Sanitation</td></tr>
+          <tr><td>
+            <table width="100%" cellpadding="3" cellspacing="0" border="1" bordercolor="#444444">
+              <tr>
+                <th class="data-th" width="10%">#</th>
+                <th class="data-th kpi-col" width="65%">Key Performance Indicators</th>
+                <th class="data-th" width="25%">Details</th>
+              </tr>
+              <tr><td class="data-td">1</td><td class="data-td kpi-col">Containers Lifted</td><td class="data-td bold">{{ total_lifted_containers|default:"0" }}</td></tr>
+              <tr><td class="data-td">2</td><td class="data-td kpi-col">Moqas Cleared</td><td class="data-td bold">{{ total_lifted_moqas|default:"0" }}</td></tr>
+              <tr><td class="data-td">3</td><td class="data-td kpi-col">Waste Dumped at LFS (Tons)</td><td class="data-td bold">{{ total_waste_dumped_at_lfs|default:"0" }}</td></tr>
+              <tr><td class="data-td">4</td><td class="data-td kpi-col">Waste Locally Dumped (Tons)</td><td class="data-td bold">{{ total_waste_locally_dumped|default:"0" }}</td></tr>
+              <tr><td class="data-td">5</td><td class="data-td kpi-col">LFS Trips (No.)</td><td class="data-td bold">{{ total_lfs_trips|default:"0" }}</td></tr>
+              <tr><td class="data-td">6</td><td class="data-td kpi-col">Local Dumping Trips (No.)</td><td class="data-td bold">{{ total_local_dumping_trips|default:"0" }}</td></tr>
+              <tr><td class="data-td">7</td><td class="data-td kpi-col">Fuel Top Up (Liters)</td><td class="data-td bold">{{ fuel_totals.fuel_top_up_liters|default:"0" }}</td></tr>
+              <tr><td class="data-td">8</td><td class="data-td kpi-col">Primary Vehicle Trips</td><td class="data-td bold">{{ fuel_totals.primary_trips|default:"0" }}</td></tr>
+              <tr><td class="data-td">9</td><td class="data-td kpi-col">Primary Waste Collection (Tons)</td><td class="data-td bold">{{ total_primary_waste_collection|default:"0" }}</td></tr>
+              <tr><td class="data-td">10</td><td class="data-td kpi-col">Door to Door Solid Waste Collection</td><td class="data-td bold">{{ total_door_to_door_collection|default:"0" }}</td></tr>
+              <tr><td class="data-td">11</td><td class="data-td kpi-col">Cleaning De-siltation of Manholes</td><td class="data-td bold">{{ total_cleaning_de_siltation_of_manhole|default:"0" }}</td></tr>
+              <tr><td class="data-td">12</td><td class="data-td kpi-col">Cleaning De-siltation of Drains/Sewers (KM)</td><td class="data-td bold">{{ total_cleaning_de_siltation_of_drain_sewers|default:"0" }}</td></tr>
+              <tr><td class="data-td">13</td><td class="data-td kpi-col">Fumigation Sprays (No.)</td><td class="data-td bold">{{ total_fumigation_sprays|default:"0" }}</td></tr>
+              <tr><td class="data-td">14</td><td class="data-td kpi-col">IR Spray (No.)</td><td class="data-td bold">{{ total_ir_spray|default:"0" }}</td></tr>
+              <tr><td class="data-td">15</td><td class="data-td kpi-col">Dogs Catching</td><td class="data-td bold">{{ total_dogs_catching|default:"0" }}</td></tr>
+              <tr><td class="data-td">16</td><td class="data-td kpi-col">Rat Killing</td><td class="data-td bold">{{ total_rat_killing|default:"0" }}</td></tr>
+              <tr><td class="data-td">17</td><td class="data-td kpi-col">Replacement of Manhole </td><td class="data-td bold">{{ total_replacement_of_manhole_covers|default:"0" }}</td></tr>
+            </table>
+          </td></tr>
+        </table>
+
+      </td>
+
+      <td width="1%">&nbsp;</td>
+
+      <!-- MIDDLE COLUMN -->
+      <td width="30%" valign="top">
+
+        <table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000">
+          <tr><td class="panel-title-cell" style="border-bottom:1px solid #000;">Citizen Liaison Cell</td></tr>
+          <tr><td>
+            <table width="100%" cellpadding="3" cellspacing="0" border="1" bordercolor="#444444">
+              <tr>
+                <th class="data-th" width="10%">#</th>
+                <th class="data-th kpi-col" width="65%">Key Performance Indicators</th>
+                <th class="data-th" width="25%">Details</th>
+              </tr>
+              {% for activity in activity_summary %}
+              <tr>
+                <td class="data-td">{{ forloop.counter }}</td>
+                <td class="data-td kpi-col">{{ activity.activity__name }}</td>
+                <td class="data-td bold">{{ activity.total_reports|default:"0" }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="3" class="no-data">No activity data available for the selected date.</td></tr>
+              {% endfor %}
+            </table>
+          </td></tr>
+        </table>
+        <br/>
+
+        <table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000">
+          <tr><td class="panel-title-cell" style="border-bottom:1px solid #000;">Complaints Management System</td></tr>
+          <tr><td>
+            <table width="100%" cellpadding="3" cellspacing="0" border="1" bordercolor="#444444">
+              <tr>
+                <th class="data-th" width="10%">#</th>
+                <th class="data-th kpi-col" width="45%">Type</th>
+                <th class="data-th" width="22%">Received</th>
+                <th class="data-th" width="23%">Resolved</th>
+              </tr>
+              {% if type_summary %}
+                {% for complaint_type, counts in type_summary.items %}
+                <tr>
+                  <td class="data-td">{{ forloop.counter }}</td>
+                  <td class="data-td kpi-col">{{ complaint_type }}</td>
+                  <td class="data-td bold">{{ counts.total|default:"0" }}</td>
+                  <td class="data-td bold">{{ counts.resolved|default:"0" }}</td>
+                </tr>
+                {% endfor %}
+                <tr>
+                  <td class="data-td bold"></td>
+                  <td class="data-td kpi-col bold">Total</td>
+                  <td class="data-td bold">{{ total_received|default:"0" }}</td>
+                  <td class="data-td bold">{{ total_resolved|default:"0" }}</td>
+                </tr>
+              {% else %}
+                <tr><td colspan="4" class="no-data">No complaint type data available for the selected date.</td></tr>
+              {% endif %}
+            </table>
+          </td></tr>
+        </table>
+        <br/>
+
+        <table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000">
+          <tr><td class="panel-title-cell" style="border-bottom:1px solid #000;">Field Visits Conducted</td></tr>
+          <tr><td>
+            <table width="100%" cellpadding="3" cellspacing="0" border="1" bordercolor="#444444">
+              <tr>
+                <th class="data-th" width="12%">#</th>
+                <th class="data-th kpi-col" width="68%">Visiting Officer</th>
+                <th class="data-th" width="20%">No.</th>
+              </tr>
+              {% for designation in designation_counts %}
+              <tr>
+                <td class="data-td">{{ forloop.counter }}</td>
+                <td class="data-td kpi-col">{{ designation.name_of_official__designation }}</td>
+                <td class="data-td bold">{{ designation.total|default:"0" }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="3" class="no-data">No data available for the selected date.</td></tr>
+              {% endfor %}
+            </table>
+          </td></tr>
+        </table>
+
+      </td>
+
+      <td width="1%">&nbsp;</td>
+
+      <!-- RIGHT COLUMN -->
+      <td width="35%" valign="top">
+
+        <table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000">
+          <tr><td class="panel-title-cell" style="border-bottom:1px solid #000;">Attendance</td></tr>
+          <tr><td>
+            <table width="100%" cellpadding="3" cellspacing="0" border="1" bordercolor="#444444">
+              <tr>
+                <th class="data-th" width="8%">#</th>
+                <th class="data-th kpi-col" width="34%">Type</th>
+                <th class="data-th" width="14%">Present</th>
+                <th class="data-th" width="14%">Leave</th>
+                <th class="data-th" width="14%">Absent</th>
+                <th class="data-th" width="16%">Total</th>
+              </tr>
+              {% for department in department_summary_all_locations %}
+              <tr>
+                <td class="data-td">{{ forloop.counter }}</td>
+                <td class="data-td kpi-col">{{ department.employee_name__department }}</td>
+                <td class="data-td">{{ department.total_present|default:"0" }}</td>
+                <td class="data-td">{{ department.total_leave|default:"0" }}</td>
+                <td class="data-td">{{ department.total_absent|default:"0" }}</td>
+                <td class="data-td bold">{{ department.total_present|add:department.total_absent|add:department.total_leave }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="6" class="no-data">No records found.</td></tr>
+              {% endfor %}
+              <tr>
+                <td colspan="2" class="data-td kpi-col bold">Total</td>
+                <td class="data-td bold">{{ overall_totals.total_present|default:"0" }}</td>
+                <td class="data-td bold">{{ overall_totals.total_leave|default:"0" }}</td>
+                <td class="data-td bold">{{ overall_totals.total_absent|default:"0" }}</td>
+                <td class="data-td bold">{{ overall_totals.total_present|add:overall_totals.total_absent|add:overall_totals.total_leave }}</td>
+              </tr>
+            </table>
+          </td></tr>
+        </table>
+        <br/>
+
+        <table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#000000">
+          <tr><td class="panel-title-cell" style="border-bottom:1px solid #000;">Fleet Summary</td></tr>
+          <tr><td>
+            <table width="100%" cellpadding="3" cellspacing="0" border="1" bordercolor="#444444">
+              <tr>
+                <td class="data-td" width="10%" rowspan="2">1</td>
+                <td class="data-td kpi-col bold" width="35%" rowspan="2">Functional</td>
+                <td class="data-td kpi-col" width="35%">Parked</td>
+                <td class="data-td bold" width="20%">{{ total_functional_parked|default:"0" }}</td>
+              </tr>
+              <tr>
+                <td class="data-td kpi-col">Field Operations</td>
+                <td class="data-td bold">{{ total_functional_field_operation|default:"0" }}</td>
+              </tr>
+              <tr>
+                <td class="data-td" rowspan="2">2</td>
+                <td class="data-td kpi-col bold" rowspan="2">Non-Functional</td>
+                <td class="data-td kpi-col">Minor Repair</td>
+                <td class="data-td bold">{{ total_non_functional_minor_repair|default:"0" }}</td>
+              </tr>
+              <tr>
+                <td class="data-td kpi-col">Major Repair</td>
+                <td class="data-td bold">{{ total_non_functional_major_repair|default:"0" }}</td>
+              </tr>
+              <tr>
+                <td colspan="3" class="data-td kpi-col bold">Total</td>
+                <td class="data-td bold" style="background-color:#d9d9d9; font-size:10pt;">{{ total_fleet|default:"0" }}</td>
+              </tr>
+            </table>
+          </td></tr>
+        </table>
+        <br/>
+
+        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td width="50%" class="system-note" style="text-align:left;">Generated On: {% now "d M Y, h:i A" %}</td>
+            <td width="50%" class="system-note" style="text-align:right;">This is a computer generated report.</td>
+          </tr>
+        </table>
+
+      </td>
+
+    </tr>
+  </table>
+
+
+
+
+</body>
+</html>

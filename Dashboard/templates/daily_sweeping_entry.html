@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% load street_tags %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <div class="text-center mb-4">
+        <h2 class="fw-bold text-dark">🧹 Daily Street Sweeping</h2>
+    </div>
+
+    <!-- Date Filter -->
+    <form method="get" class="text-center mb-3">
+        <label for="date" class="fw-bold me-2">Select Date:</label>
+    
+        <input type="date"
+               id="date"
+               name="date"
+               value="{{ selected_date|date:'Y-m-d' }}"
+               class="form-control d-inline-block w-auto"
+               max="{{ today|date:'Y-m-d' }}">
+    
+        <button type="submit" class="btn btn-primary btn-sm ms-2">
+            Filter
+        </button>
+    </form>
+    
+    <!-- ✅ Single Date Display -->
+    <div class="text-center mb-4">
+        <h5 class="fw-bold">
+            🗓 Data Entry for:
+            {{ selected_date|date:"F d, Y" }}
+     
+        </h5>
+    </div>
+    
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle">
+                <thead class="table-dark text-center">
+                    <tr>
+                        <th>#</th>
+                        <th>Street</th>
+                        <th>UC</th>
+                        <th>NC</th>
+                        <th>Zone</th>
+                        <th>Total Lenght in kM</th>
+                        <th>Sweeping</th>
+                        <th>Type</th>
+                        <th>Sweeping Length (km)</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for street in streets %}
+                    {% with record=records_dict|dict_get:street.id %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ street.street_name }}</td>
+                        <td>{{ street.uc_name.uc_name }}</td>
+                        <td>{{ street.nc_name.nc_name }}</td>
+                        <td>{{ street.location.location_name }}</td>
+                        <td>{{ street.total_length_km }}</td>
+
+
+                        <!-- Sweeping Yes/No -->
+                        <td>
+                            <select name="sweeping_{{ street.id }}" class="form-control sweeping-select">
+                                <option value="">---</option>
+                                <option value="yes" {% if record.sweeping_done %}selected{% endif %}>Yes</option>
+                                <option value="no" {% if record and not record.sweeping_done %}selected{% endif %}>No</option>
+                            </select>
+                        </td>
+
+                        <!-- Sweeping Type -->
+                        <td>
+                            <select name="type_{{ street.id }}" class="form-control type-select"
+                                    {% if record and not record.sweeping_done %}disabled{% endif %}>
+                                <option value="">---</option>
+                                <option value="manual"
+                                    {% if record.sweeping_type == 'manual' %}selected{% endif %}>Manual</option>
+                                <option value="mechanical"
+                                    {% if record.sweeping_type == 'mechanical' %}selected{% endif %}>Mechanical</option>
+                            </select>
+                        </td>
+
+                        <!-- Sweeping Length -->
+                        <td>
+                            <input type="number"
+                                   name="length_{{ street.id }}"
+                                   class="form-control length-input"
+                                   min="0"
+                                   step="0.001"
+                                   placeholder="km"
+                                   value="{{ record.sweeping_length_km|default:'' }}"
+                                   {% if record and not record.sweeping_done %}disabled{% endif %}>
+                        </td>
+
+                        <!-- Remarks -->
+                        <td>
+                            <input type="text"
+                                   name="remarks_{{ street.id }}"
+                                   class="form-control"
+                                   value="{{ record.remarks|default:'' }}">
+                        </td>
+                    </tr>
+                    {% endwith %}
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center text-muted">
+                            No streets found
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="text-center mt-3">
+            <button type="submit" class="btn btn-success">
+                💾 Save Sweeping Data
+            </button>
+        </div>
+    </form>
+
+</div>
+
+<!-- JS to auto-enable/disable Type and Length -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const rows = document.querySelectorAll('tr');
+
+    rows.forEach(row => {
+        const sweepingSelect = row.querySelector('.sweeping-select');
+        const typeSelect = row.querySelector('.type-select');
+        const lengthInput = row.querySelector('.length-input');
+
+        if (!sweepingSelect) return;
+
+        // Initialize disabled state
+        if (sweepingSelect.value !== 'yes') {
+            if (typeSelect) typeSelect.disabled = true;
+            if (lengthInput) lengthInput.disabled = true;
+        }
+
+        // Listen for changes
+        sweepingSelect.addEventListener('change', function () {
+            const isYes = this.value === 'yes';
+            if (typeSelect) typeSelect.disabled = !isYes;
+            if (lengthInput) lengthInput.disabled = !isYes;
+        });
+    });
+});
+</script>
+
+{% endblock %}

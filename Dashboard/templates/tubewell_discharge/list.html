@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container mt-4">
+    <div class="card shadow-sm">
+
+        <!-- Header -->
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Tube Well Discharge List</h4>
+
+            <a href="{% url 'tubewell_discharge_create' %}" class="btn btn-primary btn-sm">
+                + Add Discharge
+            </a>
+        </div>
+
+        <div class="card-body">
+
+            <!-- 🔍 Search -->
+            <form method="GET" class="mb-3">
+                <div class="input-group">
+                    <input type="text" name="q" value="{{ query }}"
+                           class="form-control"
+                           placeholder="Search by TubeWell ID or Name...">
+                    <button class="btn btn-primary">Search</button>
+                </div>
+            </form>
+
+            <!-- Table -->
+            <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>TubeWell ID</th>
+                        <th>Tube Well</th>
+                        <th>Location</th>
+                        <th>UC</th>
+                        <th>Average Discharge (m³/h)</th>
+                        <th>Last Update Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for t in tubewells %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ t.tubewell_id }}</td>
+                        <td>{{ t.tubewell_name }}</td>
+                        <td>{{ t.location.location_name }}</td>
+                        <td>{{ t.uc.uc_name }}</td>
+
+                        <td>
+                            {% if t.latest_discharge %}
+                                {{ t.latest_discharge }}
+                            {% else %}
+                                {{ t.average_discharge }} <span class="text-muted"></span>
+                            {% endif %}
+                        </td>
+
+                        <td>{{ t.latest_date|default:"-" }}</td>
+
+                        <td>
+                            <button class="btn btn-sm btn-info"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#historyModal{{ t.id }}">
+                                History
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">
+                            No TubeWells found
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- ================= MODALS ================= -->
+{% for t in tubewells %}
+<div class="modal fade" id="historyModal{{ t.id }}" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">
+            {{ t.tubewell_name }} - Discharge History
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <!-- TABLE -->
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Discharge (m³/h)</th>
+                    <th>Type</th>
+                </tr>
+            </thead>
+            <tbody>
+
+            <tr class="table-secondary">
+                <td>-</td>
+                <td>{{ t.average_discharge }}</td>
+                <td>Primary</td>
+            </tr>
+
+            {% for d in t.tubewelldischarge_set.all %}
+            <tr>
+                <td>{{ d.updated_average_discharge_date }}</td>
+                <td>{{ d.updated_average_discharge }}</td>
+                <td>Updated</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" class="text-center text-muted">
+                    No history found
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- CHART -->
+        <canvas id="chart{{ t.id }}" height="120"></canvas>
+
+        <!-- DATA FOR JS -->
+        <script>
+            window.labels{{ t.id }} = [
+                "Primary",
+                {% for d in t.tubewelldischarge_set.all %}
+                    "{{ d.updated_average_discharge_date }}",
+                {% endfor %}
+            ];
+
+            window.data{{ t.id }} = [
+                {{ t.average_discharge }},
+                {% for d in t.tubewelldischarge_set.all %}
+                    {{ d.updated_average_discharge }},
+                {% endfor %}
+            ];
+        </script>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+
+<!-- ✅ Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- ✅ Chart Script -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    let charts = {};
+
+    {% for t in tubewells %}
+    let modal{{ t.id }} = document.getElementById('historyModal{{ t.id }}');
+
+    modal{{ t.id }}.addEventListener('shown.bs.modal', function () {
+
+        let ctx = document.getElementById('chart{{ t.id }}').getContext('2d');
+
+        // destroy old chart if exists
+        if (charts['{{ t.id }}']) {
+            charts['{{ t.id }}'].destroy();
+        }
+
+        charts['{{ t.id }}'] = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: window.labels{{ t.id }},
+                datasets: [{
+                    label: 'Discharge (m³/h)',
+                    data: window.data{{ t.id }},
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+    });
+    {% endfor %}
+
+});
+</script>
+
+{% endblock %}

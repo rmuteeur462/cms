@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Bin Lifting Report for {{ day_of_week }} - {{ today }}
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1 class="h3 mb-4 text-gray-800">Bin Lifting Report for {{ day_of_week }} ({{ today }})</h1>
+
+        <!-- Display the report -->
+        <div class="table-responsive">
+            <table class="table table-bordered" id="binReportTable">
+                <thead>
+                    <tr>
+                        <th>Bin ID</th>
+                        <th>Bin Name</th>
+                        <th>Category</th>
+                        <th>Capacity</th>
+                        <th>Lifting Frequency</th>
+                        <th>First Lifting Time</th>
+                        <th>Second Lifting Time</th>
+                        <th>Third Lifting Time</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bin in attendance_report %}
+                        <tr>
+                            <td>{{ bin.bin_id }}</td>
+                            <td>{{ bin.name }}</td>
+                            <td>{{ bin.category }}</td>
+                            <td>{{ bin.capacity }}</td>
+                            <td>{{ bin.lifting_frequency }}</td>
+                            <td>{{ bin.firstliftingtime }}</td>
+                            <td>{{ bin.secondliftingtime }}</td>
+                            <td>{{ bin.thirdliftingtime }}</td>
+                            <td>
+                                {% if bin.status == 'Lifted' %}
+                                    <span class="badge badge-success">{{ bin.status }}</span>
+                                {% else %}
+                                    <span class="badge badge-danger">{{ bin.status }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

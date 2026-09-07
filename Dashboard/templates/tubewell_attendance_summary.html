@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Tube Well Attendance and Water Supply Summary
+{% endblock %}
+
+{% block content %}
+<style>
+    .table-dark-header th {
+        background-color: #343a40; /* Dark background color */
+        color: white; /* White text color */
+    }
+</style>
+
+<div class="container mt-5">
+    <h2>Total Tube Wells: {{ total_tubewells }}</h2>
+    <h2 class="mb-4">Daily Tube Well and Water Supply Summary ({{ date }})</h2>
+
+    <!-- Filter Form -->
+    <form method="get" class="mb-4">
+        <div class="form-row">
+            <div class="col-md-4 mb-3">
+                <label for="date">Select Date:</label>
+                <input type="date" id="date" name="date" class="form-control" value="{{ date }}" max="{{ date }}">
+            </div>
+            <div class="col-md-4 mb-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary">Filter</button>
+            </div>
+        </div>
+    </form>
+
+        
+    <!-- CSV Download Button -->
+    <div class="text-right mb-4">
+        <button id="downloadCsvBtn" class="btn btn-success">Download CSV</button>
+    </div>
+
+   <!-- Combined Tube Well Attendance and Water Supply Summary -->
+<!-- Combined Tube Well Attendance and Water Supply Summary -->
+<h3>Tube Well Summary</h3>
+<div class="table-responsive">
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark-header">
+            <tr>
+                <th>Location</th>
+                <th>Total Tubewells</th> <!-- New column for Total Tubewells -->
+                <th>Functional</th>
+                <th>Non-Functional</th>
+                <th>Non-Operational</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if combined_summary %}
+                {% for summary in combined_summary %}
+                    <tr>
+                        <td>{{ summary.location.location_name }}</td>
+                        <td>{{ summary.total_tubewells }}</td> <!-- Display total tubewells -->
+                        <td>{{ summary.total_functional }}</td>
+                        <td>{{ summary.total_non_functional }}</td>
+                        <td>{{ summary.total_non_operational }}</td>
+                    </tr>
+                {% endfor %}
+                <!-- Total Row -->
+                <tr>
+                    <td><strong>Total</strong></td>
+                    <td><strong>{{ total_tubewells }}</strong></td> <!-- Display total tubewells for all locations -->
+                    <td><strong>{{ total_functional }}</strong></td>
+                    <td><strong>{{ total_non_functional }}</strong></td>
+                    <td><strong>{{ total_non_operational }}</strong></td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="5" class="text-center">No data available for {{ date }}.</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+
+
+
+<!-- Functional and Non-Functional Filtration Data -->
+<h3>Filtration Summary</h3>
+<div class="table-responsive">
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark-header">
+            <tr>
+                <th>Location</th>
+                <th>Functional Filtration</th>
+                <th>Non-Functional Filtration</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if combined_summary %}
+                {% for summary in combined_summary %}
+                    <tr>
+                        <td>{{ summary.location.location_name }}</td>
+                        <td>{{ summary.functional_filtration }}</td>
+                        <td>{{ summary.non_functional_filtration }}</td>
+                    </tr>
+                {% endfor %}
+                <!-- Total Row -->
+                <tr>
+                    <td><strong>Total</strong></td>
+                    <td><strong>{{ total_functional_filtration }}</strong></td>
+                    <td><strong>{{ total_non_functional_filtration }}</strong></td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="3" class="text-center">No filtration data available for {{ date }}.</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<!-- New Connections Summary -->
+<h3>New Connections Summary</h3>
+<div class="table-responsive">
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark-header">
+            <tr>
+                <th>Location</th>
+                <th>New Connections</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if combined_summary %}
+                {% for summary in combined_summary %}
+                    <tr>
+                        <td>{{ summary.location.location_name }}</td>
+                        <td>{{ summary.new_connections }}</td>
+                    </tr>
+                {% endfor %}
+                <!-- Total Row -->
+                <tr>
+                    <td><strong>Total</strong></td>
+                    <td><strong>{{ total_new_connections }}</strong></td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="2" class="text-center">No new connection data available for {{ date }}.</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+
+<!-- Water Test Summary -->
+<h3>Water Test Summary</h3>
+<div class="table-responsive">
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark-header">
+            <tr>
+                <th>Location</th>
+                <th>Total Tests</th>
+                <th>Safe Tests</th>
+                <th>Unsafe Tests</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if combined_summary %}
+                {% for summary in combined_summary %}
+                    <tr>
+                        <td>{{ summary.location.location_name }}</td>
+                        <td>{{ summary.total_tests }}</td>
+                        <td>{{ summary.safe_tests }}</td>
+                        <td>{{ summary.unsafe_tests }}</td>
+                    </tr>
+                {% endfor %}
+                <!-- Total Row -->
+                <tr>
+                    <td><strong>Total</strong></td>
+                    <td><strong>{{ total_tests }}</strong></td>
+                    <td><strong>{{ total_safe_tests }}</strong></td>
+                    <td><strong>{{ total_unsafe_tests }}</strong></td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="4" class="text-center">No water test data available for {{ date }}.</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+
+
+<!-- Tubewell Summary -->
+<!-- <h3>Tubewell Summary</h3> -->
+<!-- <div class="table-responsive"> -->
+    <!-- <table class="table table-bordered table-striped"> -->
+        <!-- <thead class="table-dark-header"> -->
+            <!-- <tr> -->
+                <!-- <th>Total Tubewells</th> -->
+                <!-- <th>Operational Tubewells</th> -->
+                <!-- <th>Non-Operational Tubewells</th>
+                <th>Non-Functional Tubewells</th>
+                <th>Total New Connections</th>
+                <th>Functional Filtration Plants</th>
+                <th>Non-Functional Filtration Plants</th> -->
+                <!-- <th>Total Tests</th>
+                <th>Safe Tests</th>
+                <th>Unsafe Tests</th>
+
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ total_tubewells }}</td>
+                <td>{{ total_functional }}</td>
+                <td>{{ total_non_operational }}</td>
+                <td>{{ total_non_functional }}</td>
+                <td>{{ total_new_connections }}</td>
+                <td>{{ total_functional_filtration }}</td>
+                <td>{{ total_non_functional_filtration }}</td>
+                <td>{{ total_tests }}</td>
+                <td>{{ total_safe_tests }}</td>
+                <td>{{ total_unsafe_tests }}</td>
+
+            </tr>
+        </tbody>
+    </table>
+</div> -->
+
+<script>
+    document.getElementById("downloadCsvBtn").addEventListener("click", function() {
+        var tables = document.querySelectorAll("table");
+        var csvData = [];
+
+        tables.forEach(function(table) {
+            var rows = table.rows;
+            var tableData = [];
+
+            var headers = [];
+            for (var i = 0; i < rows[0].cells.length; i++) {
+                headers.push(rows[0].cells[i].innerText.toUpperCase());
+            }
+            tableData.push('"' + headers.join('","') + '"');
+
+            for (var i = 1; i < rows.length; i++) {
+                var rowData = [];
+                for (var j = 0; j < rows[i].cells.length; j++) {
+                    rowData.push('"' + rows[i].cells[j].innerText + '"');
+                }
+                tableData.push(rowData.join(","));
+            }
+
+            csvData.push(tableData.join("\n"));
+        });
+
+        var csvString = csvData.join("\n\n");
+
+        var blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        var link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "tube_well_attendance_and_water_supply_summary.csv";
+        link.click();
+    });
+</script>
+{% endblock %}

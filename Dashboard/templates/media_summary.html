@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Media Summary Report
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center">Media Summary</h2>
+
+    <!-- Filter Form -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+        </div>
+        <form method="GET" class="card-body">
+            <div class="form-row">
+                <div class="col">
+                    <label for="attendance_date">Select Date:</label>
+                    <input type="date" id="attendance_date" name="attendance_date" class="form-control" value="{{ attendance_date|date:'Y-m-d' }}">
+                </div>
+                <div class="col">
+                    <label for="post_type">Post Type:</label>
+                    <select name="post_type" id="post_type" class="form-control">
+                        <option value="all" {% if post_type_id == "all" %}selected{% endif %}>All</option>
+                        {% for post_type in post_types %}
+                            <option value="{{ post_type.id }}" {% if post_type.id|stringformat:"s" == post_type_id %}selected{% endif %}>{{ post_type.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col align-self-end">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- CSV Download Button -->
+    <div class="mt-4">
+        <button id="downloadCsv" class="btn btn-success">Download CSV</button>
+    </div>
+
+    <!-- Summary Table -->
+    <div class="table-responsive mt-4">
+        <h4>Summary of Posts by Type and Platform</h4>
+        <table class="table table-bordered table-striped" style="border: 2px solid #343a40;">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Post Type</th>
+                    <th>Total Posts</th>
+                    <th>Platform</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if media_summary %}
+                    {% for summary in media_summary %}
+                        <tr>
+                            <td>{{ summary.post_type_name }}</td>
+                            <td>{{ summary.total_posts }}</td>
+                            <td>{{ summary.platform_name }}</td>
+                        </tr>
+                    {% endfor %}
+                    <tr>
+                        <td><strong>Total:</strong></td>
+                        <td><strong>{{ total_posts }}</strong></td>
+                        <td>-</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="3" class="text-center"><strong>No media data available for the selected date.</strong></td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Media Summary Chart -->
+    <div class="mt-5">
+        <canvas id="mediaSummaryChart"></canvas>
+    </div>
+</div>
+
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Prepare data for chart
+        const labels = [];
+        const postData = [];
+        const backgroundColors = [];
+
+        // Loop over each summary item to prepare the chart data
+        {% for summary in media_summary %}
+            labels.push("{{ summary.platform_name }}");
+            postData.push({{ summary.total_posts }});
+
+            // Assign a different color for each bar
+            // You can replace the colors with your own list
+            backgroundColors.push(
+                'rgba(' + Math.floor(Math.random() * 256) + ',' + 
+                         Math.floor(Math.random() * 256) + ',' + 
+                         Math.floor(Math.random() * 256) + ', 0.6)'  // Random RGB colors
+            );
+        {% endfor %}
+
+        // Render the chart
+        const ctx = document.getElementById('mediaSummaryChart').getContext('2d');
+        const mediaSummaryChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,  // Platform labels
+                datasets: [{
+                    label: 'Number of Posts',
+                    data: postData,
+                    backgroundColor: backgroundColors, // Array of random colors for each bar
+                    borderColor: backgroundColors.map(color => color.replace('0.6', '1')), // Darken the borders
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Posts'
+                        }
+                    }
+                },
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Posts by Platform'
+                    }
+                }
+            }
+        });
+    });
+</script>
+
+
+<script>
+    document.getElementById('downloadCsv').addEventListener('click', function () {
+        // Prepare table data to export
+        const table = document.querySelector('.table');
+        const rows = Array.from(table.querySelectorAll('tr'));
+        
+        // Extract the headers
+        const headers = Array.from(rows[0].querySelectorAll('th')).map(th => th.innerText);
+
+        // Extract the table rows
+        const data = rows.slice(1).map(row => {
+            return Array.from(row.querySelectorAll('td')).map(td => td.innerText);
+        });
+
+        // Convert to CSV
+        let csvContent = headers.join(',') + '\n'; // Add header row
+        data.forEach(row => {
+            csvContent += row.join(',') + '\n'; // Add data rows
+        });
+
+        // Create a downloadable link and trigger the download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'media_summary.csv';
+        link.click();
+    });
+</script>
+
+{% endblock %}

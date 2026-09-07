@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Add TubeWell Water Production
+{% endblock %}
+
+{% block styles %}
+<!-- Include Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    .form-label {
+        font-weight: 600;
+    }
+
+    /* Make select2 height align with Bootstrap input */
+    .select2-container--default .select2-selection--single {
+        height: 48px;
+        padding: 8px 12px;
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+
+    .select2-container .select2-selection--multiple {
+        min-height: 48px;
+        padding: 5px 8px;
+    }
+
+    .select2-container {
+        width: 100% !important;
+    }
+
+    .card-header {
+        font-size: 1.1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <h1 class="h3 mb-4 text-gray-800 text-center" style="font-weight: bold;">
+        TubeWell Water Production Data
+    </h1>
+
+    <!-- Filter Form -->
+    <form method="get" class="mb-4">
+        <div class="row justify-content-center">
+            <div class="col-md-4">
+                <label for="month" class="form-label fw-bold">Select Month:</label>
+                <select name="month" id="month" class="form-select" onchange="this.form.submit()">
+                    {% for option in month_choices %}
+                        <option value="{{ option.value }}" {% if option.value == selected_month %}selected{% endif %}>
+                            {{ option.label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </form>
+
+    <!-- CSV Download Button -->
+    <div class="text-right mb-2">
+        <button class="btn btn-success" onclick="downloadTableAsCSV('waterProduceTable', 'tube_well_water_produce.csv')">
+            Download CSV
+        </button>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+        <ul>
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+  <!-- Add Record Button -->
+<button type="button" class="btn btn-primary mb-4" data-toggle="modal" data-target="#addWaterProduceModal">
+    Add New Record
+</button>
+
+<!-- Add Modal -->
+<div class="modal fade" id="addWaterProduceModal" tabindex="-1" role="dialog" aria-labelledby="addWaterProduceModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addWaterProduceModalLabel">Add TubeWell Water Production Data Monthly</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    {{ form.as_p }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-success">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Data Table -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3 bg-primary text-white">
+        <h6 class="m-0 font-weight-bold">Current Month Water Production</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="waterProduceTable" class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th>Sr. No</th>
+                        <th>TubeWell Name</th>
+                        <th>TubeWell ID</th>
+                        <!-- <th>Average Discharge <small>(m³)</small></th> -->
+                        <th>Run Hour</th>
+                        <th>Water Meter Reading Start</th>
+                        <th>Water Meter Reading End</th>
+                        <th>Water Produced <small>(m³)</small></th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in current_month_data %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ item.tubewell.tubewell_name }}</td>
+                        <td>{{ item.tubewell.tubewell_id }}</td>
+                        <!-- <td>{{ item.tubewell.average_discharge }}</td> -->
+                        <td>{{ item.run_hour }}</td>
+                        <td>{{ item.water_meter_reading_start }}</td>
+                        <td>{{ item.water_meter_reading_end }}</td>
+                        <td>{{ item.water_produce }}</td>
+                        <td>{{ item.water_produce_date|date:"Y-m-d" }}</td>
+                        <td>
+                            <button
+                                class="btn btn-warning btn-sm"
+                                data-toggle="modal"
+                                data-target="#updateWaterProduceModal-{{ item.id }}"
+                            >
+                                Update
+                            </button>
+                        </td>
+                    </tr>
+
+                    <!-- Update Modal for each item -->
+                    <div
+                        class="modal fade"
+                        id="updateWaterProduceModal-{{ item.id }}"
+                        tabindex="-1"
+                        role="dialog"
+                        aria-labelledby="updateWaterProduceModalLabel-{{ item.id }}"
+                        aria-hidden="true"
+                    >
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <form method="POST" action="{% url 'update_water_produce' item.id %}">
+                                    {% csrf_token %}
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="updateWaterProduceModalLabel-{{ item.id }}">
+                                            Update TubeWell Water Production
+                                        </h5>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <!-- Tubewell name readonly -->
+                                        <div class="form-group">
+                                            <label>Tubewell Name</label>
+                                            <input type="text" class="form-control" value="{{ item.tubewell.tubewell_name }}" readonly>
+                                        </div>
+
+                                        <!-- Editable fields -->
+                                        <div class="form-group">
+                                            <label for="run_hour_{{ item.id }}">Run Hour</label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                name="run_hour"
+                                                id="run_hour_{{ item.id }}"
+                                                class="form-control"
+                                                value="{{ item.run_hour }}"
+                                                required
+                                            >
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="water_meter_reading_start_{{ item.id }}">Water Meter Reading Start</label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                name="water_meter_reading_start"
+                                                id="water_meter_reading_start_{{ item.id }}"
+                                                class="form-control"
+                                                value="{{ item.water_meter_reading_start }}"
+                                                required
+                                            >
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="water_meter_reading_end_{{ item.id }}">Water Meter Reading End</label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                name="water_meter_reading_end"
+                                                id="water_meter_reading_end_{{ item.id }}"
+                                                class="form-control"
+                                                value="{{ item.water_meter_reading_end }}"
+                                                required
+                                            >
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="water_produce_{{ item.id }}">Water Produced (auto-calculated)</label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                name="water_produce"
+                                                id="water_produce_{{ item.id }}"
+                                                class="form-control"
+                                                value="{{ item.water_produce }}"
+                                                readonly
+                                            >
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="remarks_{{ item.id }}">Remarks</label>
+                                            <textarea
+                                                name="remarks"
+                                                id="remarks_{{ item.id }}"
+                                                class="form-control"
+                                            >{{ item.remarks }}</textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="water_produce_date_{{ item.id }}">Date</label>
+                                            <input
+                                                type="date"
+                                                name="water_produce_date"
+                                                id="water_produce_date_{{ item.id }}"
+                                                class="form-control"
+                                                value="{{ item.water_produce_date|date:'Y-m-d' }}"
+                                                required
+                                            >
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                        <button type="submit" class="btn btn-primary">Update</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% empty %}
+                    <tr>
+                        <td colspan="10" class="text-center">No data available for the current month.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.modal[id^="updateWaterProduceModal-"]').forEach(modal => {
+            const runHourInput = modal.querySelector('input[name="run_hour"]');
+            const meterStartInput = modal.querySelector('input[name="water_meter_reading_start"]');
+            const meterEndInput = modal.querySelector('input[name="water_meter_reading_end"]');
+            const waterProduceInput = modal.querySelector('input[name="water_produce"]');
+
+            function recalc() {
+                const runHour = parseFloat(runHourInput.value) || 0;
+                const meterStart = parseFloat(meterStartInput.value) || 0;
+                const meterEnd = parseFloat(meterEndInput.value) || 0;
+
+                if (meterStart === 0 && meterEnd === 0) {
+                    // If you want to use average discharge in calculation, pass it in data attributes or context
+                    waterProduceInput.value = (runHour * 0).toFixed(2); // Adjust as needed
+                } else {
+                    waterProduceInput.value = (meterEnd - meterStart).toFixed(2);
+                }
+            }
+
+            runHourInput.addEventListener('input', recalc);
+            meterStartInput.addEventListener('input', recalc);
+            meterEndInput.addEventListener('input', recalc);
+        });
+    });
+</script>
+
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+  $(document).ready(function () {
+    // Init all .select2 globally
+    $('.select2').select2();
+
+    // Init .select2 inside modal with dropdownParent
+    $('#addWaterProduceModal').on('shown.bs.modal', function () {
+      $('#addWaterProduceModal .select2').select2({
+        dropdownParent: $('#addWaterProduceModal'),
+        width: 'resolve',
+        placeholder: 'Search or select a TubeWell',
+        allowClear: true
+      });
+    });
+  });
+
+  function downloadTableAsCSV(tableId, filename) {
+      const table = document.getElementById(tableId);
+      let csv = [];
+      const rows = table.querySelectorAll("tr");
+
+      for (let row of rows) {
+          let rowData = [];
+          const cols = row.querySelectorAll("th, td");
+          for (let col of cols) {
+              let text = col.innerText.replace(/"/g, '""');
+              rowData.push(`"${text}"`);
+          }
+          csv.push(rowData.join(","));
+      }
+
+      const csvBlob = new Blob([csv.join("\n")], { type: "text/csv" });
+      const url = URL.createObjectURL(csvBlob);
+      const a = document.createElement("a");
+      a.setAttribute("hidden", "");
+      a.setAttribute("href", url);
+      a.setAttribute("download", filename);
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+  }
+</script>
+{% endblock %}

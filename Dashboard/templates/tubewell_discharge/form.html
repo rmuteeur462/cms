@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Add / Edit TubeWell Discharge
+{% endblock %}
+
+{% block styles %}
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    .form-label {
+        font-weight: 600;
+    }
+
+    .select2-container--default .select2-selection--single {
+        height: 48px;
+        padding: 8px 12px;
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+
+    .select2-container {
+        width: 100% !important;
+    }
+
+    .card-header {
+        font-size: 1.1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        {% if form.instance.pk %}Edit{% else %}Add{% endif %} TubeWell Discharge
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="tubeWellDischargeForm">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label class="form-label">TubeWell</label>
+                            {{ form.tubewell }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Updated Average Discharge</label>
+                            {{ form.updated_average_discharge }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Discharge Date</label>
+                            {{ form.updated_average_discharge_date }}
+                        </div>
+
+                        <div class="text-end">
+                            <a href="{% url 'tubewell_discharge_list' %}" class="btn btn-secondary btn-sm">
+                                Back
+                            </a>
+                            <button type="submit" class="btn btn-success btn-sm">
+                                Save
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Initialize all Select2 fields on page
+    $('.select2').select2({
+        width: '100%',
+        placeholder: 'Search TubeWell',
+        allowClear: true
+    });
+
+    // If you ever put this form inside a modal, initialize again with dropdownParent
+    $('#tubeWellDischargeModal').on('shown.bs.modal', function () {
+        $('#tubeWellDischargeModal .select2').select2({
+            dropdownParent: $('#tubeWellDischargeModal'),
+            width: 'resolve',
+            placeholder: 'Search TubeWell',
+            allowClear: true
+        });
+    });
+});
+</script>
+{% endblock %}

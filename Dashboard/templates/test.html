@@ -1,0 +1,2468 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Home{% endblock %}
+
+{% block styles %}
+<style>
+    /* Make the carousel control icons black */
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+    background-color: black; /* Set background to black */
+    filter: brightness(50%); /* Ensure it remains fully black */
+    border-radius: 50%; /* Optional: make it round */
+    width: 40px;
+    height: 40px;
+}
+
+/* Optional: Darken the entire button area */
+.carousel-control-prev,
+.carousel-control-next {
+    background-color: rgba(255, 255, 255, 0.144); /* Darken background with transparency */
+    width: 30px; /* Adjust button size */
+}
+
+
+    .hover-effect {
+        transition: transform 0.2s, box-shadow 0.2s; /* Smooth transition for transform and shadow */
+    }
+
+    .hover-effect:hover {
+        transform: scale(1.05); /* Scale the card slightly */
+        box-shadow: 0 8px 16px rgb(0, 0, 0); /* Add a shadow on hover */
+    }
+
+    /* Hover effect for the card */
+    .hover-effect {
+        transition: transform 0.2s, box-shadow 0.2s; /* Smooth transition for transform and shadow */
+    }
+
+    .hover-effect:hover {
+        transform: scale(1.05); /* Scale the card slightly */
+        box-shadow: 0 8px 16px rgb(0, 0, 0); /* Add a shadow on hover */
+    }
+
+    /* Blinking Effect */
+ /* Blinking Effect */
+.blinking {
+    animation: colorFlash 2s infinite alternate;
+}
+
+/* Stop blinking when hovered */
+.blinking:hover {
+    animation: none; /* Stops the blinking effect */
+}
+
+@keyframes colorFlash {
+    0% { background-color: yellow; color: black; }
+    100% { background-color: rgb(15, 112, 240); color: white; }
+}
+
+     /* Remove button background and border */
+     .btn-transparent {
+        background-color: transparent !important;
+        border: none !important;
+        padding: 5px 10px; /* Adjust padding if needed */
+    }
+
+    /* Optional: Add hover effect */
+    .btn-transparent:hover {
+        opacity: 0.8;
+    }
+    .btn-bordered {
+        background-color: transparent !important;
+        border: 2px solid black !important;  /* Black border */
+        padding: 5px 15px; /* Adjust padding for better spacing */
+        border-radius: 5px; /* Optional: Slightly rounded corners */
+        text-decoration: none; /* Remove default link underline */
+        display: inline-flex; /* Keep alignment */
+        align-items: center; /* Align text and image */
+    }
+
+    /* Optional: Hover effect */
+    .btn-bordered:hover {
+        background-color: rgba(224, 55, 55, 0.1); /* Light hover effect */
+    }
+
+    .btn-bordered:hover {
+    background-color: rgb(40, 158, 255) !important;  /* Black background */
+    color: white !important;  /* White text */
+    transform: scale(1.05);  /* Slightly enlarge */
+    transition: all 0.3s ease-in-out;
+}
+
+/* Click Effect - Brief shrinking effect */
+.btn-bordered:active {
+    transform: scale(0.95);  /* Shrink slightly when clicked */
+    transition: transform 0.1s;
+}
+
+    /* Keyframes for logo animation */
+    @keyframes bounce {
+        0%, 100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-10px);
+        }
+    }
+
+    /* Logo animation on hover */
+    .hover-effect:hover .logo-animation {
+        animation: bounce 0.6s ease-in-out infinite;
+    }
+
+
+
+    
+.card-red {
+    background-color: rgb(165, 42, 42) !important; /* Dark Red */
+    color: white !important;
+}
+
+.card-purple {
+    background-color: rgb(128, 0, 128) !important; /* Dark Purple */
+    color: white !important;
+}
+
+.card-blue {
+    background-color: rgb(0, 0, 139) !important; /* Dark Blue */
+    color: white !important;
+}
+
+.card-green {
+    background-color: rgb(0, 100, 0) !important; /* Dark Green */
+    color: white !important;
+}
+
+.card-yellow {
+    background-color: rgb(204, 204, 0) !important; /* Dark Yellow */
+    color: black !important;
+}
+
+.card-orange {
+    background-color: rgb(205, 133, 63) !important; /* Dark Orange */
+    color: white !important;
+}
+
+.card-pink {
+    background-color: rgb(199, 21, 133) !important; /* Deep Pink */
+    color: white !important;
+}
+
+.card-teal {
+    background-color: rgb(0, 128, 128) !important; /* Dark Teal */
+    color: white !important;
+}
+
+.card-gray {
+    background-color: rgb(105, 105, 105) !important; /* Dark Gray */
+    color: white !important;
+}
+
+.card-brown {
+    background-color: rgb(139, 69, 19) !important; /* Dark Brown */
+    color: white !important;
+}
+.card-cyan {
+    background-color: rgb(15, 175, 175) !important; /* Dark Cyan */
+    color: white !important;
+}
+
+.card-navy {
+    background-color: rgba(0, 0, 80, 0.705) !important; /* Navy Blue */
+    color: white !important;
+}
+
+.card-navy2 {
+    background-color: rgb(7, 167, 113) !important; /* Navy Blue */
+    color: white !important;
+}
+
+.card-navy3 {
+    background-color: rgb(167, 124, 7) !important; /* Navy Blue */
+    color: white !important;
+}
+
+.card-navy4 {
+    background-color: rgb(82, 7, 167) !important; /* Navy Blue */
+    color: white !important;
+}
+
+/* Card Base Styles */
+.card-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 15px;
+}
+
+.card {
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s, color 0.3s;
+}
+
+/* Hover Effect - Change Background & Text/Icon Color */
+.card:hover {
+    background-color: rgb(255, 255, 255) !important;
+    color: rgb(0, 0, 0) !important;
+    transform: scale(1.05);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Ensure Text and Icons Turn Black */
+.card:hover .info-text h5,
+.card:hover .info-icon i {
+    color: rgb(0, 0, 0) !important;
+}
+
+/* Info Card */
+.info-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px;
+    border-radius: 10px;
+    color: white;
+    font-weight: bold;
+    width: 200px;
+}
+
+/* Info Content */
+.info-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.info-text {
+    text-align: left;
+}
+
+/* Icon Animation */
+.info-icon {
+    font-size: 40px;
+    opacity: 3;
+    animation: blink-animation 1.5s infinite alternate, bounce-animation 3s infinite;
+}
+
+/* Blinking Effect */
+@keyframes blink-animation {
+    0% { color: white; }
+    50% { color: rgb(202, 202, 202); }
+}
+
+/* Bouncing Effect */
+@keyframes bounce-animation {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+    
+</style>
+
+
+{% endblock %}
+
+
+
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="card-header py-3">
+            </div>
+            <div class="card-container">
+
+                <div class="card card-red p-3" onclick="window.location.href='{% url 'attendance_summary_pdf' %}?date={{ selected_date|date:'Y-m-d' }}'">
+                    <div class="info-content">
+                        <div class="info-text">
+                            <h5>Download DPR Report</h5>
+                        </div>
+                        <div class="info-icon">
+                            <i class="fas fa-file-download"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- {% if latest_document %}
+                <div class="card card-purple p-3" onclick="window.location.href='{{ latest_document.uploaded_file.url }}'">
+                    <div class="info-content">
+                        <div class="info-text">
+                            <h5>M&E Latest Report</h5>
+                           
+                        </div>
+                        <div class="info-icon">
+                            <i class="fas fa-file-download me-2"></i>
+                        </div>
+                    </div>
+                </div>
+                {% endif %} -->
+
+
+              
+                <div class="card card-purple p-3" onclick="window.location.href='{% url 'document_list' %}'">
+                    <div class="info-content">
+                        <div class="info-text">
+                            <h5>M&E Reports</h5>
+                        </div>
+                        <div class="info-icon">
+                            <i class="fas fa-folder-open me-2"></i>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="card card-navy p-3" onclick="window.location.href='{% url 'map_all_bins' %}'">
+                    <div class="info-content">
+                        <div class="info-text">
+                            <h5>WSSP Bins</h5>
+                           
+                        </div>
+                        <div class="info-icon">
+                            <i class="fas fa-map me-2"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card card-gray p-3" onclick="window.location.href='{% url 'map_all_tubewells' %}'">
+                    <div class="info-content">
+                        <div class="info-text">
+                            <h5>WSSP TubeWells</h5>
+                        </div>
+                        <div class="info-icon">
+                            <i class="fas fa-water me-2"></i> <!-- You can change the icon as needed -->
+                        </div>
+                    </div>
+                </div>
+                
+                
+
+                <!-- <div class="card card-brown p-3" onclick="window.location.href='https://ipms.kpdata.gov.pk/guardian/users/login'">
+                    <div class="info-content">
+                        <div class="info-text">
+                            <h5>IPMS Portal</h5>
+                           
+                        </div>
+                        <div class="info-icon">
+                            <i class="fas fa-chart-line me-2"></i>
+                        </div>
+                    </div>
+                </div> -->
+
+
+
+                <!-- <div class="card card-gray p-3" onclick="window.location.href='https://admin.pmdu.gov.pk/guardian/users/login'">
+                    <div class="info-content">
+                        <div class="info-text">
+                            <h5>PCP Portal</h5>
+                           
+                        </div>
+                        <div class="info-icon">
+                            <i class="fas fa-users me-2"></i>
+                        </div>
+                    </div>
+                </div> -->
+
+
+
+                <!-- <div class="card card-green p-3" onclick="window.location.href='https://cmp.kp.gov.pk/guardian/users/login'">
+                    <div class="info-content">
+                        <div class="info-text">
+                            <h5>Ekhtiyar Awam Portal</h5>
+                           
+                        </div>
+                        <div class="info-icon">
+                            <i class="fas fa-landmark me-2"></i>
+                        </div>
+                    </div>
+                </div> -->
+
+
+                <div class="card card-orange p-3" onclick="window.location.href='http://bod.wsspeshawar.org.pk:4003/login/?next=/'">
+                <!-- <div class="card card-orange p-3" onclick="window.location.href='http://192.168.35.213:8000'"> -->
+   
+                    <div class="info-content">
+                        <div class="info-text">
+                            <h5>BOD Portal</h5>
+                           
+                        </div>
+                        <div class="info-icon">
+                            <i class="fas fa-calendar-alt me-2"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card card-cyan p-3" onclick="window.location.href='http://cispvt.com/wssp/login.php'">
+                    <div class="info-content">
+                        <div class="info-text">
+                            <h5>SCADA Portal</h5>
+                           
+                        </div>
+                        <div class="info-icon">
+                            <i class="fas fa-tachometer-alt me-2"></i>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="card card-blue p-3" onclick="window.location.href='http://103.152.255.243:8081/ciupeshawar/index.html'">
+                    <div class="info-content">
+                        <div class="info-text">
+                            <h5>WSSP GIS Data</h5>
+                           
+                        </div>
+                        <div class="info-icon">
+                            <i class="fas fa-map-marker-alt me-2"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card card-pink p-3" onclick="window.location.href='https://wssp.connexisfms.com/'">
+                    <div class="info-content">
+                        <div class="info-text">
+                            <h5>Online Fleet Tracking System</h5>
+                           
+                        </div>
+                        <div class="info-icon">
+                            <i class="fas fa-truck me-2"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card card-teal p-3" onclick="window.location.href='http://119.159.226.107:4001/wssp-billing-system/supporting_lib/wssp_online_bill_generator/'">
+                    <div class="info-content">
+                        <div class="info-text">
+                            <h5>Duplicate Billing Portal</h5>
+                           
+                        </div>
+                        <div class="info-icon">
+                            <i class="fas fa-file-invoice me-2"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card card-gray p-3" onclick="window.location.href='http://119.159.249.170:4001'">
+                    <div class="info-content">
+                        <div class="info-text">
+                            <h5>Asset Management System</h5>
+                        </div>
+                        <div class="info-icon">
+                            <i class="fas fa-clipboard-list me-2"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- <div class="card card-navy4 p-3" onclick="window.location.href='http://172.16.17.150/doc/page/login.asp?_1748948521945'">
+                    <div class="info-content d-flex align-items-center justify-content-between">
+                        <div class="info-text">
+                            <h5 class="mb-0">Camera System</h5>
+                        </div>
+                        <div class="info-icon ms-3">
+                            <i class="fas fa-camera"></i> 
+                        </div>
+                    </div>
+                </div> -->
+                
+                
+
+                <!-- <div class="card card-purple p-3" onclick="window.location.href='https://wsspeshawar.org.pk/'">
+                    <div class="info-content">
+                        <div class="info-text">
+                            <h5>WSSP Official Website</h5>
+                           
+                        </div>
+                        <div class="info-icon">
+                            <i class="fas fa-globe me-2"></i>
+                        </div>
+                    </div>
+                </div> -->
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="container-fluid">
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="card-header py-3">
+                <h2 class="m-0 font-weight-bold text-primary">Coming Soon!</h2>
+            </div>
+            <div class="card-container">
+
+                <div class="card card-navy2 p-3" onclick="alert('Coming Soon!')">
+                    <div class="info-content">
+                        <div class="info-text">
+                            <h5>E-Service Citizen Portal</h5>
+                        </div>
+                        <div class="info-icon">
+                            <i class="fas fa-globe"></i> <!-- Changed from download to globe -->
+                        </div>
+                    </div>
+                </div>
+                
+                {% if latest_document %}
+                <div class="card card-navy3 p-3" onclick="alert('Coming Soon!')">
+                    <div class="info-content">
+                        <div class="info-text">
+                            <h5>GIS-Based Attendance System</h5>
+                        </div>
+                        <div class="info-icon">
+                            <i class="fas fa-map-marked-alt"></i> <!-- Changed from download to map -->
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="card card-navy4 p-3" onclick="alert('Coming Soon!')">
+                    <div class="info-content d-flex align-items-center justify-content-between">
+                        <div class="info-text">
+                            <h5 class="mb-0">Payroll Software</h5> <!-- Fixed spelling from "Pay Role" -->
+                        </div>
+                        <div class="info-icon ms-3">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                        </div>
+                    </div>
+                    
+                </div>
+                 
+
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+   
+
+
+                    
+                    
+        
+         
+
+
+    <form method="GET" class="mb-4">
+        <div class="form-row align-items-end">
+            <div class="form-group col-md-4">
+                <label for="date">Select Date:</label>
+                <input type="date" id="date" name="date" class="form-control" value="{{ selected_date|date:'Y-m-d' }}" required>
+            </div>
+            <div class="form-group col-md-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter me-2"></i> Filter
+                </button>
+            </div>
+            
+            
+        </div>
+    </form>
+   
+    
+    
+    
+
+    <!-- Bootstrap Carousel to Display Cards -->
+    <div id="dashboardCarousel" class="carousel slide" data-ride="carousel" data-interval="30000" data-pause="hover">
+        <div class="carousel-inner">
+
+            <!-- First Set of Cards -->
+            <div class="carousel-item active">
+                <div class="row">
+
+
+
+                    {% load static %} <!-- Load static files in Django template -->
+ 
+
+         <!-- Card 1 -->
+        <!-- Today's Attendance Overview Card -->
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2 hover-effect" style="background-color: #ffffff;">
+                <div class="card-body">
+                    <div class="font-weight-bold text-primary text-uppercase mb-1" style="font-size: 20px; color: #4C3BCF;">
+                        <span style="font-size: 24px; font-weight: bold;">1</span> <!-- This is the card number -->
+                    </div>
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+
+                            <div class="text-center mb-3 logo-animation-container">
+                                <img class="logo-animation" src="{% static 'logo/Picture1.png' %}" alt="Logo" style="width: 120px; height: auto;">
+                            </div>
+
+                            <div class="font-weight-bold text-primary text-uppercase mb-1" style="font-size: 20px; color: #4C3BCF;">
+                                𝐒𝐭𝐚𝐟𝐟 𝐀𝐭𝐭𝐞𝐧𝐝𝐚𝐧𝐜𝐞                            </div>
+                            
+                            <p><strong>{{ selected_date|date:"F j, Y" }}</strong></p>
+            
+                            <div>
+                                <a href="{% url 'attendance_summary' %}" class="btn" style="background-color: #4C3BCF; color: white;">
+                                    <!-- Add the icon to the left of the text -->
+                                    <i class="fas fa-calendar-check"></i> Summary
+                                </a>
+                            </div>
+                            
+                            
+                            
+                                <table class="table table-borderless">
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>Total Employees</strong></td>
+                                            <td>{{ total_employees }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Present</td>
+                                            <td>{{ total_present }} ({{ present_percentage|floatformat:2 }}%)</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Absent</td>
+                                            <td>{{ total_absent }} ({{ absent_percentage|floatformat:2 }}%)</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Leave</td>
+                                            <td>{{ total_leave }} ({{ leave_percentage|floatformat:2 }}%)</td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                        
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                        
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                <!-- Donut Chart for Employee Attendance -->
+                                <canvas id="employeeAttendanceChart" width="400" height="400"></canvas>
+
+                               
+                            </div>
+
+                            
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+        <script>
+            var ctx = document.getElementById('employeeAttendanceChart').getContext('2d');
+            var employeeAttendanceChart = new Chart(ctx, {
+                type: 'bar', // Change to bar chart
+                data: {
+                    labels: ['Total Employee', 'Present', 'Absent', 'On Leave'],
+                    datasets: [{
+                        label: 'Employee Attendance',
+                        data: [{{ total_employees }}, {{ total_present }}, {{ total_absent }}, {{ total_leave }}],
+                        backgroundColor: [
+                            'rgba(153, 102, 255, 0.6)', // Total Employee
+                            'rgba(75, 192, 192, 0.6)',   // Present
+                            'rgba(255, 99, 132, 0.6)',   // Absent
+                            'rgba(255, 206, 86, 0.6)'    // On Leave
+                        ],
+                        borderColor: [
+                            'rgba(153, 102, 255, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(255, 206, 86, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true // Ensure the y-axis starts at zero
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                        },
+                    },
+                }
+            });
+        </script>
+        
+
+
+        <!-- Card 2 -->
+        <!-- Today's Vehicle Attendance Overview Card -->
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2 hover-effect" style="background-color: #ffffff;">
+                <div class="card-body">
+                    <div class="font-weight-bold text-success text-uppercase mb-1" style="font-size: 20px; color: #28a745;">
+                        <span style="font-size: 24px; font-weight: bold;">2</span> <!-- This is the card number -->
+                    </div>
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-center mb-3 logo-animation-container">
+                                <img class="logo-animation" src="{% static 'logo/Picture2.jpg' %}" alt="Logo" style="width: 120px; height: auto;">
+                            </div>
+                            <div class="font-weight-bold text-success text-uppercase mb-1" style="font-size: 20px; color: #28a745;">
+                                𝐕𝐞𝐡𝐢𝐜𝐥𝐞 𝐒𝐭𝐚𝐭𝐮𝐬
+                            </div>
+                            <p><strong>{{ selected_date|date:"F j, Y" }}</strong></p>
+                        </div>
+                        <!-- Move button to the right side using a flex container -->
+                        <div class="col-auto ml-auto">
+                            <a href="{% url 'vehicle_attendance_summary' %}" class="btn" style="background-color: #28a745; color: white;">
+                                <!-- Add the icon to the left of the text -->
+                                <i class="fas fa-car-side"></i> Summary
+                            </a>
+        
+                
+                        
+                            
+
+                        
+
+                                <table class="table table-borderless">
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>Total Vehicles</strong></td>
+                                            <td>{{ total_vehicles }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Functional</strong></td>
+                                            <td>{{ total_functional }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>&nbsp;&nbsp;&nbsp; Parked</td>
+                                            <td>{{ total_parked }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>&nbsp;&nbsp;&nbsp; Field Operation</td>
+                                            <td>{{ total_field_operation }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Non-Functional</strong></td>
+                                            <td>{{ total_non_functional }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>&nbsp;&nbsp;&nbsp; Minor Repair</td>
+                                            <td>{{ total_minor_repair }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>&nbsp;&nbsp;&nbsp; Major Repair</td>
+                                            <td>{{ total_major_repair }}</td>
+                                        </tr>
+
+                                        <tr>
+                                            <td><strong> Total Fuel Issue (Liters)</td>
+                                            <td>{{ total_fuel_top_up }}</td>
+                                        </tr>
+
+
+                                        <!-- <tr>
+                                            <td><strong>Total Secondary Trips</td>
+                                            <td>{{ total_lfs_trips }}</td>
+                                        </tr>
+
+                                        <tr>
+                                            <td><strong> Total Primary Trips</td>
+                                            <td>{{ total_primary_trips }}</td>
+                                        </tr> -->
+                                        
+                                        
+
+                                    </tbody>
+                                </table>
+                                <!-- Canvas for Vehicle Attendance Chart -->
+                                <canvas id="vehicleAttendanceChart" width="400" height="400"></canvas>
+                                
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        
+                    
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                var ctx = document.getElementById('vehicleAttendanceChart').getContext('2d');
+                var vehicleAttendanceChart = new Chart(ctx, {
+                    type: 'bar', // Change type to 'bar'
+                    data: {
+                        labels: ['Total Vehicle', 'Functional', 'Non Functional'],
+                        datasets: [{
+                            label: 'Vehicle Status',
+                            data: [{{ total_vehicles }}, {{ total_functional }}, {{ total_non_functional }}],
+                            backgroundColor: [
+                                'rgba(75, 192, 192, 0.6)',   // Total Vehicles
+                                'rgba(54, 162, 235, 0.6)',   // Functional
+                                'rgba(255, 206, 86, 0.6)',   // Non Functional
+                            ],
+                            borderColor: [
+                                'rgba(75, 192, 192, 1)',
+                                'rgba(54, 162, 235, 1)',
+                                'rgba(255, 206, 86, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true // Ensure the y-axis starts at zero
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'bottom', // Display legend at the bottom
+                            },
+                        }
+                    }
+                });
+            });
+        </script>
+                        
+                    
+
+
+         <!-- Card 3 -->
+<!-- Today's Visit Overview Card -->
+<div class="col-lg-3 col-md-6 mb-4">
+    <div class="card border-left-dark shadow h-100 py-2 hover-effect" style="background-color: #ffffff;">
+        <div class="card-body">
+            <div class="font-weight-bold text-dark text-uppercase mb-1" style="font-size: 20px;">
+                <span style="font-size: 24px; font-weight: bold;">3</span> <!-- This is the card number -->
+            </div>
+
+            <div class="row no-gutters align-items-center">
+
+                
+
+                <div class="text-center mb-3 logo-animation-container">
+                    <img class="logo-animation" src="{% static 'logo/Picture3.jpg' %}" alt="Logo" style="width: 120px; height: auto;">
+                </div>
+
+
+                <div class="col mr-2">
+                    <div class="font-weight-bold text-dark text-uppercase mb-1" style="font-size: 20px;">
+                        𝐅𝐢𝐞𝐥𝐝 𝐕𝐢𝐬𝐢𝐭 𝐒𝐭𝐚𝐭𝐮𝐬
+                    </div>
+                    
+                    <p><strong>{{ selected_date|date:"F j, Y" }}</strong></p>
+                    
+                    <div>
+                        <a href="{% url 'field_visit_summary' %}" class="btn" style="background-color: #343a40; color: white;">
+                            <!-- Add the icon to the left of the text -->
+                            <i class="fas fa-clipboard-list"></i> Summary
+                        </a>
+                    </div>
+                    
+  
+                    <!-- Display designation-wise visit counts -->
+                    <table class="table table-borderless mt-3">
+                        <tbody>
+                            <tr>
+                                <td><strong>Total Activities:</strong></td>
+                                <td>{{ total_visits_today }}</td>
+                            </tr>
+                            {% for designation in designation_counts %}
+                            <tr>
+                                <td>{{ designation.name_of_official__designation }}</td>
+                                <td>{{ designation.total }}</td>
+                            </tr>
+                            
+                            {% endfor %}
+                        </tbody>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </table>
+
+
+                    <!-- Bar Chart for Designation Counts -->
+                    <canvas id="fieldVisitChart" width="400" height="400"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    var ctx = document.getElementById('fieldVisitChart').getContext('2d');
+    var fieldVisitChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [{% for designation in designation_counts %}'{{ designation.name_of_official__designation }}',{% endfor %}],
+            datasets: [{
+                label: 'Number of Visits',
+                data: [
+                    {% for designation in designation_counts %}{{ designation.total }},{% endfor %}
+                ],
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.6)',
+                    'rgba(54, 162, 235, 0.6)',
+                    'rgba(255, 206, 86, 0.6)',
+                    'rgba(75, 192, 192, 0.6)',
+                    'rgba(153, 102, 255, 0.6)',
+                    'rgba(255, 159, 64, 0.6)',
+                    'rgba(201, 203, 207, 0.6)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)',
+                    'rgba(201, 203, 207, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false,
+                },
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                }
+            }
+        }
+    });
+</script>
+
+
+
+
+
+<!-- Card 4 -->
+ <!-- Today's TubeWell Attendance Card -->
+<div class="col-lg-3 col-md-6 mb-4">
+    <div class="card border-left-info shadow h-100 py-2 hover-effect" style="background-color: #ffffff;">
+        <div class="card-body">
+            <div class="font-weight-bold text-info text-uppercase mb-1" style="font-size: 20px; color: #17a2b8;">
+                <span style="font-size: 24px; font-weight: bold;">4</span> <!-- This is the card number -->
+            </div>
+            <div class="row no-gutters align-items-center">
+
+                <!-- Centered Image Container -->
+                
+
+
+                <div class="text-center mb-3 logo-animation-container">
+                    <img class="logo-animation" src="{% static 'logo/Picture4.png' %}" alt="Logo" style="width: 120px; height: auto;">
+                </div>
+
+                <div class="col mr-2">
+                    <div class="font-weight-bold text-info text-uppercase mb-1" style="font-size: 20px; color: #17a2b8;">
+                        𝐖𝐚𝐭𝐞𝐫 𝐒𝐮𝐩𝐩𝐥𝐲 𝐒𝐭𝐚𝐭𝐮𝐬
+                    </div>
+                    <p><strong>{{ selected_date|date:"F j, Y" }}</strong></p>
+
+                    <!-- Buttons to Switch Between Data Types -->
+                    <div class="btn-group mb-3" role="group" aria-label="Data Type">
+                        <button type="button" class="btn btn-sm" style="background-color: #17a2b8; color: white;" onclick="showData('tubewell')">TubeWell Status</button>
+                        <button type="button" class="btn btn-sm" style="background-color: #6c757d; color: white;" onclick="showData('waterSupply')">Water Supply</button>
+                        <button type="button" class="btn btn-sm" style="background-color: #17a2b8; color: white;" onclick="showData('waterQuality')">Water Quality</button>
+                    </div>
+                    
+
+                    <div>
+                        <a href="{% url 'tubewell_attendance_summary' %}" class="btn" style="background-color: #17a2b8; color: white;">
+                            <!-- Add the icon to the left of the text -->
+                            <i class="fas fa-tasks"></i> Summary
+                        </a>
+                    </div>
+                    
+
+                    <!-- TubeWell Status Data -->
+                    <div id="tubewellData" class="data-section">
+
+                        <table class="table table-borderless">
+                            <tbody>
+                                <tr>
+                                <td style="text-align: center; font-size: 15px; color: #17a2b8;">
+                                    <strong>TubeWell Status</strong>
+                                </td>                                
+                                </tr>
+                                
+                                <tr>
+                                    <td><strong>Total TubeWells</strong></td>
+                                    <td>{{ total_tubewells }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Operational</td>
+                                    <td>{{ total_functional_tubewells }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Non-Operational</td>
+                                    <td>{{ total_non_operational_tubewells }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Non-Functional</td>
+                                    <td>{{ total_non_functional_tubewells }}</td>
+                                </tr>
+
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                                
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+                        <canvas id="tubeWellAttendanceChart" width="400" height="400"></canvas>
+                    </div>
+
+                    <!-- Water Supply Data -->
+                    <div id="waterSupplyData" class="data-section" style="display: none;">
+                      
+                        <table class="table table-borderless">
+                            <tbody>
+                                
+                                 <tr>
+                                <td style="text-align: center; font-size: 15px; color: #17a2b8;">
+                                    <strong>Water Supply</strong>
+                                </td>                                
+                                </tr>
+                                <tr>
+                                    <td>Total New Connections</td>
+                                    <td>{{ totals_water_supply.total_new_connections }}</td>
+                                </tr>
+
+                                <tr>
+                                    <td>Total Filtration Plants</td>
+                                    <td>{{ total_filters }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Functional Filtration Plants</td>
+                                    <td>{{ total_functional_filters }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Non-Functional Filtration Plants</td>
+                                    <td>{{ total_non_functional_filters }}</td>
+                                </tr>
+                                
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                                
+                            </tbody>
+                        </table>
+                        <canvas id="waterSupplyChart" width="400" height="400"></canvas>
+                    </div>
+
+                    <!-- Water Quality Data -->
+                    <div id="waterQualityData" class="data-section" style="display: none;">
+                       
+                        <table class="table table-borderless">
+                            <tbody>
+
+                                <tr>
+                                <td style="text-align: center; font-size: 15px; color: #17a2b8;">
+                                    <strong>Water Quality</strong>
+                                </td>                                
+                                </tr>
+
+                                {% for location, total_tests in location_totals.items %}
+                                <tr>
+                                    <td><strong>Total Test</strong></td>
+                                    <td>{{ total_tests }}</td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+
+                                
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        <canvas id="testsChart" width="400" height="400"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Function to show selected data type
+    function showData(type) {
+        // Hide all data sections
+        document.querySelectorAll('.data-section').forEach(function(section) {
+            section.style.display = 'none';
+        });
+
+        // Show the selected data section
+        document.getElementById(type + 'Data').style.display = 'block';
+    }
+
+    // Initialize the TubeWell Status data as the default visible section
+    showData('tubewell');
+
+    // TubeWell Attendance Chart
+    var ctxTubeWell = document.getElementById('tubeWellAttendanceChart').getContext('2d');
+    var tubeWellAttendanceChart = new Chart(ctxTubeWell, {
+        type: 'bar',
+        data: {
+            labels: ['Total TubeWells', 'Operational', 'Non-Operational', 'Non-Functional'],
+            datasets: [{
+                label: 'TubeWell Status',
+                data: [{{ total_tubewells }}, {{ total_functional_tubewells }}, {{ total_non_operational_tubewells }}, {{ total_non_functional_tubewells }}],
+                backgroundColor: ['rgba(75, 192, 192, 0.6)', 'rgba(54, 162, 235, 0.6)', 'rgba(255, 99, 132, 0.6)', 'rgba(255, 206, 86, 0.6)'],
+                borderColor: ['rgba(75, 192, 192, 1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 99, 132, 1)', 'rgba(255, 206, 86, 1)'],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true }
+            },
+            plugins: { legend: { display: true, position: 'bottom' } }
+        }
+    });
+
+    // Water Supply Chart
+       var ctxWaterSupply = document.getElementById('waterSupplyChart').getContext('2d');
+    var waterSupplyChart = new Chart(ctxWaterSupply, {
+        type: 'bar', // Change type to 'bar'
+        data: {
+            labels: ['Functional Plants', 'Non-Functional Plants'],
+            datasets: [{
+                label: 'Water Supply Overview',
+                data: [
+                    {{ total_functional_filters|default:0 }}, 
+                    {{ total_non_functional_filters|default:0 }}
+                ],
+                backgroundColor: ['rgba(54, 162, 235, 0.7)', 'rgba(255, 99, 132, 0.7)'],
+                borderColor: ['rgba(54, 162, 235, 1)', 'rgba(255, 99, 132, 1)'],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true // Ensure the y-axis starts at zero
+                }
+            },
+            plugins: { 
+                legend: { 
+                    display: true, 
+                    position: 'bottom' 
+                }
+            }
+        }
+    });
+
+    // Water Quality Tests Chart
+    var ctxTests = document.getElementById('testsChart').getContext('2d');
+    var testsChart = new Chart(ctxTests, {
+        type: 'bar',
+        data: {
+            labels: [{% for location, total_tests in location_totals.items %}'Test',{% endfor %}],
+            datasets: [{
+                label: 'Total Tests by Location',
+                data: [{% for location, total_tests in location_totals.items %}{{ total_tests }},{% endfor %}],
+                backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true } },
+            plugins: { legend: { display: true, position: 'bottom' } }
+        }
+    });
+</script>
+
+
+
+
+
+
+    
+                    </div>
+            </div>
+
+
+
+
+
+            <!-- Second Set of Cards -->
+            <div class="carousel-item">
+                <div class="row">
+
+
+<!-- Card 5 -->
+<!-- Combined Sanitation Overview Card -->
+<div class="col-lg-3 col-md-6 mb-4">
+    <div class="card border-left-success shadow h-100 py-2 hover-effect">
+        <div class="card-body">
+            <div class="row no-gutters align-items-center">
+                <div class="col mr-2">
+                    <!-- Card Number and Header -->
+                    <div class="font-weight-bold text-success text-uppercase mb-1" style="font-size: 20px;">
+                        <span style="font-size: 24px; font-weight: bold;">5</span> <!-- This is the card number -->
+                    </div>
+
+                    <!-- Centered Image Container (Logo) -->
+                    <div class="row no-gutters justify-content-center mt-3 mb-4">
+
+
+                        <div class="text-center mb-3 logo-animation-container">
+                            <img class="logo-animation" src="{% static 'logo/Picture7.png' %}" alt="Logo" style="width: 80px; height: auto;">
+                        </div>
+
+                    </div>
+
+
+                                
+                            <!-- Updated text color to success for consistency -->
+                            <div class="font-weight-bold text-success mb-1" style="font-size: 20px;">
+                                𝐒𝐚𝐧𝐢𝐭𝐚𝐭𝐢𝐨𝐧 𝐒𝐭𝐚𝐭𝐮𝐬
+                            </div>
+                            <p><strong>{{ selected_date|date:"F j, Y" }}</strong></p>
+        
+                            <!-- Buttons to Switch Between Data Types -->
+                            <div class="btn-group mb-3" role="group" aria-label="Sanitation Data Type">
+                                <button type="button" class="btn btn-success btn-sm" onclick="showData('primary')">Primary</button>                 
+                                <button type="button" class="btn btn-sm" style="background-color: #6c757d; color: white;" onclick="showData('secondary')">secondary</button>
+                                <button type="button" class="btn btn-success btn-sm" onclick="showData('additional')">Additional Activities</button>
+                            </div>
+        
+                            <div>
+                                <a href="{% url 'sanitation_summary' %}" class="btn btn-success btn-sm">
+                                    <!-- Add the sanitation-related icon to the left of the text -->
+                                    <i class="fas fa-trash-alt"></i> Summary
+                                </a>
+                            </div>
+                                               
+        
+        
+                            <!-- Primary Data -->
+                            <div id="primaryData" class="data-section">
+                              
+                                <table class="table table-borderless">
+                                    <tbody>
+                                        <tr>
+                                        <td style="text-align: center; font-size: 15px; color: #17b824d2;">
+                                            <strong>Primary</strong>
+                                        </td>                                
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Total Containers</strong></td>
+                                            <td>{{ total_containers }}</td>
+                                        </tr>
+        
+                                        <tr>
+                                            <td>Lifted Containers</td>
+                                            <td>{{ total_lifted_containers }}</td>
+                                        </tr>
+        
+                                        <tr>
+                                            <td>Unlifted Containers</td>
+                                            <td>{{ total_unlifted_containers }}</td>
+                                        </tr>
+                                      
+        
+                                        <tr>
+                                            <td><strong>Total Moqas</strong></td>
+                                            <td>{{ total_moqas }}</td>
+                                        </tr>
+        
+                                        <tr>
+                                            <td>Lifted Moqas</td>
+                                            <td>{{ total_lifted_moqas }}</td>
+                                        </tr>
+        
+        
+                                        <tr>
+                                            <td>Unlifted Moqas</td>
+                                            <td>{{ total_unlifted_moqas }}</td>
+                                        </tr>
+                                       
+        
+        
+                                       
+                                        <!-- <tr>
+                                            <td>Primary Vehicle Trips</td>
+                                            <td>{{ total_primary_trips }}</td>
+                                        </tr> -->
+        
+                                        <tr>
+                                            <td>Primary Waste Collection (Tons)</td>
+                                            <td>{{ totals.primary_waste_collection }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                         <tr>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                                    <canvas id="sanitationBarChart" width="400" height="400"></canvas>
+        
+                            </div>
+        
+                            <!-- Secondary Data -->
+                            <div id="secondaryData" class="data-section" style="display: none;">
+                               
+                                <table class="table table-borderless">
+                                    <tbody>
+                                         <tr>
+                                        <td style="text-align: center; font-size: 15px; color: #17b824d2;">
+                                            <strong>Secondary</strong>
+                                        </td>                                
+                                        </tr>
+                                        <tr>
+                                            <td>Waste Dumped at LFS (Tons)</td>
+                                            <td>{{ totals.waste_dumped_at_lfs }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Waste Locally Dumped (Tons)</td>
+                                            <td>{{ totals.waste_locally_dumped }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>LFS Trips (No)</td>
+                                            <td>{{ totals.lfs_trips }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Local Dumping Trips (No)</td>
+                                            <td>{{ totals.local_dumping_trips }}</td>
+                                        </tr>
+        
+                                        <!-- <tr>
+                                            <td>Secondary Vehicle Trips</td>
+                                            <td>{{ total_secondary_trips }}</td>
+                                        </tr> -->
+                                    </tbody>
+                                    <tr>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                    <tr>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                    <tr>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                    <tr>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                    
+                                </table>
+                                <canvas id="sanitationChart2" width="400" height="400"></canvas>
+                                
+                            </div>
+        
+                            <!-- Additional Activities Data -->
+                            <div id="additionalData" class="data-section" style="display: none;">
+                             
+                                <table class="table table-borderless">
+                                    <tbody>
+                                         <tr>
+                                        <td style="text-align: center; font-size: 15px; color: #17b824d2;">
+                                            <strong>Additional Activities</strong>
+                                        </td>                                
+                                        </tr>
+                                        <tr>
+                                            <td>Door to Door Collection</td>
+                                            <td>{{ totals.door_to_door_collection }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Replacement of Manhole Covers</td>
+                                            <td>{{ totals.replacement_of_manhole_covers }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Cleaning De-siltation of Manhole</td>
+                                            <td>{{ totals.cleaning_de_siltation_of_manhole }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Cleaning De-siltation of Drain Sewers (Km)</td>
+                                            <td>{{ totals.cleaning_de_siltation_of_drain_sewars }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Fumigation Sprays</td>
+                                            <td>{{ totals.fumigation_sprays }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>IR Spray</td>
+                                            <td>{{ totals.ir_spray }}</td>
+                                        </tr>
+        
+                                        <!-- <tr>
+                                            <td>Total Fuel Issued (Liters)</td>
+                                            <td>{{ total_fuel_issued }}</td>
+                                        </tr> -->
+                                    </tbody>
+                                </table>
+                                <canvas id="sanitationChart3" width="400" height="400"></canvas>
+                                
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+           
+           // Sanitation Bar Chart for Primary Data
+        var ctxSanitationBar = document.getElementById('sanitationBarChart').getContext('2d');
+        var sanitationBarChart = new Chart(ctxSanitationBar, {
+            type: 'bar',
+            data: {
+                labels: ['Total Containers', 'Lifted Containers', 'Unlifted Containers', 'Total Moqas', 'Lifted Moqas', 'Unlifted Moqas'],
+                datasets: [{
+                    label: 'Sanitation Overview - Primary',
+                    data: [
+                        {{ total_containers }},
+                        {{ total_lifted_containers }},
+                        {{ total_unlifted_containers }},
+                        {{ total_moqas }},
+                        {{ total_lifted_moqas }},
+                        {{ total_unlifted_moqas }}
+                    ],
+                    backgroundColor: [
+                        'rgba(75, 192, 192, 0.7)', // Teal
+                        'rgba(255, 99, 132, 0.7)', // Red
+                        'rgba(255, 206, 86, 0.7)', // Yellow
+                        'rgba(54, 162, 235, 0.7)', // Blue
+                        'rgba(255, 159, 64, 0.7)', // Orange
+                        'rgba(153, 102, 255, 0.7)'  // Purple
+                    ],
+                    borderColor: [
+                        'rgba(75, 192, 192, 1)', // Teal
+                        'rgba(255, 99, 132, 1)', // Red
+                        'rgba(255, 206, 86, 1)', // Yellow
+                        'rgba(54, 162, 235, 1)', // Blue
+                        'rgba(255, 159, 64, 1)', // Orange
+                        'rgba(153, 102, 255, 1)'  // Purple
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                }
+            }
+        });
+        
+            // Sanitation Pie Chart for Secondary
+            var ctxSanitation2 = document.getElementById('sanitationChart2').getContext('2d');
+        var sanitationChart2 = new Chart(ctxSanitation2, {
+            type: 'bar',  // Changed to 'bar' for a bar chart
+            data: {
+                labels: ['Waste Dumped at LFTS', 'Waste Locally Dumped', 'LFS Trips', 'Local Dumping Trips'],
+                datasets: [{
+                    label: 'Secondary',
+                    data: [
+                        {{ totals.waste_dumped_at_lfs }},
+                        {{ totals.waste_locally_dumped }},
+                        {{ totals.lfs_trips }},
+                        {{ totals.local_dumping_trips }}
+                    ],
+                    backgroundColor: [
+                        'rgba(75, 192, 192, 0.7)', // Teal
+                        'rgba(255, 99, 132, 0.7)', // Red
+                        'rgba(255, 206, 86, 0.7)', // Yellow
+                        'rgba(54, 162, 235, 0.7)'  // Blue
+                    ],
+                    borderColor: [
+                        'rgba(75, 192, 192, 1)', // Teal
+                        'rgba(255, 99, 132, 1)', // Red
+                        'rgba(255, 206, 86, 1)', // Yellow
+                        'rgba(54, 162, 235, 1)'  // Blue
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true, // Ensures the y-axis starts at 0
+                        title: {
+                            display: true,
+                            text: 'Amount' // Label for y-axis
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Categories' // Label for x-axis
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                label += context.raw; // Show the raw data value on hover
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Sanitation Pie Chart for Additional Activities
+        var ctxSanitation3 = document.getElementById('sanitationChart3').getContext('2d');
+        var sanitationChart3 = new Chart(ctxSanitation3, {
+            type: 'bar',  // Changed to 'bar' for a bar chart
+            data: {
+                labels: ['Door to Door Collection', 'Replacement of Manhole Covers', 'Cleaning De-siltation of Manhole', 'Cleaning De-siltation of Drain Sewers (Km)', 'Fumigation Sprays', 'IR Spray'],
+                datasets: [{
+                    label: 'Additional Activities',
+                    data: [
+                        {{ totals.door_to_door_collection }},
+                        {{ totals.replacement_of_manhole_covers }},
+                        {{ totals.cleaning_de_siltation_of_manhole }},
+                        {{ totals.cleaning_de_siltation_of_drain_sewars }},
+                        {{ totals.fumigation_sprays }},
+                        {{ totals.ir_spray }}
+                    ],
+                    backgroundColor: [
+                        'rgba(75, 192, 192, 0.7)', // Teal
+                        'rgba(255, 99, 132, 0.7)', // Red
+                        'rgba(255, 206, 86, 0.7)', // Yellow
+                        'rgba(54, 162, 235, 0.7)', // Blue
+                        'rgba(153, 102, 255, 0.7)', // Purple
+                        'rgba(255, 159, 64, 0.7)'  // Orange
+                    ],
+                    borderColor: [
+                        'rgba(75, 192, 192, 1)', // Teal
+                        'rgba(255, 99, 132, 1)', // Red
+                        'rgba(255, 206, 86, 1)', // Yellow
+                        'rgba(54, 162, 235, 1)', // Blue
+                        'rgba(153, 102, 255, 1)', // Purple
+                        'rgba(255, 159, 64, 1)'  // Orange
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true, // Ensures the y-axis starts at 0
+                        title: {
+                            display: true,
+                            text: 'Count' // Label for y-axis
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Activities' // Label for x-axis
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                label += context.raw; // Show the raw data value on hover
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        </script>
+        
+        
+        
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ <!-- Today's Media Posts Overview Card -->
+<div class="col-lg-3 col-md-6 mb-4">
+    <div class="card border-left-primary shadow h-100 py-2 hover-effect" style="background-color: #ffffff;">
+        <div class="card-body">
+            <div class="font-weight-bold text-primary text-uppercase mb-1" style="font-size: 20px;">
+                <span style="font-size: 24px; font-weight: bold; color: #007bff;">6</span> <!-- Card number -->
+            </div>
+            <div class="row no-gutters align-items-center">
+
+                <!-- Centered Image Container -->
+                
+                
+                <div class="text-center mb-3 logo-animation-container">
+                    <img class="logo-animation" src="{% static 'logo/Picture5.png' %}" alt="Logo" style="width: 130px; height: auto;">
+                </div>
+                
+                <div class="col mr-2">
+                        <!-- Updated text color for Media label -->
+                        <div class="font-weight-bold text-primary text-uppercase mb-1" style="font-size: 20px; color: #007bff;">
+                            𝐌𝐞𝐝𝐢𝐚 𝐒𝐭𝐚𝐭𝐮𝐬
+                        </div>
+                        <p><strong>{{ selected_date|date:"F j, Y" }}</strong></p>
+                        
+                        <div>
+                            <a href="{% url 'media_summary' %}" class="btn btn-primary btn-sm">
+                                <!-- Add the media-related icon to the left of the text -->
+                                <i class="fas fa-film"></i> Summary
+                            </a>
+                        </div>
+                        
+                        
+                        <table class="table table-borderless">
+                            
+                            <tbody>
+                                {% for post_type, count in post_type_counts.items %}
+                                <tr>
+                                    <td><strong>{{ post_type }}</strong></td>
+                                    <td>{{ count }}</td>
+                                </tr>
+                                
+                                {% endfor %}
+                            </tbody>
+                            <tr>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td></td>
+                            </tr> <tr>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                             <tr>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                        </table>
+                        <!-- Media Posts Chart -->
+                        <canvas id="mediaPostsChart" width="400" height="400"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </a>
+</div>
+
+<!-- Chart Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Chart for Media Posts Overview
+    const mediaPostsCtx = document.getElementById('mediaPostsChart').getContext('2d');
+    new Chart(mediaPostsCtx, {
+        type: 'bar',
+        data: {
+            labels: [{% for post_type in post_type_counts.keys %}'{{ post_type }}',{% endfor %}],
+            datasets: [{
+                data: [{% for count in post_type_counts.values %}{{ count }},{% endfor %}],
+                backgroundColor: ['#4e73df', '#36b9cc', '#1cc88a', '#f6c23e', '#e74a3b'],
+                borderWidth: 0 // Removes the borders from the bars
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false // Hides the legend as it's not needed
+                }
+            }
+        }
+    });
+</script>
+
+
+
+        
+
+
+
+<!-- Card 7 -->
+                <!-- Today's complain Overview Card -->
+                <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="card border-left-warning shadow h-100 py-2 hover-effect">
+                            <div class="card-body">
+
+
+
+                                
+                                <div class="font-weight-bold text-warning text-uppercase mb-1" style="font-size: 20px;">
+                                    <span style="font-size: 24px; font-weight: bold;">7</span> <!-- Card number -->
+                                </div>
+
+                                <div class="text-center mb-3 logo-animation-container">
+                                    <img class="logo-animation" src="{% static 'logo/complain.png' %}" alt="Logo" style="width: 120px; height: auto;">
+                                </div>
+                                    
+
+                               
+
+
+                                
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="font-weight-bold text-warning text-uppercase mb-1" style="font-size: 20px;">
+                                            𝐂𝐨𝐦𝐩𝐥𝐚𝐢𝐧𝐭 𝐒𝐭𝐚𝐭𝐮𝐬
+                                        </div>
+
+                                        <p><strong>{{ selected_date|date:"F j, Y" }}</strong></p>
+                                    
+
+
+
+                                        <div>
+                                            <a href="{% url 'complaint_summary' %}" class="btn btn-warning btn-sm">
+                                                <!-- Add the complaint-related icon to the left of the text -->
+                                                <i class="fas fa-exclamation-triangle"></i> Summary
+                                            </a>
+                                        </div>
+                                        
+
+                                        
+                                        <table class="table table-borderless mt-3">
+                                            <tbody>
+                                                <tr>
+                                                    <td><strong>Complaints Received</strong></td>
+                                                    <td>{{ total_complaints }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Complaints Resolved</td>
+                                                    <td>{{ total_resolved_complaints }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Complaints Pending</td>
+                                                    <td>{{ total_pending_complaints }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td></td>
+                                                    <td></td>
+                                                </tr>
+                                                <tr>
+                                                    <td></td>
+                                                    <td></td>
+                                                </tr>
+                                                <tr>
+                                                    <td></td>
+                                                    <td></td>
+                                                </tr>
+                                                <tr>
+                                                    <td></td>
+                                                    <td></td>
+                                                </tr>
+                                                <tr>
+                                                    <td></td>
+                                                    <td></td>
+                                                </tr>
+                                                <tr>
+                                                    <td></td>
+                                                    <td></td>
+                                                </tr>
+                                                <tr>
+                                                    <td></td>
+                                                    <td></td>
+                                                </tr>
+                                                <tr>
+                                                    <td></td>
+                                                    <td></td>
+                                                </tr>
+                                                <tr>
+                                                    <td></td>
+                                                    <td></td>
+                                                </tr>
+                                                <tr>
+                                                    <td></td>
+                                                    <td></td>
+                                                </tr>
+                                                <tr>
+                                                    <td></td>
+                                                    <td></td>
+                                                </tr>
+                                                 <tr>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                            </tbody>
+                                        </table>
+                                        <!-- Canvas for the Bar Chart -->
+                                        <canvas id="complaintsBarChart" width="400" height="400"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                
+                <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                <script>
+                    // Complaints Bar Chart
+                    var ctxComplaints = document.getElementById('complaintsBarChart').getContext('2d');
+                    var complaintsBarChart = new Chart(ctxComplaints, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Resolved', 'Pending'],
+                            datasets: [{
+                                label: 'Complaints Overview',
+                                data: [
+                                    {{ total_resolved_complaints }}, 
+                                    {{ total_pending_complaints }}
+                                ],
+                                backgroundColor: [
+                                    'rgba(75, 192, 192, 0.7)',  // Teal for resolved
+                                    'rgba(255, 159, 64, 0.7)'  // Orange for pending
+                                ],
+                                borderColor: [
+                                    'rgba(75, 192, 192, 1)',  // Teal for resolved
+                                    'rgba(255, 159, 64, 1)'  // Orange for pending
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'top'
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Number of Complaints'
+                                    }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Status'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                </script>
+              
+              
+
+
+
+            
+               <!-- Card 8 -->
+            
+               <!-- CLC Reports Overview Card -->
+            
+               <div class="col-lg-3 col-md-6 mb-4">
+                <div class="card border-left-info shadow h-100 py-2 hover-effect">
+                    <div class="card-body">
+                        <div class="font-weight-bold text-info text-uppercase mb-1" style="font-size: 20px;">
+                            <span style="font-size: 24px; font-weight: bold;">8</span> <!-- This is the card number -->
+                        </div>
+            
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+
+                                <div class="text-center mb-3 logo-animation-container">
+                                    <img class="logo-animation" src="{% static 'logo/clc.png' %}" alt="Logo" style="width: 120px; height: auto;">
+                                </div>
+                                    
+
+
+                                <div class="font-weight-bold text-info text-uppercase mb-1" style="font-size: 20px;">
+                                    𝐂𝐋𝐂 𝐒𝐭𝐚𝐭𝐮𝐬
+                                </div>
+                                
+                                <p><strong>{{ selected_date|date:"F j, Y" }}</strong></p>
+                                
+                                <div>
+                                    <a href="{% url 'clc_summary' %}" class="btn btn-info btn-sm">
+                                        <!-- Add the info-related icon to the left of the text -->
+                                        <i class="fas fa-info-circle"></i> Summary
+                                    </a>
+                                </div>
+                                
+
+
+                    <!-- Display a summary of CLC activities -->
+                    <table class="table table-borderless mt-3">
+                        <tbody>
+                            <tr>
+                                <td><strong>Total Activities:</strong></td>
+                                <td>{{ total_clc_reports }}</td>
+                            </tr>
+                            {% for activity in clc_activity_data %}
+                            <tr>
+                                <td>{{ activity.activity__name }}</td>
+                                <td>{{ activity.total_reports }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </table>
+            
+                    <!-- Bar Chart for CLC Activities -->
+                    <canvas id="clcActivityChart" width="400" height="400"></canvas>
+                </div>
+            </div>
+            </div>
+            </div>
+            </div>
+            
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            
+          <script>
+    var ctx = document.getElementById('clcActivityChart').getContext('2d');
+    var clcActivityChart = new Chart(ctx, {
+        type: 'bar', // Change type to bar
+        data: {
+            labels: [
+                {% for activity in clc_activity_data %}'{{ activity.activity__name }}',{% endfor %}
+            ],
+            datasets: [{
+                label: 'Total Reports', // Add label for the dataset
+                data: [
+                    {% for activity in clc_activity_data %}{{ activity.total_reports }},{% endfor %}
+                ],
+                backgroundColor: [
+                    'rgba(54, 162, 235, 0.6)', 
+                    'rgba(255, 99, 132, 0.6)', 
+                    'rgba(255, 206, 86, 0.6)', 
+                    'rgba(75, 192, 192, 0.6)', 
+                    'rgba(153, 102, 255, 0.6)', 
+                    'rgba(255, 159, 64, 0.6)'
+                ], 
+                borderColor: [
+                    'rgba(54, 162, 235, 1)', 
+                    'rgba(255, 99, 132, 1)', 
+                    'rgba(255, 206, 86, 1)', 
+                    'rgba(75, 192, 192, 1)', 
+                    'rgba(153, 102, 255, 1)', 
+                    'rgba(255, 159, 64, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: true, // Show the legend
+                },
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Activity Names' // Label for X-axis
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Total Reports' // Label for Y-axis
+                    },
+                    beginAtZero: true // Start Y-axis at zero
+                }
+            }
+        }
+    });
+</script>
+  
+        
+                
+            </div>
+        </div>
+        
+
+        <!-- 3 Set of Cards -->
+        <div class="carousel-item">
+            <div class="row">
+
+
+
+        
+<!-- Card for Revenue Overview -->
+<div class="col-lg-3 col-md-6 mb-4">
+    <div class="card border-left-info shadow h-100 py-2 hover-effect">
+        <div class="card-body">
+            <div class="row no-gutters align-items-center">
+                <div class="col mr-2">
+
+                    <div class="font-weight-bold text-info text-uppercase mb-1" style="font-size: 20px;">
+                        <span style="font-size: 24px; font-weight: bold;">9</span> <!-- Total Recovery -->
+                    </div>
+                    
+                    <div class="text-center mb-3 logo-animation-container">
+                        <img class="logo-animation" src="{% static 'logo/REV.jpg' %}" alt="Logo" style="width: 120px; height: 220;">
+                    </div>
+
+                    <div class="font-weight-bold text-info text-uppercase mb-1" style="font-size: 20px;">
+                        𝐑𝐞𝐯𝐞𝐧𝐮𝐞 𝐒𝐭𝐚𝐭𝐮𝐬
+                    </div>
+
+                    <p><strong>{{ selected_date|date:"F j, Y" }}</strong></p>
+
+                    <div>
+                        <a href="{% url 'revenue_summary' %}" class="btn btn-info btn-sm">
+                            <!-- Add the revenue-related icon to the left of the text -->
+                            <i class="fas fa-money-bill-wave"></i> Summary
+                        </a>
+                    </div>
+                    
+
+                    <table class="table table-borderless mt-3">
+                        <tbody>
+                            <tr>
+                                <td>Total Recovery of the Day WS/SWM</td>
+                                <td>{{ revenue_totals.total_recovery_of_day|floatformat:2 }}</td>
+                            </tr>
+                            <tr>
+                                <td>Total Revenue of the Day</td>
+                                <td>{{ revenue_totals.total_billed_amount|floatformat:2 }}</td>
+                            </tr>
+                            <tr>
+                                <td>Total Number of Bills Paid</td>
+                                <td>{{ revenue_totals.total_number_of_bills_paid }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- Canvas for Revenue Chart -->
+                    <canvas id="revenueChart" width="400" height="400"></canvas>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script to Create the Bar Chart -->
+<script>
+    var ctx = document.getElementById('revenueChart').getContext('2d');
+    var revenueChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Total Recovery', 'Total Revenue', 'Bills Paid'], // Labels for the bars
+            datasets: [{
+                label: 'Revenue Status',
+                data: [
+                    {{ revenue_totals.total_recovery_of_day|floatformat:2 }},
+                    {{ revenue_totals.total_billed_amount|floatformat:2 }},
+                    {{ revenue_totals.total_number_of_bills_paid }}
+                ], // Dynamic data inserted here
+                backgroundColor: [
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(75, 192, 192, 0.2)'
+                ],
+                borderColor: [
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(75, 192, 192, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+
+                
+            </div>
+        </div>
+        
+
+
+
+        
+         <!-- Carousel controls (Previous and Next buttons) -->
+         <a class="carousel-control-prev" href="#dashboardCarousel" role="button" data-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="sr-only">Previous</span>
+        </a>
+        <a class="carousel-control-next" href="#dashboardCarousel" role="button" data-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="sr-only">Next</span>
+        </a>
+
+
+    </div>
+</div>
+
+
+           
+<!-- Include Bootstrap JS and jQuery for carousel functionality -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
+{% endblock %}

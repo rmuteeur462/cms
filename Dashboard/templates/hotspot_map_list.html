@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% load custom_filters %}
+{% block content %}
+
+<div class="container-fluid mt-3">
+
+  <div class="d-flex flex-column justify-content-center align-items-center gap-4">
+    <div class="header-content">
+        <h1 class="display-5 fw-bold mb-2">
+            <span class="text-dark">🌧️ WSSP Urban Flooding Hotspots</span>
+          </h1>
+    </div>
+</div>
+  <p class="text-center text-muted mb-3">Total Hotspots: <b>{{ hotspots|length }}</b></p>
+
+  <form method="get" class="mb-3 d-flex justify-content-center">
+    <label for="location" class="me-2 fw-bold">Filter by Location:</label>
+    <select name="location" id="location" class="form-select w-auto" onchange="this.form.submit()">
+      <option value="">All Locations</option>
+      {% for loc in locations %}
+        <option value="{{ loc.id }}" {% if selected_location == loc.id %}selected{% endif %}>
+          {{ loc.location_name }}
+        </option>
+      {% endfor %}
+    </select>
+  </form>
+  
+  <div id="map-container" class="position-relative">
+    <div id="map" class="shadow-sm rounded" style="height:85vh;width:100%;border:1px solid #ddd;"></div>
+
+    <!-- Legend -->
+    <div id="legend" class="p-2 rounded shadow-sm bg-white">
+        <h6 class="fw-bold mb-2">Legend</h6>
+        <div class="d-flex align-items-center mb-1">
+          <span class="legend-color" style="background:red;"></span>
+          <span class="ms-2">Locations Previously Affected by Urban Flooding</span>
+        </div>
+        <div class="d-flex align-items-center">
+          <span class="legend-color" style="background:blue;"></span>
+          <span class="ms-2">Active Urban Flooding Hotspot</span>
+        </div>
+      </div>
+      
+  </div>
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v7.5.1/ol.css">
+<script src="https://cdn.jsdelivr.net/npm/ol@v7.5.1/dist/ol.js"></script>
+
+<script>
+const hotspots = [
+  {% for hotspot in hotspots %}
+  {
+    id: {{ hotspot.id }},
+    name: "{{ hotspot.name|escapejs }}",
+    zone: "{{ hotspot.zone|escapejs }}",
+    uc: "{{ hotspot.uc|escapejs }}",
+    lat: {{ hotspot.lat }},
+    lon: {{ hotspot.lon }},
+    supervisor: "{{ hotspot.supervisor|escapejs }} ({{ hotspot.supervisor_phone }})",
+    officer: "{{ hotspot.officer|escapejs }} ({{ hotspot.officer_phone }})",
+    last_intensity: "{{ hotspot.last_intensity }}",
+    has_urban: {{ hotspot.has_urban|yesno:"true,false" }},
+    history: [
+      {% for e in events_by_hotspot|get_item:hotspot.id %}
+      "{{ e.created_at|date:'Y-m-d H:i' }} - Rainfall Intensity: {{ e.get_rainfall_intensity_display }}{% if e.remarks %} ({{ e.remarks|escapejs }}){% endif %}",
+      {% endfor %}
+    ]
+  },
+  {% endfor %}
+];
+
+const map = new ol.Map({
+  target: 'map',
+  layers: [new ol.layer.Tile({ source: new ol.source.OSM() })],
+  view: new ol.View({
+    center: ol.proj.fromLonLat([71.5249, 34.0151]),
+    zoom: 12
+  })
+});
+
+const vectorSource = new ol.source.Vector();
+hotspots.forEach(h => {
+  if (!isNaN(h.lat) && !isNaN(h.lon)) {
+    const color = h.has_urban ? "red" : "blue";
+    const feature = new ol.Feature({
+      geometry: new ol.geom.Point(ol.proj.fromLonLat([h.lon, h.lat])),
+      ...h,
+      coords: `${h.lat}, ${h.lon}`
+    });
+    feature.setStyle(new ol.style.Style({
+      image: new ol.style.Circle({
+        radius: 10,
+        fill: new ol.style.Fill({ color }),
+        stroke: new ol.style.Stroke({ color: '#333', width: 2 })
+      })
+    }));
+    vectorSource.addFeature(feature);
+  }
+});
+
+const vectorLayer = new ol.layer.Vector({ source: vectorSource });
+map.addLayer(vectorLayer);
+
+const extent = vectorSource.getExtent();
+if (vectorSource.getFeatures().length > 0) {
+  map.getView().fit(extent, { padding: [50,50,50,50] });
+}
+
+// Popup
+const container = document.createElement('div');
+container.className = 'ol-popup';
+Object.assign(container.style, {
+  background:'white',padding:'10px',border:'1px solid #ccc',
+  borderRadius:'8px',minWidth:'280px',maxWidth:'350px',
+  maxHeight:'300px',overflowY:'auto',boxShadow:'0 2px 8px rgba(0,0,0,0.3)'
+});
+
+const overlay = new ol.Overlay({
+  element: container,
+  autoPan: { animation: { duration: 250 } }
+});
+map.addOverlay(overlay);
+
+map.on("singleclick", evt => {
+  const feature = map.forEachFeatureAtPixel(evt.pixel, f => f);
+  if (feature) {
+    const d = feature.getProperties();
+    const history = d.history || [];
+    const historyHtml = history.length > 0 
+      ? `<ul class="mb-0 small">${history.map(i=>`<li>${i}</li>`).join("")}</ul>`
+      : `<p class="text-muted mb-0">No history available.</p>`;
+    container.innerHTML = `
+      <h5 class="fw-bold text-primary mb-1">${d.name}</h5>
+      <p class="mb-1"><b>Zone:</b> ${d.zone} | <b>UC:</b> ${d.uc}</p>
+      <p class="mb-1"><b>Supervisor:</b> ${d.supervisor}</p>
+      <p class="mb-1"><b>Officer:</b> ${d.officer}</p>
+      <p class="mb-2"><b>Coordinates:</b> ${d.coords}</p>
+      <h6 class="fw-bold border-top pt-2">📜 History</h6>
+      ${historyHtml}
+    `;
+    overlay.setPosition(feature.getGeometry().getCoordinates());
+    map.getView().animate({center:feature.getGeometry().getCoordinates(),zoom:16,duration:800});
+  } else {
+    overlay.setPosition(undefined);
+  }
+});
+
+// Reset View Button
+const zoomBtn = document.createElement("button");
+zoomBtn.textContent = "⤢ Reset View";
+Object.assign(zoomBtn.style,{
+  position:"absolute",top:"15px",right:"15px",padding:"8px 14px",
+  background:"#007bff",color:"#fff",border:"none",borderRadius:"5px",
+  cursor:"pointer",fontWeight:"bold",boxShadow:"0 2px 6px rgba(0,0,0,0.2)",
+  zIndex:"1000"
+});
+zoomBtn.addEventListener("click",()=>{
+  map.getView().fit(extent,{padding:[50,50,50,50],duration:800});
+  overlay.setPosition(undefined);
+});
+document.getElementById("map").appendChild(zoomBtn);
+</script>
+
+<style>
+#legend {
+  position:absolute;
+  bottom:20px;
+  left:20px;
+  width:180px;
+  font-size:0.9rem;
+  border:1px solid #ddd;
+}
+.legend-color {
+  display:inline-block;
+  width:16px;
+  height:16px;
+  border:1px solid #555;
+  border-radius:50%;
+}
+.ol-popup:after, .ol-popup:before {
+  top:100%;border:solid transparent;content:"";height:0;width:0;position:absolute;pointer-events:none;
+}
+.ol-popup:after {
+  border-top-color:white;border-width:10px;left:48%;margin-left:-10px;
+}
+.ol-popup:before {
+  border-top-color:#ccc;border-width:11px;left:48%;margin-left:-11px;
+}
+</style>
+
+{% endblock %}

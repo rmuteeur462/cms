@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    TubeWell Attendance Report
+{% endblock %}
+
+{% block content %}
+<h2 class="text-center">TubeWell Report</h2>
+
+<!-- Filter Form -->
+<form method="get" class="filter-form">
+    <div class="form-row">
+        <div class="form-group col-md-3">
+            <label for="from_date">From Date:</label>
+            <input type="date" id="from_date" name="from_date" class="form-control" value="{{ from_date|date:'Y-m-d' }}">
+        </div>
+        <div class="form-group col-md-3">
+            <label for="to_date">To Date:</label>
+            <input type="date" id="to_date" name="to_date" class="form-control" value="{{ to_date|date:'Y-m-d' }}">
+        </div>
+        <div class="form-group col-md-3">
+            <label for="location">Location:</label>
+            <select id="location" name="location" class="form-control">
+                <option value="">-- All Locations --</option>
+                {% for location in locations %}
+                    <option value="{{ location.location_name }}" {% if location.location_name == location_filter %}selected{% endif %}>
+                        {{ location.location_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group col-md-3">
+            <label for="tubewell_search">Search Tubewell (ID or Name):</label>
+            <input type="text" id="tubewell_search" name="search" class="form-control" value="{{ search_filter }}" placeholder="Search Tubewell ID or Name">
+        </div>
+        <div class="form-group col-md-3">
+            <label for="status_filter">Status:</label>
+            <select id="status_filter" name="status" class="form-control">
+                <option value="">-- All Statuses --</option>
+                <option value="functional" {% if status_filter == "functional" %}selected{% endif %}>Functional</option>
+                <option value="non_functional" {% if status_filter == "non_functional" %}selected{% endif %}>Non-Functional</option>
+                <option value="non_operational" {% if status_filter == "non_operational" %}selected{% endif %}>Non-Operational</option>
+            </select>
+        </div>
+    </div>
+    <div class="text-center">
+        <button type="submit" class="btn btn-primary">Generate Report</button>
+    </div>
+</form>
+
+<!-- CSV and PDF Download Buttons -->
+<div class="text-center mt-3">
+    <button id="downloadCSV" class="btn btn-success">Download CSV</button>
+    <button id="downloadPDF" class="btn btn-danger">Download PDF</button>
+</div>
+
+<!-- Attendance Table -->
+<div class="table-responsive mt-3">
+    <table class="table table-bordered table-hover shadow-sm bg-white" id="attendanceTable">
+        <thead class="bg-primary text-white">
+            <tr>
+                <th>Tubewell ID</th>
+                <th>Tubewell Name</th>
+                <th>Location</th>
+                <th>UC</th>
+                <th>Functional Days</th>
+                <th>Non-Functional Days</th>
+                <th>Non-Operational Days</th>
+                <th>Total Run Hours</th>
+                <th>Total Electricity Consumption</th>
+                <th>Total Water Produced</th>
+            
+            </tr>
+        </thead>
+        <tbody>
+            {% for attendance in attendance_data %}
+                <tr>
+                    <td>{{ attendance.tubewell_id }}</td>
+                    <td>{{ attendance.tubewell_name }}</td>
+                    <td>{{ attendance.location }}</td>
+                    <td>{{ attendance.uc }}</td>
+                    <td>{{ attendance.functional_days }}</td>
+                    <td>{{ attendance.non_functional_days }}</td>
+                    <td>{{ attendance.non_operational_days }}</td>
+                    <td>{{ attendance.run_hours_total }}</td>
+                    <td>{{ attendance.electricity_consume_total }}</td>
+                    <td>{{ attendance.water_produce_total }}</td>
+                
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="11" class="text-center"><strong>No Data Avaiable.</strong></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.21/jspdf.plugin.autotable.min.js"></script>
+
+<script>
+document.getElementById("downloadCSV").addEventListener("click", function() {
+    let table = document.getElementById("attendanceTable");
+    let rows = table.querySelectorAll("tr");
+    let csv = [];
+
+    rows.forEach(function(row) {
+        let cols = row.querySelectorAll("td, th");
+        let rowData = [];
+        cols.forEach(function(col) {
+            rowData.push(col.innerText);
+        });
+        csv.push(rowData.join(","));
+    });
+
+    let csvContent = "data:text/csv;charset=utf-8," + csv.join("\n");
+    let encodedUri = encodeURI(csvContent);
+    let link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "attendance_report.csv");
+    link.click();
+});
+
+
+document.getElementById('downloadPDF').addEventListener('click', function() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const table = document.getElementById('attendanceTable');
+    const rows = Array.from(table.querySelectorAll('tr'));
+
+    const imagePath = 'http://wod.wsspeshawar.org.pk:4002/static/logo/khan.png';
+
+    
+
+    doc.addImage(imagePath, 'PNG', -4, 5, 220, 30);
+
+    // Set header background color (Primary Blue - #007bff)
+    doc.setFillColor(0, 123, 255);
+    doc.rect(10, 40, 190, 10, 'F'); // Increased height for better spacing
+
+    doc.setFontSize(16);
+    doc.setTextColor(255, 255, 255); // White text
+    doc.setFont("helvetica", "bold");
+    doc.text("TubeWell Report", 86, 47); 
+
+    // Add selected date range inside the header
+    doc.setFontSize(12);
+
+    let header = [];
+    let headerCells = rows[0].querySelectorAll('th');
+    headerCells.forEach(function(cell) {
+        header.push(cell.textContent.trim());
+    });
+
+    let content = [];
+    rows.slice(1, rows.length - 1).forEach(function(row) { // Excluding the total row for now
+        let rowData = [];
+        row.querySelectorAll('td').forEach(function(cell) {
+            rowData.push(cell.textContent.trim());
+        });
+        content.push(rowData);
+    });
+
+    // Extracting total row separately
+    let totalRow = [];
+    let totalCells = rows[rows.length - 1].querySelectorAll('td');
+    totalCells.forEach(function(cell) {
+        totalRow.push(cell.textContent.trim());
+    });
+
+    doc.autoTable({
+        head: [header],
+        body: content,
+        startY: 65, // Moved down to accommodate the new header size
+        styles: {
+            fontSize: 6
+        },
+        headStyles: {
+            fillColor: [0, 123, 255], // Bootstrap Primary Blue
+            textColor: 255, // White text
+            fontStyle: 'bold'
+        }
+    });
+
+    // Adding the total row separately with header color
+    doc.autoTable({
+        body: [totalRow],
+        startY: doc.autoTable.previous.finalY + 2, // Positioning it right below the table
+        styles: {
+            fontSize: 10
+        },
+        bodyStyles: {
+            fillColor: [0, 123, 255], // Bootstrap Primary Blue
+            textColor: 123, // White text
+            fontStyle: 'bold'
+        }
+    });
+
+    doc.save('TubeWell_report.pdf');
+});
+</script>
+{% endblock %}
+
+{% endblock %}

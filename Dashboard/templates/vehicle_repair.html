@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    Vehicle Repair Management
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800" style="font-weight: bold; font-size: 1.5rem; text-align: center;">
+        Vehicle Repair & Maintenance - {{ report_date|date:"Y-m-d" }}
+    </h1>
+
+    <!-- Filter Form -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="form-inline mb-3">
+                <div class="form-group mr-3">
+                    <label for="date" class="mr-2">Select Date:</label>
+                    <input type="date" class="form-control" name="date" value="{{ report_date|date:'Y-m-d' }}" required>
+                </div>
+                <button type="submit" class="btn btn-primary mb-2">Filter</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add New Vehicle Repair Data Button -->
+    <button type="button" class="btn btn-primary mb-4" data-toggle="modal" data-target="#addRepairModal">
+        Add New Vehicle Repair Data
+    </button>
+
+    <!-- Add Repair Modal -->
+    <div class="modal fade" id="addRepairModal" tabindex="-1" role="dialog" aria-labelledby="addRepairModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addRepairModalLabel">Add New Vehicle Repair Data</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST" enctype="multipart/form-data" id="repairForm">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary" id="submitRepairForm">Add Data</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vehicle Repair Records Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h2 class="mt-4">Vehicle Repair Records</h2>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover shadow-sm bg-white">
+                    <thead class="bg-primary text-white">
+                        <tr>
+                            <th>Sr.No</th>
+                            <th>Location</th>
+                            <th>Vehicle</th>
+                            <th>Repair Description</th>
+                            <th>Cost</th>
+                            <th>Remarks</th>
+                            <th>Image</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for repair in repair_data %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ repair.location }}</td>
+                                <td>{{ repair.Vehicle }}</td>
+                                <td>{{ repair.Vehicle_repair }}</td>
+                                <td>{{ repair.cost }}</td>
+                                <td>{{ repair.remarks }}</td>
+                                <td>
+                                    {% if repair.image %}
+                                        <img src="{{ repair.image.url }}" alt="Repair Image" style="max-width: 100px;">
+                                    {% else %}
+                                        No image
+                                    {% endif %}
+                                </td>
+                                <td>{{ repair.date }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="9" class="text-center">No vehicle repair records found for {{ report_date }}.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+{% endblock %}

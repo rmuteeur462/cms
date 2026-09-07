@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block content %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+
+<h1 class="h3 mb-4 text-gray-800 text-center font-weight-bold">Urban Flood Report</h1>
+
+<div class="container-fluid py-4">
+   
+
+    <!-- Filters Card -->
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-header bg-primary text-white fw-semibold">
+        <i class="bi bi-funnel-fill"></i> Filters
+      </div>
+      <div class="card-body">
+        <form method="get" class="row g-3">
+          <!-- Start Date -->
+          <div class="col-md-2">
+            <label class="form-label fw-semibold">Start Date</label>
+            <input type="date" name="start_date" value="{{ selected.start_date }}" class="form-control">
+          </div>
+    
+          <!-- End Date -->
+          <div class="col-md-2">
+            <label class="form-label fw-semibold">End Date</label>
+            <input type="date" name="end_date" value="{{ selected.end_date }}" class="form-control">
+          </div>
+    
+          <!-- Hotspot -->
+          <div class="col-md-2">
+            <label class="form-label fw-semibold">Hotspot</label>
+            <select name="hotspot" class="form-select">
+              <option value="">All</option>
+              {% for hs in hotspots %}
+              <option value="{{ hs.id }}" {% if selected.hotspot == hs.id|stringformat:"s" %}selected{% endif %}>
+                {{ hs.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+    
+          <!-- Location -->
+          <div class="col-md-2">
+            <label class="form-label fw-semibold">Location</label>
+            <select name="location" class="form-select">
+              <option value="">All</option>
+              {% for l in locations %}
+              <option value="{{ l.id }}" {% if selected.location == l.id|stringformat:"s" %}selected{% endif %}>
+                {{ l.location_name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          
+    
+          <!-- Rainfall Intensity -->
+          <div class="col-md-2">
+            <label class="form-label fw-semibold">Rainfall Intensity</label>
+            <select name="intensity" class="form-select">
+              <option value="">All</option>
+              <option value="low" {% if selected.intensity == "low" %}selected{% endif %}>Low</option>
+              <option value="medium" {% if selected.intensity == "medium" %}selected{% endif %}>Medium</option>
+              <option value="high" {% if selected.intensity == "high" %}selected{% endif %}>High</option>
+            </select>
+          </div>
+    
+          <!-- ✅ Urban Flooding Filter -->
+          <div class="col-md-2">
+            <label class="form-label fw-semibold">Urban Flooding</label>
+            <select name="urban_flooding" class="form-select">
+              <option value="">All</option>
+              <option value="yes" {% if selected.urban_flooding == "yes" %}selected{% endif %}>Yes</option>
+              <option value="no" {% if selected.urban_flooding == "no" %}selected{% endif %}>No</option>
+            </select>
+          </div>
+    
+          <!-- Buttons -->
+          <div class="col-12 text-end mt-3">
+            <button class="btn btn-primary" type="submit">
+              <i class="bi bi-search"></i> Apply
+            </button>
+            <a href="{% url 'flood_report' %}" class="btn btn-secondary">
+              <i class="bi bi-arrow-repeat"></i> Reset
+            </a>
+            <button onclick="downloadTableAsCSV('floodTable')" type="button" class="btn btn-success shadow-sm">
+              <i class="bi bi-download"></i> Export CSV
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Table Card -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white fw-semibold">
+          <i class="bi bi-table"></i> Flood Report Table
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table id="floodTable" class="table table-striped table-bordered table-hover align-middle text-nowrap">
+              <thead class="table-light">
+                <tr>
+                  <th>#</th>
+                  <th>Hotspot</th>
+                  <th>Location</th>
+                  <th>UC</th>
+                  <th>Rain Start</th>
+                  <th>Rain End</th>
+                  <th>Urban Flooding Start</th>
+                  <th>Urban Flooding End</th>
+                  <th>Rainfall Intensity</th>
+                  <th style="width:200px; min-width:200px; max-width:200px;">Remarks</th>
+                  <th>Before Image</th>
+                  <th>After Image</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for e in events %}
+                <tr>
+                  <td>{{ forloop.counter }}</td>
+                  <td>{{ e.hotspot.name }}</td>
+                  <td>{{ e.hotspot.location.location_name }}</td>
+                  <td>{{ e.hotspot.uc.uc_name }}</td>
+                  <td>{{ e.rain_start_time|default:"-" }}</td>
+                  <td>{{ e.rain_end_time|default:"-" }}</td>
+                  <td>{{ e.urban_start_time|default:"-" }}</td>
+                  <td>{{ e.urban_end_time|default:"-" }}</td>
+                  <td>
+                    <span class="badge 
+                      {% if e.rainfall_intensity == 'low' %}bg-success
+                      {% elif e.rainfall_intensity == 'medium' %}bg-warning text-dark
+                      {% else %}bg-danger{% endif %}">
+                      {{ e.rainfall_intensity }}
+                    </span>
+                  </td>
+                  <td style="width:200px; min-width:200px; max-width:200px; white-space:normal;">
+                    {{ e.remarks|default:"-" }}
+                  </td>
+                                    <td>
+                    {% if e.before_image %}
+                    <img src="{{ e.before_image.url }}" 
+                         alt="Before" 
+                         class="img-thumbnail" 
+                         style="max-width:70px;cursor:pointer"
+                         data-bs-toggle="modal" 
+                         data-bs-target="#imageModal" 
+                         data-bs-img="{{ e.before_image.url }}">
+                    {% else %}-{% endif %}
+                  </td>
+                  <td>
+                    {% if e.after_image %}
+                    <img src="{{ e.after_image.url }}" 
+                         alt="After" 
+                         class="img-thumbnail" 
+                         style="max-width:70px;cursor:pointer"
+                         data-bs-toggle="modal" 
+                         data-bs-target="#imageModal" 
+                         data-bs-img="{{ e.after_image.url }}">
+                    {% else %}-{% endif %}
+                  </td>
+                  <td>{{ e.created_at|date:"M d, Y H:i" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="13" class="text-center text-muted">No records found.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Image Modal -->
+      <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+          <div class="modal-content">
+            <div class="modal-body p-0 text-center">
+              <img id="modalImage" src="" class="img-fluid rounded" alt="Preview">
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Script to handle image click -->
+      <script>
+      document.addEventListener("DOMContentLoaded", function(){
+        const imageModal = document.getElementById('imageModal');
+        const modalImage = document.getElementById('modalImage');
+        imageModal.addEventListener('show.bs.modal', function (event) {
+          const trigger = event.relatedTarget;
+          const imgSrc = trigger.getAttribute('data-bs-img');
+          modalImage.src = imgSrc;
+        });
+      });
+      </script>
+      
+</div>
+
+<!-- JavaScript Export -->
+<script>
+function downloadTableAsCSV(tableId) {
+    const rows = document.querySelectorAll(`#${tableId} tr`);
+    let csvContent = "";
+    rows.forEach(row => {
+        let cols = row.querySelectorAll("th, td");
+        let rowData = [];
+        cols.forEach(col => rowData.push(`"${col.innerText}"`));
+        csvContent += rowData.join(",") + "\n";
+    });
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "flood_report.csv";
+    link.click();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="container mt-4">
+    <h3 class="mb-4">Complaint Log Report</h3>
+
+    <!-- 🔹 Date Filter Form -->
+    <form method="get" class="row g-3 mb-4">
+        <div class="col-md-3">
+            <label for="from_date" class="form-label">From Date</label>
+            <input type="date" id="from_date" name="from_date" 
+                   value="{{ from_date|date:'Y-m-d' }}" class="form-control">
+        </div>
+        <div class="col-md-3">
+            <label for="to_date" class="form-label">To Date</label>
+            <input type="date" id="to_date" name="to_date" 
+                   value="{{ to_date|date:'Y-m-d' }}" class="form-control">
+        </div>
+        <div class="col-md-3 align-self-end">
+            <button type="submit" class="btn btn-primary">Filter</button>
+            <a href="{% url 'complaint_report' %}" class="btn btn-secondary">Reset</a>
+        </div>
+        <div class="col-md-3 align-self-end text-end">
+            <button id="downloadCSV" type="button" class="btn btn-success">⬇️ Download CSV</button>
+        </div>
+    </form>
+
+    <!-- 🔹 Complaints Table -->
+    <div class="table-responsive">
+        <table id="complaintTable" class="table table-bordered table-striped align-middle">
+            <thead class="table-primary">
+                <tr>
+                    <th>#</th>
+                    <th>Complaint ID</th>
+                    <th>Title</th>
+                    <th>Type</th>
+                    <th>Sub Type</th>
+                    <th>Source</th>
+                    <th>Location</th>
+                    <th>UC</th>
+                    <th>Status</th>
+                    <th>Created Date</th>
+                    <th>Resolved Date</th>
+                    <th>Customer Satisfaction</th>  <!-- ✅ Added -->
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in complaints %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ c.id }}</td>
+                    <td>{{ c.title|default:"-" }}</td>
+                    <td>{{ c.complaint_type }}</td>
+                    <td>{{ c.SubType|default:"-" }}</td>
+                    <td>{{ c.complaint_source|default:"-" }}</td>
+                    <td>{{ c.location }}</td>
+                    <td>{{ c.uc }}</td>
+                    <td>
+                        {% if c.status == 'resolved' %}
+                            <span class="badge bg-success">Resolved</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ c.created_at|date:"Y-m-d" }}</td>
+                    <td>
+                        {% if c.resolved_date %}
+                            {{ c.resolved_date|date:"Y-m-d" }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if c.customer_satisfaction %}
+                            {% if c.customer_satisfaction == 'yes' %}
+                                <span class="badge bg-success">Yes</span>
+                            {% elif c.customer_satisfaction == 'no' %}
+                                <span class="badge bg-danger">No</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="12" class="text-center text-muted">
+                        No complaints found for selected date range.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link rel="stylesheet" 
+      href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+<script>
+$(document).ready(function () {
+    // Initialize DataTable
+    const table = $('#complaintTable').DataTable({
+        pageLength: 25,
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+        ordering: true,
+        searching: true,
+        responsive: true,
+    });
+
+    // ✅ CSV Download Function (fixed)
+    $('#downloadCSV').click(function () {
+        let csvRows = [];
+
+        // Get headers
+        const headers = [];
+        $('#complaintTable thead th').each(function () {
+            headers.push($(this).text().trim());
+        });
+        csvRows.push(headers.join(','));
+
+        // Get table data (only visible after search/filter)
+        table.rows({ search: 'applied' }).every(function () {
+            const data = this.data();
+            const tempDiv = document.createElement("div");
+            const rowCells = [];
+
+            // Extract text safely from each cell
+            $(data).each(function () {
+                tempDiv.innerHTML = this;
+                const text = tempDiv.textContent || tempDiv.innerText || '';
+                rowCells.push('"' + text.replace(/"/g, '""') + '"'); // quote for CSV
+            });
+
+            csvRows.push(rowCells.join(','));
+        });
+
+        // Create and trigger CSV download
+        const csvString = csvRows.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'complaint_report.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    });
+});
+</script>
+
+{% endblock %}

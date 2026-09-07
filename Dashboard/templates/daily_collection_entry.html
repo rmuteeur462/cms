@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% load street_tags %}
+
+{% block content %}
+<div class="container mt-4">
+
+
+
+    <div class="header-content d-flex justify-content-center text-center mt-4">
+        <h1 class="display-5 fw-bold mb-2">
+            <span class="text-dark">D2D Collection</span>
+        </h1>
+    </div>
+    <!-- Date Filter -->
+    <form method="get" class="text-center mb-3">
+      <label for="date" class="fw-bold me-2">Select Date:</label>
+  
+      <input type="date"
+             id="date"
+             name="date"
+             value="{{ selected_date|date:'Y-m-d' }}"
+             class="form-control d-inline-block w-auto"
+             max="{{ today|date:'Y-m-d' }}">
+  
+      <button type="submit" class="btn btn-primary btn-sm ms-2">
+          Filter
+      </button>
+  </form>
+  
+  <!-- ✅ Single Date Display -->
+  <div class="text-center mb-4">
+      <h5 class="fw-bold">
+          🗓 Data Entry for:
+          {{ selected_date|date:"F d, Y" }}
+   
+      </h5>
+  </div>
+  
+    
+
+    <div class="d-flex justify-content-end align-items-center mb-4 gap-2">
+      <a href="{% url 'street_list' %}" class="btn btn-success">
+          <i class="bi bi-geo-alt-fill me-1"></i>
+          Add Street
+      </a>
+      
+      <a href="{% url 'street_collection_dashboard' %}" class="btn btn-primary">
+          <i class="bi bi-bar-chart-fill me-1"></i>
+          Dashboard View
+      </a>
+  
+      <a href="{% url 'accumulative_street_report' %}" class="btn btn-primary">
+          <i class="bi bi-file-text-fill me-1"></i>
+          D2D Report
+      </a>
+  </div>
+    
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle">
+                <thead class="table-dark text-center">
+                    <tr>
+                        <th>#</th>
+                        <th>Street Name</th>
+                        <th>NC</th>
+                        <th>UC</th>
+                        <th>Zone</th>
+                        <th>Total Houses</th>
+                        <th>Total Shops</th>
+
+                        <th>Collected Houses</th>
+                        <th>Collected Shops</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for street in streets %}
+                      {% with record=records_dict|default_if_none:''|dict_get:street.id %}
+                      <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ street.street_name }}</td>
+                        <td>{{ street.nc_name.nc_name }}</td>
+                        <td>{{ street.uc_name.uc_name }}</td>
+                        <td>{{ street.location.location_name }}</td>
+                        <td>{{ street.no_of_houses }}</td>
+                        <td>{{ street.no_of_shops }}</td>
+                  
+                        <td>
+                          <input type="number" 
+                                 name="houses_{{ street.id }}" 
+                                 value="{{ record.collected_houses|default:'' }}" 
+                                 class="form-control collected-house" 
+                                 min="0"
+                                 max="{{ street.no_of_houses }}"
+                                 data-max-houses="{{ street.no_of_houses }}">
+                        </td>
+                  
+                        <td>
+                          <input type="number" 
+                                 name="shops_{{ street.id }}" 
+                                 value="{{ record.collected_shops|default:'' }}" 
+                                 class="form-control collected-shop" 
+                                 min="0"
+                                 max="{{ street.no_of_shops }}"
+                                 data-max-shops="{{ street.no_of_shops }}">
+                        </td>
+                  
+                        <td>
+                          <input type="text" 
+                                 name="remarks_{{ street.id }}" 
+                                 value="{{ record.remarks|default:'' }}" 
+                                 class="form-control">
+                        </td>
+                      </tr>
+                      {% endwith %}
+                    {% empty %}
+                      <tr><td colspan="10" class="text-center">No streets found.</td></tr>
+                    {% endfor %}
+                  </tbody>
+                  
+            </table>
+        </div>
+        <div class="text-center mt-3">
+            <button type="submit" class="btn btn-success">💾 Save All Entries</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Validate collected houses
+      document.querySelectorAll('.collected-house').forEach(input => {
+        input.addEventListener('input', function() {
+          const max = parseInt(this.dataset.maxHouses) || 0;
+          if (parseInt(this.value) > max) {
+            alert(`Collected houses cannot exceed total houses (${max}).`);
+            this.value = max;
+          } else if (parseInt(this.value) < 0) {
+            this.value = 0;
+          }
+        });
+      });
+    
+      // Validate collected shops
+      document.querySelectorAll('.collected-shop').forEach(input => {
+        input.addEventListener('input', function() {
+          const max = parseInt(this.dataset.maxShops) || 0;
+          if (parseInt(this.value) > max) {
+            alert(`Collected shops cannot exceed total shops (${max}).`);
+            this.value = max;
+          } else if (parseInt(this.value) < 0) {
+            this.value = 0;
+          }
+        });
+      });
+    });
+    </script>
+    
+{% endblock %}

@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">{{ title }}</h2>
+            <button id="exportExcel" class="btn btn-success btn-sm">
+                <i class="bi bi-file-earmark-excel me-1"></i> Export to Excel
+            </button>
+        </div>
+        
+        <div class="card-body">
+            <!-- Filter form -->
+            <form method="GET" class="row g-3 mb-4 p-3 bg-light rounded">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">
+                        <i class="bi bi-geo-alt me-1"></i> Zone
+                    </label>
+                    <select name="location" class="form-select">
+                        <option value="">All Zones</option>
+                        {% for loc in locations %}
+                        <option value="{{ loc.id }}" {% if selected_location == loc.id|stringformat:"s" %}selected{% endif %}>
+                            {{ loc.location_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">
+                        <i class="bi bi-calendar-event me-1"></i> From Date
+                    </label>
+                    <input type="date" name="from_date" class="form-control" value="{{ from_date }}">
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">
+                        <i class="bi bi-calendar-check me-1"></i> To Date
+                    </label>
+                    <input type="date" name="to_date" class="form-control" value="{{ to_date }}">
+                </div>
+
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-funnel me-1"></i> Apply Filter
+                    </button>
+                </div>
+            </form>
+
+            <!-- Applied Filters Display -->
+            {% if selected_location or from_date or to_date %}
+            <div class="alert alert-info alert-dismissible fade show mb-3" role="alert">
+                <strong><i class="bi bi-info-circle me-1"></i> Active Filters:</strong>
+           
+                {% if from_date %}
+                    <span class="badge bg-primary ms-2">From: {{ from_date }}</span>
+                {% endif %}
+                {% if to_date %}
+                    <span class="badge bg-primary ms-2">To: {{ to_date }}</span>
+                {% endif %}
+                <a href="?" class="ms-2 text-decoration-none">Clear All</a>
+            </div>
+            {% endif %}
+
+                 <!-- Summary Statistics -->
+          
+            <!-- Compliance summary table -->
+            <div class="table-responsive">
+                <table id="complianceTable" class="table table-bordered table-striped table-hover align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="text-start">Indicator</th>
+                            <th class="text-center">Yes (✓)</th>
+                            <th class="text-center">No (✗)</th>
+                            <th class="text-center">% Compliance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in data %}
+                        <tr>
+                            <td class="text-start fw-medium">{{ row.indicator }}</td>
+                            <td class="text-center">
+                                <span class="badge bg-success rounded-pill">{{ row.yes }}</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-danger rounded-pill">{{ row.no }}</span>
+                            </td>
+                            <td class="text-center">
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <div class="progress" style="width: 100px; height: 20px;">
+                                        <div class="progress-bar {% if row.percent >= 75 %}bg-success{% elif row.percent >= 50 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                             role="progressbar" 
+                                             style="width: {{ row.percent }}%;" 
+                                             aria-valuenow="{{ row.percent }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    <span class="ms-2 fw-bold">{{ row.percent }}%</span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">
+                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                No data available for the selected period.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+       
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+document.getElementById('exportExcel').addEventListener('click', function() {
+    // Prepare data for export
+    const reportTitle = "{{ title }}";
+    const filterInfo = [];
+    
+ 
+    {% if from_date %}
+    filterInfo.push(['From Date', '{{ from_date }}']);
+    {% endif %}
+    {% if to_date %}
+    filterInfo.push(['To Date', '{{ to_date }}']);
+    {% endif %}
+    
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    
+    // Create worksheet data
+    const wsData = [
+        [reportTitle],
+        [],
+        ...filterInfo,
+        [],
+        ['Indicator', 'Yes (✓)', 'No (✗)', '% Compliance']
+    ];
+    
+    // Add table data
+    const table = document.getElementById('complianceTable');
+    const rows = table.querySelectorAll('tbody tr');
+    
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length === 4) {
+            wsData.push([
+                cells[0].textContent.trim(),
+                cells[1].textContent.trim(),
+                cells[2].textContent.trim(),
+                cells[3].textContent.match(/\d+/)[0] + '%'
+            ]);
+        }
+    });
+    
+    // Create worksheet
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    
+    // Set column widths
+    ws['!cols'] = [
+        { wch: 40 },  // Indicator
+        { wch: 12 },  // Yes
+        { wch: 12 },  // No
+        { wch: 15 }   // % Compliance
+    ];
+    
+    // Merge title cell
+    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }];
+    
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Compliance Report');
+    
+    // Generate filename with current date
+    const date = new Date().toISOString().split('T')[0];
+    const filename = `compliance_report_${date}.xlsx`;
+    
+    // Save file
+    XLSX.writeFile(wb, filename);
+});
+</script>
+
+<style>
+    .table th {
+        font-weight: 600;
+        white-space: nowrap;
+        vertical-align: middle;
+    }
+    
+    .table td {
+        vertical-align: middle;
+    }
+    
+    .progress {
+        background-color: #e9ecef;
+    }
+    
+    @media (max-width: 768px) {
+        .card-header h2 {
+            font-size: 1.25rem;
+        }
+        
+        .card-header {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .card-header .btn {
+            width: 100%;
+        }
+        
+        .progress {
+            width: 60px !important;
+        }
+    }
+</style>
+{% endblock %}
