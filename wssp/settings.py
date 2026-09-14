@@ -7,7 +7,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-^w6%&nnkv*ho^xyt4s%+$jxo6g!@vp3&@gc6gc+q8gfgis789g'
 DEBUG = True
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '172.16.17.100', '172.16.17.168:1111', '165.99.50.65', 'wod.wsspeshawar.org.pk:4002', 'wod.wsspeshawar.org.pk']
+ALLOWED_HOSTS = ['*']
 
 
 

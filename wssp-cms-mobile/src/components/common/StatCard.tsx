@@ -28,11 +28,11 @@ export const StatCard: React.FC<StatCardProps> = ({
     >
       <View style={styles.topRow}>
         <View style={[styles.iconBox, { backgroundColor: bgColor }]}>
-          <Ionicons name={icon} size={20} color={color} />
+          <Ionicons name={icon} size={16} color={color} />
         </View>
-        <Text style={styles.valueText}>{typeof value === 'number' ? value.toLocaleString() : value}</Text>
+        <Text style={[styles.valueText, { color }]}>{typeof value === 'number' ? value.toLocaleString() : value}</Text>
       </View>
-      <Text style={styles.titleText}>{title}</Text>
+      <Text style={styles.titleText} numberOfLines={1}>{title}</Text>
     </TouchableOpacity>
   );
 };
@@ -41,43 +41,43 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.sm,
+    paddingBottom: 10,
     borderWidth: 1,
     borderColor: Colors.border,
-    borderTopWidth: 3.5,
+    borderTopWidth: 3,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
-    minHeight: 100,
+    shadowRadius: 4,
+    elevation: 1,
+    minHeight: 78,
     justifyContent: 'space-between',
   },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: 6,
   },
   iconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   valueText: {
-    fontSize: Typography.fontSize.xxl,
+    fontSize: 22,
     fontWeight: '900',
-    color: Colors.textPrimary,
     letterSpacing: 0.5,
   },
   titleText: {
-    fontSize: Typography.fontSize.xs,
+    fontSize: 10,
     fontWeight: '700',
     color: Colors.textSecondary,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginTop: Spacing.xs,
+    letterSpacing: 0.6,
   },
 });

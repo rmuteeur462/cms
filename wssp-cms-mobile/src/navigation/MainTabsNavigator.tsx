@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, StyleSheet, Platform } from 'react-native';
 import { HomeScreen } from '../screens/main/HomeScreen';
 import { ComplaintsScreen } from '../screens/main/ComplaintsScreen';
+import { CreateComplaintScreen } from '../screens/main/CreateComplaintScreen';
 import { ReportsScreen } from '../screens/main/ReportsScreen';
 import { ProfileScreen } from '../screens/main/ProfileScreen';
 import { AppHeader } from '../components/common/AppHeader';
@@ -23,6 +24,14 @@ export const MainTabsNavigator: React.FC = () => {
           tabBarStyle: styles.tabBar,
           tabBarLabelStyle: styles.tabBarLabel,
           tabBarIcon: ({ focused, color, size }) => {
+            if (route.name === 'NewComplaint') {
+              return (
+                <View style={[styles.centerPlusButton, focused && styles.centerPlusButtonFocused]}>
+                  <Ionicons name="add" size={26} color="#FFFFFF" />
+                </View>
+              );
+            }
+
             let iconName: keyof typeof Ionicons.glyphMap = 'home';
 
             if (route.name === 'Home') {
@@ -44,7 +53,14 @@ export const MainTabsNavigator: React.FC = () => {
         })}
       >
         <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: 'Home' }} />
-        <Tab.Screen name="Complaints" component={ComplaintsScreen} options={{ tabBarLabel: 'Complaints' }} />
+        <Tab.Screen name="Complaints" component={ComplaintsScreen} options={{ tabBarLabel: 'Directory' }} />
+        <Tab.Screen
+          name="NewComplaint"
+          component={CreateComplaintScreen}
+          options={{
+            tabBarLabel: () => null,
+          }}
+        />
         <Tab.Screen name="Reports" component={ReportsScreen} options={{ tabBarLabel: 'Reports' }} />
         <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: 'Profile' }} />
       </Tab.Navigator>
@@ -61,18 +77,18 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
-    height: Platform.OS === 'ios' ? 86 : 64,
+    height: Platform.OS === 'ios' ? 88 : 72,
     paddingTop: 6,
     paddingBottom: Platform.OS === 'ios' ? 24 : 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.06,
     shadowRadius: 8,
-    elevation: 8,
+    elevation: 10,
   },
   tabBarLabel: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
     letterSpacing: 0.2,
     marginTop: 2,
   },
@@ -82,5 +98,26 @@ const styles = StyleSheet.create({
   },
   iconFocused: {
     transform: [{ scale: 1.08 }],
+  },
+  centerPlusButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Platform.OS === 'ios' ? 8 : 18,
+    shadowColor: Colors.primaryDark,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 8,
+    borderWidth: 2.5,
+    borderColor: '#FFFFFF',
+  },
+  centerPlusButtonFocused: {
+    backgroundColor: Colors.primaryLight,
+    transform: [{ scale: 1.1 }],
+    borderColor: Colors.accent,
   },
 });

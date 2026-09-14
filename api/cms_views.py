@@ -264,3 +264,190 @@ class CMSComplaintDetailView(APIView):
         }
 
         return Response(data, status=status.HTTP_200_OK)
+
+
+class CMSComplaintOptionsView(APIView):
+    """
+    GET /api/cms/complaints/options/
+    Returns cascading metadata for the Complaint creation form:
+    - locations (scoped to officer)
+    - ucs (grouped/filterable by location_id)
+    - sources (complaint sources)
+    - types (categories)
+    - subtypes (grouped/filterable by complaint_type_id)
+    - choices (genders, consumer_types)
+    """
+    permission_classes = [permissions.IsAuthenticated, IsCMSAuthorized]
+
+    def get(self, request):
+        allowed_location_ids = get_user_allowed_location_ids(request.user)
+
+        locations = list(Location.objects.filter(id__in=allowed_location_ids).values('id', 'location_name').order_by('location_name'))
+        ucs = list(UC.objects.filter(location_id__in=allowed_location_ids).values('id', 'uc_name', 'location_id').order_by('uc_name'))
+        sources = list(ComplaintSource.objects.values('id', 'source_name').order_by('source_name'))
+        types = list(ComplaintType.objects.values('id', 'type_name').order_by('type_name'))
+        subtypes = list(ComplaintSubType.objects.values('id', 'type_name', 'complaint_type_id').order_by('type_name'))
+
+        return Response({
+            "locations": [{"id": l['id'], "name": l['location_name']} for l in locations],
+            "ucs": [{"id": u['id'], "name": u['uc_name'], "location_id": u['location_id']} for u in ucs],
+            "sources": [{"id": s['id'], "name": s['source_name']} for s in sources],
+            "types": [{"id": t['id'], "name": t['type_name']} for t in types],
+            "subtypes": [{"id": st['id'], "name": st['type_name'], "type_id": st['complaint_type_id']} for st in subtypes],
+            "genders": [
+                {"value": "male", "label": "Male"},
+                {"value": "female", "label": "Female"},
+            ],
+            "consumer_types": [
+                {"value": "domestic", "label": "Domestic"},
+                {"value": "commercial", "label": "Commercial"},
+                {"value": "industrial", "label": "Industrial"},
+            ],
+        }, status=status.HTTP_200_OK)
+
+
+class CMSComplaintCreateView(APIView):
+    """
+    POST /api/cms/complaints/create/
+    Creates a new complaint.
+    Accepts multipart/form-data or JSON.
+    Enforces server-side zonal permission check.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsCMSAuthorized]
+
+    def post(self, request):
+        allowed_location_ids = get_user_allowed_location_ids(request.user)
+        data = request.data
+
+        # 1. Validate required fields
+        first_name = str(data.get('first_name', '')).strip()
+        cell_number = str(data.get('cell_number', '')).strip()
+        location_id = data.get('location_id')
+        complaint_type_id = data.get('complaint_type_id')
+        complaint_detail = str(data.get('complaint_detail', '')).strip()
+
+        errors = {}
+        if not first_name:
+            errors['first_name'] = 'Applicant first name is required.'
+        if not cell_number:
+            errors['cell_number'] = 'Cell number is required.'
+        if not location_id:
+            errors['location_id'] = 'Location (Zone) is required.'
+        if not complaint_type_id:
+            errors['complaint_type_id'] = 'Complaint category (type) is required.'
+        if not complaint_detail:
+            errors['complaint_detail'] = 'Complaint detail / description is required.'
+
+        if errors:
+            return Response({"detail": "Validation error.", "errors": errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 2. Server-side location authorization check
+        try:
+            loc_id = int(location_id)
+        except (ValueError, TypeError):
+            return Response({"detail": "Invalid location ID."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if loc_id not in allowed_location_ids:
+            return Response(
+                {"detail": "You do not have departmental authorization to create complaints in this zone."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # 3. Resolve Foreign Keys
+        try:
+            location = Location.objects.get(id=loc_id)
+        except Location.DoesNotExist:
+            return Response({"detail": "Selected location not found."}, status=status.HTTP_400_BAD_REQUEST)
+
+        uc = None
+        uc_id = data.get('uc_id')
+        if uc_id:
+            try:
+                uc = UC.objects.get(id=int(uc_id))
+            except (UC.DoesNotExist, ValueError):
+                pass
+
+        complaint_source = None
+        source_id = data.get('complaint_source_id')
+        if source_id:
+            try:
+                complaint_source = ComplaintSource.objects.get(id=int(source_id))
+            except (ComplaintSource.DoesNotExist, ValueError):
+                pass
+        else:
+            complaint_source = ComplaintSource.objects.filter(source_name__icontains='mobile').first() or ComplaintSource.objects.first()
+
+        try:
+            complaint_type = ComplaintType.objects.get(id=int(complaint_type_id))
+        except (ComplaintType.DoesNotExist, ValueError):
+            return Response({"detail": "Selected complaint type not found."}, status=status.HTTP_400_BAD_REQUEST)
+
+        subtype = None
+        subtype_id = data.get('subtype_id')
+        if subtype_id:
+            try:
+                subtype = ComplaintSubType.objects.get(id=int(subtype_id))
+            except (ComplaintSubType.DoesNotExist, ValueError):
+                pass
+
+        # 4. Handle GPS coordinates if provided
+        latitude = data.get('latitude')
+        longitude = data.get('longitude')
+        address = str(data.get('address', '')).strip()
+        if latitude and longitude:
+            gps_tag = f"\n[GPS: {latitude}, {longitude}]"
+            if gps_tag not in address:
+                address = f"{address} {gps_tag}".strip()
+
+        # 5. Create Complaint Instance
+        complaint = Complaint(
+            location=location,
+            uc=uc,
+            complaint_source=complaint_source,
+            complaint_type=complaint_type,
+            SubType=subtype,
+            first_name=first_name,
+            last_name=str(data.get('last_name', '')).strip(),
+            cnic=str(data.get('cnic', '')).strip() or None,
+            cell_number=cell_number,
+            phone_number=str(data.get('phone_number', '')).strip() or None,
+            bill_number=str(data.get('bill_number', '')).strip() or None,
+            gender=str(data.get('gender', 'male')).lower(),
+            consumer_type=str(data.get('consumer_type', 'domestic')).lower(),
+            area=str(data.get('area', '')).strip(),
+            tehsil=str(data.get('tehsil', '')).strip(),
+            address=address,
+            title=str(data.get('title', '')).strip() or (subtype.type_name if subtype else complaint_type.type_name),
+            type=str(data.get('type', '')).strip() or None,
+            complaint_detail=complaint_detail,
+            date=timezone.now().date(),
+            status='pending',
+        )
+
+        # 6. Handle before_image upload
+        if 'before_image' in request.FILES:
+            complaint.before_image = request.FILES['before_image']
+
+        complaint.save()
+
+        # Update action log with user
+        ComplaintActionLog.objects.filter(complaint=complaint, action='created').update(user=request.user)
+
+        return Response({
+            "success": True,
+            "message": "Complaint successfully registered.",
+            "complaint": {
+                "id": complaint.id,
+                "complaint_no": f"CMS-{complaint.id}",
+                "title": complaint.title,
+                "citizen_name": f"{complaint.first_name} {complaint.last_name}".strip(),
+                "cell_number": complaint.cell_number,
+                "location": location.location_name,
+                "uc": uc.uc_name if uc else "N/A",
+                "category": complaint_type.type_name,
+                "subtype": subtype.type_name if subtype else None,
+                "date": complaint.date.strftime("%Y-%m-%d"),
+                "status": complaint.status,
+                "before_image": complaint.before_image.url if complaint.before_image else None,
+            }
+        }, status=status.HTTP_201_CREATED)

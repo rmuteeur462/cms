@@ -11,9 +11,10 @@ export const apiClient = axios.create({
   },
 });
 
-// Request Interceptor: Attach JWT Token
+// Request Interceptor: Attach JWT Token and dynamic Base URL
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
+    config.baseURL = Config.BASE_URL;
     try {
       const token = await StorageService.getItem<string>(Config.STORAGE_KEYS.ACCESS_TOKEN);
       if (token && config.headers) {

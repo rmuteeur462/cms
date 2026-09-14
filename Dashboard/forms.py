@@ -214,14 +214,14 @@ class ComplaintManagementForm(forms.ModelForm):
     )
 
     gender = forms.ChoiceField(
-        choices=Complaint.gender_choices,
-        widget=forms.Select(attrs={'class': 'form-control'}),
+        choices=[('', 'Select Gender')] + list(Complaint.gender_choices),
+        widget=forms.Select(attrs={'class': 'form-control form-select-custom'}),
         required=False
     )
 
     consumer_type = forms.ChoiceField(
-        choices=Complaint.consumer_type_choices,
-        widget=forms.Select(attrs={'class': 'form-control'}),
+        choices=[('', 'Select Consumer Type')] + list(Complaint.consumer_type_choices),
+        widget=forms.Select(attrs={'class': 'form-control form-select-custom'}),
         required=False
     )
 
@@ -239,32 +239,33 @@ class ComplaintManagementForm(forms.ModelForm):
 
         widgets = {
             # Applicant Info
-            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'bill_number': forms.TextInput(attrs={'class': 'form-control'}),
-            'area': forms.TextInput(attrs={'class': 'form-control'}),
-            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
-            'tehsil': forms.TextInput(attrs={'class': 'form-control'}),
-            'cnic': forms.TextInput(attrs={'class': 'form-control'}),
-            'cell_number': forms.TextInput(attrs={'class': 'form-control'}),
-            'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control form-control-custom', 'placeholder': 'e.g. Muhammad'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control form-control-custom', 'placeholder': 'e.g. Khan'}),
+            'bill_number': forms.TextInput(attrs={'class': 'form-control form-control-custom', 'placeholder': 'e.g. 10293847 (Optional)'}),
+            'area': forms.TextInput(attrs={'class': 'form-control form-control-custom', 'placeholder': 'e.g. Hayatabad Phase 1, Gulbahar'}),
+            'address': forms.Textarea(attrs={'class': 'form-control form-control-custom', 'rows': 2, 'placeholder': 'Street, House/Shop number, Landmark or Mohallah'}),
+            'tehsil': forms.TextInput(attrs={'class': 'form-control form-control-custom', 'placeholder': 'e.g. City Peshawar'}),
+            'cnic': forms.TextInput(attrs={'class': 'form-control form-control-custom', 'placeholder': '17301-XXXXXXX-X'}),
+            'cell_number': forms.TextInput(attrs={'class': 'form-control form-control-custom', 'placeholder': '03XX-XXXXXXX'}),
+            'phone_number': forms.TextInput(attrs={'class': 'form-control form-control-custom', 'placeholder': '091-XXXXXXX (Optional)'}),
 
             # Complaint Info
-            'location': forms.Select(attrs={'class': 'form-control', 'id': 'id_location'}),
-            'uc': forms.Select(attrs={'class': 'form-control', 'id': 'id_uc'}),
-            'complaint_source': forms.Select(attrs={'class': 'form-control'}),
-            'Pcp_compalin_no': forms.TextInput(attrs={'class': 'form-control'}),
-            'Eak_compalin_no': forms.TextInput(attrs={'class': 'form-control'}),
-            'Ebaldia_compalin_no': forms.TextInput(attrs={'class': 'form-control'}),
-            'complaint_type': forms.Select(attrs={'class': 'form-control'}),
-            'SubType': forms.Select(attrs={'class': 'form-control'}),
-            'title': forms.TextInput(attrs={'class': 'form-control'}),
-            'type': forms.Select(attrs={'class': 'form-control'}),
-            'complaint_detail': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-             'before_image': forms.ClearableFileInput(
+            'location': forms.Select(attrs={'class': 'form-control form-select-custom', 'id': 'id_location'}),
+            'uc': forms.Select(attrs={'class': 'form-control form-select-custom', 'id': 'id_uc'}),
+            'complaint_source': forms.Select(attrs={'class': 'form-control form-select-custom', 'id': 'id_complaint_source'}),
+            'Pcp_compalin_no': forms.TextInput(attrs={'class': 'form-control form-control-custom', 'placeholder': 'Enter PCP Complaint Number'}),
+            'Eak_compalin_no': forms.TextInput(attrs={'class': 'form-control form-control-custom', 'placeholder': 'Enter EAP Complaint Number'}),
+            'Ebaldia_compalin_no': forms.TextInput(attrs={'class': 'form-control form-control-custom', 'placeholder': 'Enter E-Baldia Number'}),
+            'complaint_type': forms.Select(attrs={'class': 'form-control form-select-custom', 'id': 'id_complaint_type'}),
+            'SubType': forms.Select(attrs={'class': 'form-control form-select-custom', 'id': 'id_SubType'}),
+            'title': forms.TextInput(attrs={'class': 'form-control form-control-custom', 'placeholder': 'Short title (e.g. Water Contamination)'}),
+            'type': forms.Select(attrs={'class': 'form-control form-select-custom'}),
+            'complaint_detail': forms.Textarea(attrs={'class': 'form-control form-control-custom', 'rows': 3, 'placeholder': 'Provide complete details and location landmark of the issue...'}),
+            'date': forms.DateInput(attrs={'class': 'form-control form-control-custom', 'type': 'date', 'id': 'id_date'}),
+            'before_image': forms.ClearableFileInput(
                 attrs={
-                    'class': 'form-control-file', 
+                    'class': 'd-none', 
+                    'id': 'id_before_image',
                     'accept': 'image/*'
                 }
             ),

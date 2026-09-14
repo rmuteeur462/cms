@@ -66,5 +66,76 @@ export const ComplaintsApi = {
   async getComplaintDetail(id: number): Promise<any> {
     const response = await apiClient.get(`/api/cms/complaints/${id}/`);
     return response.data;
-  }
+  },
+
+  async getComplaintOptions(): Promise<ComplaintOptionsResponse> {
+    const response = await apiClient.get<ComplaintOptionsResponse>('/api/cms/complaints/options/');
+    return response.data;
+  },
+
+  async createComplaint(formData: FormData): Promise<CreateComplaintResponse> {
+    const response = await apiClient.post<CreateComplaintResponse>('/api/cms/complaints/create/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
 };
+
+export interface LocationOption {
+  id: number;
+  name: string;
+}
+
+export interface UCOption {
+  id: number;
+  name: string;
+  location_id: number;
+}
+
+export interface SourceOption {
+  id: number;
+  name: string;
+}
+
+export interface TypeOption {
+  id: number;
+  name: string;
+}
+
+export interface SubtypeOption {
+  id: number;
+  name: string;
+  type_id: number;
+}
+
+export interface ComplaintOptionsResponse {
+  locations: LocationOption[];
+  ucs: UCOption[];
+  sources: SourceOption[];
+  types: TypeOption[];
+  subtypes: SubtypeOption[];
+  genders: { value: string; label: string }[];
+  consumer_types: { value: string; label: string }[];
+}
+
+export interface CreateComplaintResponse {
+  success: boolean;
+  message: string;
+  complaint: {
+    id: number;
+    complaint_no: string;
+    title: string;
+    citizen_name: string;
+    cell_number: string;
+    location: string;
+    uc: string;
+    category: string;
+    subtype: string | null;
+    date: string;
+    status: string;
+    before_image: string | null;
+  };
+}
+

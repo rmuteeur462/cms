@@ -1,43 +1,45 @@
 export const Colors = {
-  // Official WSSP Peshawar Brand Palette
-  primary: '#0D5C3A',       // Khyber Green / Deep Emerald
-  primaryDark: '#083B25',   // Header / Dark Accent
-  primaryLight: '#1B7A50',  // Interactive Hover / Accent
-  secondary: '#0284C7',     // Municipal Blue
-  accent: '#F4B41A',        // Government Gold
+  // Official WSSP Peshawar Brand Palette (Blue with Orange Touch from WSSP website)
+  primary: '#0080DF',       // WSSP Municipal Blue
+  primaryDark: '#0A3663',   // Deep Corporate Navy Blue
+  primaryLight: '#38BDF8',  // Sky Blue / Highlight
+  secondary: '#FF7A00',     // WSSP Brand Orange
+  accent: '#FF7A00',        // WSSP Brand Orange
+  accentLight: '#FFF4E6',   // Soft Orange Tint
+  accentOrange: '#FF8A00',  // Warm Orange
 
   // Surface & Layout
-  background: '#F8FAFC',    // Clean slate-tinted canvas
+  background: '#F0F6FB',    // Clean blue-tinted modern background
   surface: '#FFFFFF',       // Card / Modal background
   surfaceElevated: '#FFFFFF',
-  
+
   // Text Colors
   textPrimary: '#0F172A',   // Slate 900
   textSecondary: '#475569', // Slate 600
   textMuted: '#94A3B8',     // Slate 400
   textInverse: '#FFFFFF',
-  
+
   // Borders & Dividers
   border: '#E2E8F0',        // Slate 200
-  borderFocus: '#0D5C3A',
+  borderFocus: '#0080DF',
 
   // Status & Priority Colors
   status: {
-    pending: '#D97706',      // Amber 600
-    pendingBg: '#FEF3C7',    // Amber 100
+    pending: '#FF7A00',      // WSSP Orange for Pending
+    pendingBg: '#FFF4E6',    // Amber/Orange tint
     resolved: '#16A34A',     // Green 600
     resolvedBg: '#DCFCE7',   // Green 100
     rejected: '#DC2626',     // Red 600
     rejectedBg: '#FEE2E2',   // Red 100
-    inProgress: '#2563EB',   // Blue 600
-    inProgressBg: '#DBEAFE', // Blue 100
+    inProgress: '#0080DF',   // WSSP Blue
+    inProgressBg: '#E0F2FE', // Blue 100
   },
 
   // State Overlays
-  overlay: 'rgba(15, 23, 42, 0.6)',
+  overlay: 'rgba(10, 54, 99, 0.6)',
   danger: '#EF4444',
   success: '#10B981',
-  warning: '#F59E0B',
+  warning: '#FF7A00',
 };
 
 export const Spacing = {
@@ -78,5 +80,5 @@ export const Typography = {
     lg: 26,
     xl: 30,
     xxl: 36,
-  }
+  },
 };

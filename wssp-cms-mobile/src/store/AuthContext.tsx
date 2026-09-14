@@ -68,6 +68,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       let message = 'Login failed. Please check your credentials.';
       if (err.response?.data?.detail) {
         message = err.response.data.detail;
+      } else if (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error') || !err.response) {
+        message = `Cannot reach WSSP backend at ${Config.BASE_URL}. Ensure Django is running with: python manage.py runserver 0.0.0.0:8000 and your phone is on the same Wi-Fi.`;
       } else if (err.message) {
         message = err.message;
       }

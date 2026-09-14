@@ -22,7 +22,7 @@ import { useAuth } from '../../store/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { Formatters } from '../../utils/formatters';
 
-export const ComplaintsScreen: React.FC = () => {
+export const ComplaintsScreen: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const { user } = useAuth();
 
   const [complaints, setComplaints] = useState<ComplaintSummaryItem[]>([]);
@@ -141,17 +141,18 @@ export const ComplaintsScreen: React.FC = () => {
 
       {/* Zone Selector Chips */}
       {user?.allowed_locations && user.allowed_locations.length > 1 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.zonesScroll}
-          style={styles.zonesContainer}
-        >
+        <View style={styles.zonesContainer}>
           <TouchableOpacity
             style={[styles.zoneChip, selectedLocationId === undefined && styles.zoneChipActive]}
             onPress={() => setSelectedLocationId(undefined)}
             activeOpacity={0.7}
           >
+            <Ionicons
+              name="globe-outline"
+              size={13}
+              color={selectedLocationId === undefined ? Colors.primary : Colors.textMuted}
+              style={{ marginRight: 4 }}
+            />
             <Text style={[styles.zoneChipText, selectedLocationId === undefined && styles.zoneChipTextActive]}>
               All Zones
             </Text>
@@ -163,12 +164,18 @@ export const ComplaintsScreen: React.FC = () => {
               onPress={() => setSelectedLocationId(loc.id)}
               activeOpacity={0.7}
             >
+              <Ionicons
+                name="location-outline"
+                size={13}
+                color={selectedLocationId === loc.id ? Colors.primary : Colors.textMuted}
+                style={{ marginRight: 4 }}
+              />
               <Text style={[styles.zoneChipText, selectedLocationId === loc.id && styles.zoneChipTextActive]}>
                 {loc.name}
               </Text>
             </TouchableOpacity>
           ))}
-        </ScrollView>
+        </View>
       )}
 
       {/* Complaint List */}
@@ -202,6 +209,16 @@ export const ComplaintsScreen: React.FC = () => {
           }
         />
       )}
+
+      {/* Floating Action Button (FAB) for New Complaint */}
+      <TouchableOpacity
+        style={styles.fabBtn}
+        onPress={() => navigation?.navigate('NewComplaint')}
+        activeOpacity={0.85}
+      >
+        <Ionicons name="add" size={24} color="#FFFFFF" style={{ marginRight: 6 }} />
+        <Text style={styles.fabBtnText}>New Complaint</Text>
+      </TouchableOpacity>
 
       {/* Detail Modal */}
       <Modal
@@ -340,33 +357,34 @@ const styles = StyleSheet.create({
     color: Colors.textInverse,
   },
   zonesContainer: {
-    maxHeight: 40,
-    marginBottom: Spacing.xs,
-  },
-  zonesScroll: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     paddingHorizontal: Spacing.md,
-    gap: Spacing.xs,
-    alignItems: 'center',
+    paddingTop: 2,
+    paddingBottom: Spacing.sm,
+    gap: 8,
   },
   zoneChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: BorderRadius.full,
     backgroundColor: Colors.surface,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: Colors.border,
   },
   zoneChipActive: {
     backgroundColor: '#E0F2FE',
-    borderColor: Colors.secondary,
+    borderColor: Colors.primary,
   },
   zoneChipText: {
-    fontSize: 11,
+    fontSize: Typography.fontSize.sm,
     fontWeight: '600',
     color: Colors.textSecondary,
   },
   zoneChipTextActive: {
-    color: Colors.secondary,
+    color: Colors.primary,
     fontWeight: '800',
   },
   listContent: {
@@ -453,5 +471,29 @@ const styles = StyleSheet.create({
   bold: {
     fontWeight: '700',
     color: Colors.textSecondary,
+  },
+  fabBtn: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    borderRadius: BorderRadius.full,
+    shadowColor: Colors.primaryDark,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 6,
+    borderWidth: 1.5,
+    borderColor: '#34D399',
+  },
+  fabBtnText: {
+    color: '#FFFFFF',
+    fontSize: Typography.fontSize.sm,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
 });

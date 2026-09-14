@@ -6,20 +6,14 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
-  Modal,
-  SafeAreaView,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme';
 import { StatCard } from '../../components/common/StatCard';
-import { ComplaintCard } from '../../components/common/ComplaintCard';
-import { StatusBadge } from '../../components/common/StatusBadge';
-import { EmptyState } from '../../components/common/EmptyState';
-import { WSSPButton } from '../../components/common/WSSPButton';
 import { useAuth } from '../../store/AuthContext';
-import { ComplaintsApi, DashboardData, ComplaintSummaryItem } from '../../api/complaints';
+import { ComplaintsApi, DashboardData } from '../../api/complaints';
 import { Ionicons } from '@expo/vector-icons';
-import { Formatters } from '../../utils/formatters';
 
 interface HomeScreenProps {
   navigation?: any;
@@ -31,9 +25,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
-  const [selectedComplaint, setSelectedComplaint] = useState<any | null>(null);
-  const [detailModalVisible, setDetailModalVisible] = useState<boolean>(false);
-  const [loadingDetail, setLoadingDetail] = useState<boolean>(false);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -63,20 +54,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     loadDashboardData();
   }, []);
 
-  const handleOpenDetail = async (complaintItem: ComplaintSummaryItem) => {
-    setDetailModalVisible(true);
-    setLoadingDetail(true);
-    try {
-      const fullDetail = await ComplaintsApi.getComplaintDetail(complaintItem.id);
-      setSelectedComplaint(fullDetail);
-    } catch (err) {
-      console.warn('[HomeScreen] Detail load error, using summary:', err);
-      setSelectedComplaint(complaintItem);
-    } finally {
-      setLoadingDetail(false);
-    }
-  };
-
   return (
     <View style={styles.container}>
       <ScrollView
@@ -85,30 +62,38 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />
         }
       >
-        {/* Officer Greeting Section */}
+        {/* Officer Greeting Header */}
         <View style={styles.greetingHeader}>
           <Text style={styles.greetingText}>{getGreeting()}</Text>
           <Text style={styles.sectionSubtitle}>Complaint Management</Text>
           <Text style={styles.officerNameText}>
-            {user?.full_name} • <Text style={styles.officerRoleText}>{user?.role}</Text>
+            {user?.full_name || user?.username} •{' '}
+            <Text style={styles.officerRoleText}>{user?.role || 'Departmental Officer'}</Text>
           </Text>
         </View>
 
-        {/* 2x2 Metric Grid */}
+        {/* Loading indicator */}
+        {loading && (
+          <View style={styles.statsHeaderRow}>
+            <ActivityIndicator size="small" color={Colors.primary} />
+          </View>
+        )}
+
+        {/* 2x2 Metric Cards Grid */}
         <View style={styles.gridContainer}>
           <View style={styles.gridRow}>
             <StatCard
               title="Total Complaints"
-              value={dashboard?.metrics.total ?? '...'}
+              value={dashboard?.metrics.total ?? (loading ? '...' : 0)}
               icon="layers-outline"
               color={Colors.primary}
               bgColor="#DCFCE7"
               onPress={() => navigation?.navigate('Complaints')}
             />
-            <View style={{ width: Spacing.sm }} />
+            <View style={{ width: Spacing.md }} />
             <StatCard
               title="Pending Issues"
-              value={dashboard?.metrics.pending ?? '...'}
+              value={dashboard?.metrics.pending ?? (loading ? '...' : 0)}
               icon="time-outline"
               color={Colors.status.pending}
               bgColor={Colors.status.pendingBg}
@@ -116,181 +101,89 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             />
           </View>
 
-          <View style={[styles.gridRow, { marginTop: Spacing.sm }]}>
+          <View style={[styles.gridRow, { marginTop: Spacing.md }]}>
             <StatCard
               title="Resolved"
-              value={dashboard?.metrics.resolved ?? '...'}
+              value={dashboard?.metrics.resolved ?? (loading ? '...' : 0)}
               icon="checkmark-circle-outline"
               color={Colors.status.resolved}
               bgColor={Colors.status.resolvedBg}
               onPress={() => navigation?.navigate('Complaints', { status: 'resolved' })}
             />
-            <View style={{ width: Spacing.sm }} />
+            <View style={{ width: Spacing.md }} />
             <StatCard
               title="Registered Today"
-              value={dashboard?.metrics.today ?? '...'}
+              value={dashboard?.metrics.today ?? (loading ? '...' : 0)}
               icon="calendar-outline"
               color={Colors.secondary}
               bgColor="#E0F2FE"
+              onPress={() => navigation?.navigate('Complaints')}
             />
           </View>
         </View>
 
-        {/* Assigned Zones Pill Bar */}
-        {user?.allowed_locations && user.allowed_locations.length > 0 && (
-          <View style={styles.zonesContainer}>
-            <Text style={styles.zonesLabel}>OPERATIONAL JURISDICTION:</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.zonesScroll}>
-              {user.allowed_locations.map((loc) => (
-                <View key={loc.id} style={styles.zoneChip}>
-                  <Ionicons name="location-outline" size={12} color={Colors.primary} style={{ marginRight: 3 }} />
-                  <Text style={styles.zoneChipText}>{loc.name}</Text>
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        )}
+        {/* Quick Departmental Utilities */}
+        <View style={styles.servicesContainer}>
+          <Text style={styles.servicesTitle}>Quick Navigation</Text>
 
-        {/* Recent Complaints Header */}
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Recent Complaints</Text>
-          <TouchableOpacity onPress={() => navigation?.navigate('Complaints')} activeOpacity={0.7}>
-            <Text style={styles.seeAllText}>View All &gt;</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Recent Complaints Feed */}
-        {loading ? (
-          <View style={styles.loadingBox}>
-            <ActivityIndicator size="small" color={Colors.primary} />
-            <Text style={styles.loadingText}>Fetching recent complaints...</Text>
-          </View>
-        ) : dashboard?.recent_complaints && dashboard.recent_complaints.length > 0 ? (
-          dashboard.recent_complaints.map((item) => (
-            <ComplaintCard
-              key={item.id}
-              complaint={item}
-              onPress={() => handleOpenDetail(item)}
-            />
-          ))
-        ) : (
-          <EmptyState
-            title="No Recent Complaints"
-            description="All complaints in your assigned jurisdiction have been reviewed."
-          />
-        )}
-      </ScrollView>
-
-      {/* Complaint Detail Modal */}
-      <Modal
-        visible={detailModalVisible}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setDetailModalVisible(false)}
-      >
-        <SafeAreaView style={styles.modalSafeArea}>
-          <View style={styles.modalHeader}>
-            <View style={styles.modalTitleBox}>
-              <Text style={styles.modalComplaintNo}>{selectedComplaint?.complaint_no || 'Complaint Details'}</Text>
-              <Text style={styles.modalSubheading}>{selectedComplaint?.category}</Text>
-            </View>
+          <View style={styles.serviceRow}>
             <TouchableOpacity
-              onPress={() => setDetailModalVisible(false)}
-              style={styles.closeBtn}
-              activeOpacity={0.7}
+              style={styles.serviceCard}
+              onPress={() => navigation?.navigate('Complaints')}
+              activeOpacity={0.75}
             >
-              <Ionicons name="close" size={24} color={Colors.textSecondary} />
+              <View style={[styles.serviceIconCircle, { backgroundColor: '#F0FDF4' }]}>
+                <Ionicons name="folder-open" size={22} color={Colors.primary} />
+              </View>
+              <Text style={styles.serviceCardTitle}>Complaint Directory</Text>
+              <Text style={styles.serviceCardSubtitle}>Search & filter all cases</Text>
+            </TouchableOpacity>
+
+            <View style={{ width: Spacing.md }} />
+
+            <TouchableOpacity
+              style={styles.serviceCard}
+              onPress={() => navigation?.navigate('Reports')}
+              activeOpacity={0.75}
+            >
+              <View style={[styles.serviceIconCircle, { backgroundColor: '#EFF6FF' }]}>
+                <Ionicons name="pie-chart" size={22} color={Colors.secondary} />
+              </View>
+              <Text style={styles.serviceCardTitle}>Analytics & Reports</Text>
+              <Text style={styles.serviceCardSubtitle}>Zonal & type statistics</Text>
             </TouchableOpacity>
           </View>
 
-          {loadingDetail ? (
-            <View style={styles.modalLoading}>
-              <ActivityIndicator size="large" color={Colors.primary} />
-              <Text style={styles.modalLoadingText}>Loading full record...</Text>
+          {/* Helpline 1334 banner */}
+          <TouchableOpacity
+            style={styles.helplineBanner}
+            onPress={() => Linking.openURL('tel:1334')}
+            activeOpacity={0.8}
+          >
+            <View style={styles.helplineLeft}>
+              <View style={styles.helplineIconBox}>
+                <Ionicons name="call" size={18} color="#FFFFFF" />
+              </View>
+              <View>
+                <Text style={styles.helplineTitle}>WSSP Citizen Toll-Free Helpline</Text>
+                <Text style={styles.helplineSubtitle}>Dial 1334 for immediate public inquiries</Text>
+              </View>
             </View>
-          ) : selectedComplaint ? (
-            <ScrollView contentContainerStyle={styles.modalBody}>
-              {/* Status Banner */}
-              <View style={styles.statusBanner}>
-                <Text style={styles.bannerLabel}>Status:</Text>
-                <StatusBadge status={selectedComplaint.status} />
-              </View>
+            <View style={styles.helplineNumberBadge}>
+              <Text style={styles.helplineNumberText}>1334</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
 
-              {/* Issue Description Card */}
-              <View style={styles.detailCard}>
-                <Text style={styles.cardHeaderTitle}>Complaint Description</Text>
-                <Text style={styles.detailText}>
-                  {selectedComplaint.detail || selectedComplaint.title || 'No additional remarks.'}
-                </Text>
-              </View>
-
-              {/* Citizen & Location Details */}
-              <View style={styles.detailCard}>
-                <Text style={styles.cardHeaderTitle}>Citizen & Location</Text>
-                
-                <View style={styles.detailRow}>
-                  <Text style={styles.rowLabel}>Citizen Name:</Text>
-                  <Text style={styles.rowValue}>{selectedComplaint.citizen_name}</Text>
-                </View>
-
-                <View style={styles.detailRow}>
-                  <Text style={styles.rowLabel}>Cell Number:</Text>
-                  <Text style={styles.rowValue}>{Formatters.formatPhone(selectedComplaint.cell_number)}</Text>
-                </View>
-
-                {selectedComplaint.cnic && (
-                  <View style={styles.detailRow}>
-                    <Text style={styles.rowLabel}>CNIC:</Text>
-                    <Text style={styles.rowValue}>{Formatters.formatCNIC(selectedComplaint.cnic)}</Text>
-                  </View>
-                )}
-
-                <View style={styles.detailRow}>
-                  <Text style={styles.rowLabel}>Zone & UC:</Text>
-                  <Text style={styles.rowValue}>{selectedComplaint.location} • {selectedComplaint.uc}</Text>
-                </View>
-
-                <View style={styles.detailRow}>
-                  <Text style={styles.rowLabel}>Area / Address:</Text>
-                  <Text style={styles.rowValue}>{selectedComplaint.area || selectedComplaint.address || 'Peshawar'}</Text>
-                </View>
-
-                <View style={styles.detailRow}>
-                  <Text style={styles.rowLabel}>Registration Date:</Text>
-                  <Text style={styles.rowValue}>{Formatters.formatDate(selectedComplaint.date)}</Text>
-                </View>
-              </View>
-
-              {/* Resolution Info (if resolved) */}
-              {selectedComplaint.resolution && (
-                <View style={[styles.detailCard, styles.resolutionCard]}>
-                  <Text style={[styles.cardHeaderTitle, { color: Colors.status.resolved }]}>
-                    Resolution Details
-                  </Text>
-                  <Text style={styles.detailText}>
-                    {selectedComplaint.resolution.description || 'Marked resolved by field officer.'}
-                  </Text>
-                  {selectedComplaint.resolution.customer_satisfaction && (
-                    <View style={[styles.detailRow, { marginTop: 8 }]}>
-                      <Text style={styles.rowLabel}>Citizen Satisfaction:</Text>
-                      <Text style={[styles.rowValue, { textTransform: 'capitalize', fontWeight: '800' }]}>
-                        {selectedComplaint.resolution.customer_satisfaction}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              )}
-
-              <WSSPButton
-                title="Close Record"
-                variant="secondary"
-                onPress={() => setDetailModalVisible(false)}
-                style={{ marginTop: Spacing.md }}
-              />
-            </ScrollView>
-          ) : null}
-        </SafeAreaView>
-      </Modal>
+      {/* Floating Plus Sign Button on Front Page */}
+      <TouchableOpacity
+        style={styles.floatingAddButton}
+        onPress={() => navigation?.navigate('NewComplaint')}
+        activeOpacity={0.85}
+      >
+        <Ionicons name="add" size={32} color="#FFFFFF" />
+      </TouchableOpacity>
     </View>
   );
 };
@@ -301,22 +194,22 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   scrollContent: {
-    padding: Spacing.md,
-    paddingBottom: Spacing.xxl,
+    paddingBottom: 90, // extra clearance for floating button & bottom tabs
   },
   greetingHeader: {
-    marginBottom: Spacing.md,
-    paddingTop: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.xs,
   },
   greetingText: {
-    fontSize: Typography.fontSize.sm,
-    fontWeight: '700',
-    color: Colors.textMuted,
+    fontSize: Typography.fontSize.xs,
+    fontWeight: '800',
+    color: '#64748B',
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 1.2,
   },
   sectionSubtitle: {
-    fontSize: 26,
+    fontSize: Typography.fontSize.xxl,
     fontWeight: '900',
     color: Colors.textPrimary,
     letterSpacing: -0.5,
@@ -324,175 +217,151 @@ const styles = StyleSheet.create({
   },
   officerNameText: {
     fontSize: Typography.fontSize.sm,
-    fontWeight: '700',
     color: Colors.primary,
-    marginTop: 4,
+    fontWeight: '700',
+    marginTop: 2,
   },
   officerRoleText: {
-    fontWeight: '600',
     color: Colors.textSecondary,
+    fontWeight: '500',
+  },
+
+  // KPI Section
+  statsHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.md,
+    marginBottom: Spacing.sm,
+  },
+  statsHeaderTitle: {
+    fontSize: Typography.fontSize.sm,
+    fontWeight: '800',
+    color: Colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   gridContainer: {
+    paddingHorizontal: Spacing.md,
     marginBottom: Spacing.md,
   },
   gridRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
   },
-  zonesContainer: {
-    backgroundColor: '#F1F5F9',
-    padding: Spacing.sm,
-    borderRadius: BorderRadius.md,
+
+  // Quick Services Section
+  servicesContainer: {
+    paddingHorizontal: Spacing.md,
+  },
+  servicesTitle: {
+    fontSize: Typography.fontSize.sm,
+    fontWeight: '800',
+    color: Colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: Spacing.sm,
+  },
+  serviceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: Spacing.md,
   },
-  zonesLabel: {
-    fontSize: 9,
-    fontWeight: '800',
+  serviceCard: {
+    flex: 1,
+    backgroundColor: Colors.surface,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  serviceIconCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.sm,
+  },
+  serviceCardTitle: {
+    fontSize: Typography.fontSize.sm,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  serviceCardSubtitle: {
+    fontSize: 11,
     color: Colors.textMuted,
-    letterSpacing: 1,
-    marginBottom: 6,
+    marginTop: 2,
   },
-  zonesScroll: {
-    flexDirection: 'row',
-    gap: Spacing.xs,
-  },
-  zoneChip: {
+
+  // Helpline 1334
+  helplineBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
-    paddingHorizontal: 8,
+    justifyContent: 'space-between',
+    backgroundColor: '#0F172A',
+    paddingVertical: 12,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    marginTop: Spacing.xs,
+  },
+  helplineLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  helplineIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#334155',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.sm,
+  },
+  helplineTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  helplineSubtitle: {
+    fontSize: 10,
+    color: '#94A3B8',
+  },
+  helplineNumberBadge: {
+    backgroundColor: Colors.accent,
+    paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: BorderRadius.full,
-    borderWidth: 1,
-    borderColor: Colors.border,
   },
-  zoneChipText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.primary,
+  helplineNumberText: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: '#000000',
   },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: Spacing.xs,
-    marginBottom: Spacing.sm,
-  },
-  sectionTitle: {
-    fontSize: Typography.fontSize.lg,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-  },
-  seeAllText: {
-    fontSize: Typography.fontSize.sm,
-    fontWeight: '700',
-    color: Colors.primary,
-  },
-  loadingBox: {
+
+  // Floating Plus Button (Circle)
+  floatingAddButton: {
+    position: 'absolute',
+    bottom: 24,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: Spacing.xl,
-  },
-  loadingText: {
-    fontSize: Typography.fontSize.xs,
-    color: Colors.textMuted,
-    marginTop: Spacing.sm,
-  },
-  modalSafeArea: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: Spacing.md,
-    backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  modalTitleBox: {
-    flex: 1,
-  },
-  modalComplaintNo: {
-    fontSize: Typography.fontSize.lg,
-    fontWeight: '800',
-    color: Colors.primary,
-  },
-  modalSubheading: {
-    fontSize: Typography.fontSize.xs,
-    color: Colors.textSecondary,
-    fontWeight: '600',
-  },
-  closeBtn: {
-    padding: 6,
-  },
-  modalLoading: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalLoadingText: {
-    marginTop: Spacing.sm,
-    color: Colors.textMuted,
-    fontSize: Typography.fontSize.sm,
-  },
-  modalBody: {
-    padding: Spacing.md,
-  },
-  statusBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.surface,
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
-    marginBottom: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  bannerLabel: {
-    fontSize: Typography.fontSize.sm,
-    fontWeight: '700',
-    color: Colors.textSecondary,
-  },
-  detailCard: {
-    backgroundColor: Colors.surface,
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
-    marginBottom: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  resolutionCard: {
-    backgroundColor: '#F0FDF4',
-    borderColor: '#BBF7D0',
-  },
-  cardHeaderTitle: {
-    fontSize: Typography.fontSize.sm,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-    marginBottom: Spacing.sm,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  detailText: {
-    fontSize: Typography.fontSize.md,
-    color: Colors.textPrimary,
-    lineHeight: 22,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 4,
-  },
-  rowLabel: {
-    fontSize: Typography.fontSize.sm,
-    color: Colors.textSecondary,
-    fontWeight: '500',
-  },
-  rowValue: {
-    fontSize: Typography.fontSize.sm,
-    color: Colors.textPrimary,
-    fontWeight: '700',
+    backgroundColor: Colors.primary,
+    shadowColor: Colors.primaryDark,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 8,
+    borderWidth: 2,
+    borderColor: '#34D399',
   },
 });

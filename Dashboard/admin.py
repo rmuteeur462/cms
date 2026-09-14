@@ -104,52 +104,52 @@ class ComplaintSubTypeAdmin(admin.ModelAdmin):
 
 
 
-@admin.register(Location)
+# @admin.register(Location)
 class LocationAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('id', 'location_name')
     search_fields = ('location_name',)
 
 
-@admin.register(UC)
+# @admin.register(UC)
 class UCAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('id', 'uc_name', 'location')
     search_fields = ('uc_name',)
     list_filter = ('location',)
 
 
-@admin.register(NC)
+# @admin.register(NC)
 class NCAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('id', 'nc_name', 'uc_name')
     search_fields = ('nc_name',)
     list_filter = ('uc_name',)
 
 
-@admin.register(Street)
+# @admin.register(Street)
 class StreetAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('id', 'street_name')
     search_fields = ('Street_name',)
 
 
-@admin.register(Department)
+# @admin.register(Department)
 class DepartmentAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('id', 'department_name',)
     search_fields = ('department_name',)
 
 
-@admin.register(Designation)
+# @admin.register(Designation)
 class DesignationAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('id', 'designation_name',)
     search_fields = ('designation_name',)
 
 
-@admin.register(Post)
+# @admin.register(Post)
 class PostAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('id', 'name',)
     search_fields = ('name',)
     ordering = ('name',)
 
 
-@admin.register(PostDetail)
+# @admin.register(PostDetail)
 class PostDetailAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('id', 'post', 'media_channel')
     search_fields = ('post__name', 'media_channel')
@@ -162,14 +162,14 @@ class PostDetailAdmin(CustomAdminMixin, ImportExportModelAdmin):
         return queryset.select_related('post')
 
 
-@admin.register(official)
+# @admin.register(official)
 class OfficialAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('id', 'employee_id', 'name', 'designation', 'department', 'location')
     search_fields = ('employee_id', 'name', 'designation', 'department')
     list_filter = ('location', 'designation', 'department')
 
 
-@admin.register(Management_Staff)
+# @admin.register(Management_Staff)
 class ManagementStaffAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     list_display = ('employee_id', 'name', 'father_name', 'location', 'designation')
     search_fields = ('employee_id', 'name', 'father_name', 'designation')
@@ -183,7 +183,7 @@ class ManagementStaffAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     )
 
 
-@admin.register(DayFrequency)
+# @admin.register(DayFrequency)
 class DayFrequencyAdmin(admin.ModelAdmin):
     list_display = ('id', 'name') 
     search_fields = ('name',) 
@@ -192,28 +192,28 @@ class DayFrequencyAdmin(admin.ModelAdmin):
 class StatusAdmin(admin.ModelAdmin):
     list_display = ('id', 'status') 
     search_fields = ('status',)  
-admin.site.register(Status, StatusAdmin)
+# admin.site.register(Status, StatusAdmin)
 
 
-@admin.register(Category)
+# @admin.register(Category)
 class CategoryAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('category', 'id')
     search_fields = ('category',)
 
 
-@admin.register(Capacity)
+# @admin.register(Capacity)
 class CapacityAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('capacity', 'id')
     search_fields = ('capacity',)
 
 
-@admin.register(LiftingFrequency)
+# @admin.register(LiftingFrequency)
 class LiftingFrequencyAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('frequency', 'id')
     search_fields = ('frequency',)
 
 
-@admin.register(LiftingSchedule)
+# @admin.register(LiftingSchedule)
 class LiftingScheduleAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('from_time', 'to_time', 'id')
     search_fields = ('from_time', 'to_time')
@@ -238,17 +238,17 @@ class ComplaintTypeAdmin(CustomAdminMixin, ImportExportModelAdmin):
 class ActivityAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('name',)  
     search_fields = ('name',)  
-admin.site.register(Activity, ActivityAdmin)
+# admin.site.register(Activity, ActivityAdmin)
 
 
 class CLCStaffAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('employee_id', 'name', 'location', 'designation') 
     search_fields = ('name', 'employee_id', 'location__location_name')  
     list_filter = ('location', 'designation')  
-admin.site.register(CLCStaff, CLCStaffAdmin)
+# admin.site.register(CLCStaff, CLCStaffAdmin)
 
 
-@admin.register(TubeWell)
+# @admin.register(TubeWell)
 class TubeWellAdmin(CustomAdminMixin, ImportExportModelAdmin):
     form = TubeWellForm
     list_display = ('id', 'tubewell_id', 'tubewell_name', 'location', 'uc', 'latitude', 'longitude')
@@ -289,7 +289,7 @@ class TubeWellAdmin(CustomAdminMixin, ImportExportModelAdmin):
     export_as_csv.short_description = "Export selected tubewells as CSV"
 
 
-@admin.register(Vehicle)
+# @admin.register(Vehicle)
 class VehicleAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('id', 'vehicle_id', 'vehicle_name', 'location', 'vehicle_type')
     search_fields = ('vehicle_name',)
@@ -335,7 +335,7 @@ from django.utils.text import slugify
 
 
 
-@admin.register(Employee)
+# @admin.register(Employee)
 # class EmployeeAdmin(CustomAdminMixin, ImportExportModelAdmin):
 class EmployeeAdmin(CustomAdminMixin, admin.ModelAdmin):
     
@@ -595,17 +595,17 @@ class BinAdmin(ImportExportModelAdmin):
         # Filter bins based on allowed locations
         return qs.filter(location__in=allowed_locations)
 
-admin.site.register(Bin, BinAdmin)
+# admin.site.register(Bin, BinAdmin)
 
 
-@admin.register(Filter)
+# @admin.register(Filter)
 class FilterAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('id', 'filter_id', 'name', 'location')
     search_fields = ('name', 'location__location_name')
     list_filter = ('location',)
 
 
-@admin.register(Tracker)
+# @admin.register(Tracker)
 class TrackerAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('id', 'vehicle_id', 'vehicle_name', 'location', 'vehicle_type')
     search_fields = ('vehicle_id', 'vehicle_name')
@@ -623,14 +623,14 @@ class TrackerAdmin(CustomAdminMixin, ImportExportModelAdmin):
 
 
 
-@admin.register(Street_cleaning)
+# @admin.register(Street_cleaning)
 class Street_cleaningAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('id', 'street_name', 'uc_name')
     search_fields = ('Street_name',)
     list_filter = ('uc_name',)
 
 
-@admin.register(EmployeeAttendance)
+# @admin.register(EmployeeAttendance)
 class EmployeeAttendanceAdmin(CustomAdminMixin, ImportExportModelAdmin):
     form = EmployeeAttendanceForm
     list_display = ('id', 'attendance_date', 'location', 'employee_name', 'present', 'absent', 'leave')
@@ -640,7 +640,7 @@ class EmployeeAttendanceAdmin(CustomAdminMixin, ImportExportModelAdmin):
     date_hierarchy = 'attendance_date'
 
 
-@admin.register(VehicleAttendance)
+# @admin.register(VehicleAttendance)
 class VehicleAttendanceAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('id', 'attendance_date', 'location', 'vehicle_name', 'functional', 'non_functional')
     search_fields = ('location__location_name', 'vehicle_name__vehicle_name')
@@ -649,7 +649,7 @@ class VehicleAttendanceAdmin(CustomAdminMixin, ImportExportModelAdmin):
     date_hierarchy = 'attendance_date'
 
 
-@admin.register(TubeWellAttendance)
+# @admin.register(TubeWellAttendance)
 class TubeWellAttendanceAdmin(CustomAdminMixin, ImportExportModelAdmin):
     form = TubeWellAttendanceForm
     list_display = ('id', 'tubewell', 'location', 'functional', 'non_functional', 'attendance_date')
@@ -658,7 +658,7 @@ class TubeWellAttendanceAdmin(CustomAdminMixin, ImportExportModelAdmin):
     date_hierarchy = 'attendance_date'
 
 
-@admin.register(WaterSupply)
+# @admin.register(WaterSupply)
 class WaterSupplyAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('id', 'location', 'date')
     list_filter = ('location', 'date')
@@ -666,7 +666,7 @@ class WaterSupplyAdmin(CustomAdminMixin, ImportExportModelAdmin):
     date_hierarchy = 'date'
 
 
-@admin.register(Revenue)
+# @admin.register(Revenue)
 class RevenueAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = (
         'id', 'location', 'date', 'recovery_day_water_supply', 'recovery_day_solid_waste_management',
@@ -678,7 +678,7 @@ class RevenueAdmin(CustomAdminMixin, ImportExportModelAdmin):
     date_hierarchy = 'date'
 
 
-@admin.register(Watertest)
+# @admin.register(Watertest)
 class WatertestAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('id', 'date', 'location', 'tubewell', 'temperature_c', 'ph', 'output')
     search_fields = ('location__name', 'tubewell__tubewell_name')
@@ -700,7 +700,7 @@ class WatertestAdmin(CustomAdminMixin, ImportExportModelAdmin):
     )
 
 
-@admin.register(BinAttendance)
+# @admin.register(BinAttendance)
 class BinAttendanceAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('attendance_date', 'bin_name', 'location', 'uc', 'lifted', 'unlifted')
     search_fields = ('attendance_date', 'bin_name__name', 'location__location_name', 'uc__uc_name')
@@ -708,7 +708,7 @@ class BinAttendanceAdmin(CustomAdminMixin, ImportExportModelAdmin):
     date_hierarchy = 'attendance_date'
 
 
-@admin.register(FilterAttendance)
+# @admin.register(FilterAttendance)
 class FilterAttendanceAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('id', 'filter_name', 'attendance_date', 'location', 'functional', 'non_functional')
     list_filter = ('attendance_date', 'location', 'functional', 'non_functional')
@@ -717,7 +717,7 @@ class FilterAttendanceAdmin(CustomAdminMixin, ImportExportModelAdmin):
     date_hierarchy = 'attendance_date'
 
 
-@admin.register(VehiclePE)
+# @admin.register(VehiclePE)
 class VehiclePEAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = (
        'id', 'vehicle_name', 'location', 'vehicle_type', 'attendance_date', 'vehicle_trips', 'fuel_issued',
@@ -730,7 +730,7 @@ class VehiclePEAdmin(CustomAdminMixin, ImportExportModelAdmin):
     date_hierarchy = 'attendance_date'
 
 
-@admin.register(TrackerAttendance)
+# @admin.register(TrackerAttendance)
 class TrackerAttendanceAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('id', 'vehicle_name', 'attendance_date', 'location', 'functional', 'non_functional')
     list_filter = ('attendance_date', 'location', 'functional', 'non_functional')
@@ -739,7 +739,7 @@ class TrackerAttendanceAdmin(CustomAdminMixin, ImportExportModelAdmin):
     date_hierarchy = 'attendance_date'
 
 
-@admin.register(Sanitation)
+# @admin.register(Sanitation)
 class SanitationAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('location', 'date', 'container_lifted', 'moqas_cleared', 'primary_vehicle_trips', 
                     'primary_waste_collection_tons', 'waste_locally_dumped_tons', 'waste_dumped_at_lfs_tons', 
@@ -753,7 +753,7 @@ class SanitationAdmin(CustomAdminMixin, ImportExportModelAdmin):
     ordering = ('-created_at',)  # Order entries by the created date (most recent first)
 
 
-@admin.register(Vehiclerepair)
+# @admin.register(Vehiclerepair)
 class VehiclerepairAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('id', 'Vehicle', 'location', 'Vehicle_repair_description', 'cost', 'date', 'created_at', 'updated_at')
     list_filter = ('location', 'date', 'Vehicle')
@@ -772,7 +772,7 @@ class VehiclerepairAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_per_page = 25
 
 
-@admin.register(Tubewellrepair)
+# @admin.register(Tubewellrepair)
 class TubewellrepairAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('id', 'tubewell', 'location', 'uc', 'tubewell_repair_description', 'cost', 'date', 'created_at', 'updated_at')
     list_filter = ('location', 'uc', 'date', 'tubewell')
@@ -791,7 +791,7 @@ class TubewellrepairAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_per_page = 25
 
 
-@admin.register(Binfoam)
+# @admin.register(Binfoam)
 class BinfoamAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = (
         'attendance_date', 
@@ -1200,7 +1200,7 @@ class CLCAdmin(CustomAdminMixin, ImportExportModelAdmin):
 
     download_clc_report_with_images.short_description = "📸 Download CLC Visit Report (with Images)"
 
-admin.site.register(CLC, CLCAdmin)
+# admin.site.register(CLC, CLCAdmin)
 
 
 class PerfomaTubeAdmin(ImportExportModelAdmin, admin.ModelAdmin):
@@ -1238,7 +1238,7 @@ class PerfomaTubeAdmin(ImportExportModelAdmin, admin.ModelAdmin):
         'complaints_redressal',
     )
     search_fields = ('tube_well_id',)
-admin.site.register(perfoma_tube, PerfomaTubeAdmin)
+# admin.site.register(perfoma_tube, PerfomaTubeAdmin)
 
 
 from django.http import HttpResponse
@@ -1251,7 +1251,7 @@ import os
 from django.utils import timezone
 
 
-@admin.register(FieldVisitReport)
+# @admin.register(FieldVisitReport)
 class FieldVisitReportAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('id', 'date', 'location', 'name_of_official', 'visit_area', 'display_image_preview')
     search_fields = ('location__name', 'name_of_official__name', 'visit_area')
@@ -1358,7 +1358,7 @@ class FieldVisitReportAdmin(CustomAdminMixin, ImportExportModelAdmin):
 
 
 
-@admin.register(PostAttendance)
+# @admin.register(PostAttendance)
 class PostAttendanceAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('id', 'post_type', 'post_detail', 'no_of_post', 'post_date', 'created_at')
     search_fields = ('post_type__name', 'post_detail__media_channel', 'no_of_post')
@@ -1379,7 +1379,7 @@ class PostAttendanceAdmin(CustomAdminMixin, ImportExportModelAdmin):
 
 
 
-@admin.register(locationmap)
+# @admin.register(locationmap)
 class LocationMapAdmin(admin.ModelAdmin):
     list_display = ('name', 'latitude', 'longitude') 
     search_fields = ('name',) 
@@ -1389,13 +1389,13 @@ class LocationMapAdmin(admin.ModelAdmin):
 class KMZUploadAdmin(admin.ModelAdmin):
     list_display = ('file', 'uploaded_at', 'visualization_link')
     readonly_fields = ('visualization_link',)
-admin.site.register(KMZUpload, KMZUploadAdmin)
+# admin.site.register(KMZUpload, KMZUploadAdmin)
 
 
 
 
 
-@admin.register(ViewName)
+# @admin.register(ViewName)
 class ViewNameAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ['id', 'name']
     list_filter = ['name']
@@ -1403,7 +1403,7 @@ class ViewNameAdmin(CustomAdminMixin, ImportExportModelAdmin):
 
 
 
-@admin.register(UserViewPermission)
+# @admin.register(UserViewPermission)
 class UserViewPermissionAdmin(ImportExportModelAdmin):
     list_display = ['id', 'display_users', 'display_views', 'can_view']
     search_fields = ['user__username']  # Fixed field name
@@ -1459,17 +1459,17 @@ class OfficialCPermissionAdmin(admin.ModelAdmin):
     search_fields = ('user__username', 'user__email')
     filter_horizontal = ('Official',)
 
-admin.site.register(DepartmentPermission, DepartmentPermissionAdmin)
-admin.site.register(officialFPermission, OfficialFPermissionAdmin)
-admin.site.register(officialCPermission, OfficialCPermissionAdmin)
-admin.site.register(UcPermission, UcPermissionAdmin)
-admin.site.register(LocationPermission, LocationPermissionAdmin)
+# admin.site.register(DepartmentPermission, DepartmentPermissionAdmin)
+# admin.site.register(officialFPermission, OfficialFPermissionAdmin)
+# admin.site.register(officialCPermission, OfficialCPermissionAdmin)
+# admin.site.register(UcPermission, UcPermissionAdmin)
+# admin.site.register(LocationPermission, LocationPermissionAdmin)
 
 
 
 
 
-@admin.register(UserActivityLog)
+# @admin.register(UserActivityLog)
 class UserActivityLogAdmin(admin.ModelAdmin):
     list_display = ('user', 'action', 'model_name', 'object_id', 'timestamp')
     list_filter = ('action', 'model_name', 'timestamp')
@@ -1551,7 +1551,7 @@ class LogAdmin(admin.ModelAdmin):
         log_admin_action(request, "Viewed", obj)
         return super().change_view(request, object_id, form_url, extra_context)
 
-admin.site.register(Log, LogAdmin) 
+# admin.site.register(Log, LogAdmin) 
 
 
 def get_client_ip(request: HttpRequest):
@@ -1585,11 +1585,11 @@ def log_admin_action(request, action, obj=None):
 from django.contrib import admin
 from .models import Document, ADP
 
-admin.site.register(Document)
-admin.site.register(ADP)
+# admin.site.register(Document)
+# admin.site.register(ADP)
 
 
-@admin.register(Fuel)
+# @admin.register(Fuel)
 class FuelAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('id', 'location', 'date', 'lfs_trips_no', 'fuel_top_up_liters', 'created_at', 'updated_at')
     search_fields = ('location__location_name', 'date')
@@ -1598,7 +1598,7 @@ class FuelAdmin(CustomAdminMixin, ImportExportModelAdmin):
 
 from .models import TubeWellwaterdepth
 
-@admin.register(TubeWellwaterdepth)
+# @admin.register(TubeWellwaterdepth)
 class TubeWellwaterdepthAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('tubewell', 'water_table_depth', 'water_table_measurment_date', 'created_at', 'updated_at')
     list_filter = ('tubewell', 'water_table_measurment_date')
@@ -1615,7 +1615,7 @@ from django.http import HttpResponse
 from django.contrib import admin
 from .models import TubeWellWaterProduce
 
-@admin.register(TubeWellWaterProduce)
+# @admin.register(TubeWellWaterProduce)
 class TubeWellWaterProduceAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = (
         'tubewell',
@@ -1688,7 +1688,7 @@ from django.contrib import admin
 from .models import TubeWellElectricityUsage
 
 
-@admin.register(TubeWellElectricityUsage)
+# @admin.register(TubeWellElectricityUsage)
 class TubeWellElectricityUsageAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = (
         'tubewell',
@@ -1774,7 +1774,7 @@ from django.contrib import admin
 from .models import Hotspot
 
 
-@admin.register(Hotspot)
+# @admin.register(Hotspot)
 class HotspotAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = (
         'name',
@@ -1801,7 +1801,7 @@ from django.contrib import admin
 from .models import Hotspot, HotspotEvent
 
 
-@admin.register(HotspotEvent)
+# @admin.register(HotspotEvent)
 class HotspotEventAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = (
         'hotspot',
@@ -1841,7 +1841,7 @@ class SchemestatusInline(admin.TabularInline):
     fields = ('status', 'date', 'created_at', 'updated_at')
     readonly_fields = ('created_at', 'updated_at')
 
-@admin.register(AdpScheme)
+# @admin.register(AdpScheme)
 class AdpSchemeAdmin(admin.ModelAdmin):
     list_display = ('code', 'name', 'aa_cost', 'release', 'exp', 'start_date', 'end_date')
     search_fields = ('code', 'name')
@@ -1851,7 +1851,7 @@ class AdpSchemeAdmin(admin.ModelAdmin):
     readonly_fields = ('created_at', 'updated_at')
 
 
-@admin.register(FinancialProgress)
+# @admin.register(FinancialProgress)
 class FinancialProgressAdmin(admin.ModelAdmin):
     list_display = ('scheme', 'progress', 'created_at', 'updated_at')
     search_fields = ('scheme__code', 'scheme__name', 'progress')
@@ -1859,7 +1859,7 @@ class FinancialProgressAdmin(admin.ModelAdmin):
     readonly_fields = ('created_at', 'updated_at')
 
 
-@admin.register(PhysicalProgress)
+# @admin.register(PhysicalProgress)
 class PhysicalProgressAdmin(admin.ModelAdmin):
     list_display = ('scheme', 'progress', 'created_at', 'updated_at')
     search_fields = ('scheme__code', 'scheme__name', 'progress')
@@ -1870,7 +1870,7 @@ class PhysicalProgressAdmin(admin.ModelAdmin):
 from django.contrib import admin
 from .models import TubeWelldischarge
 
-@admin.register(TubeWelldischarge)
+# @admin.register(TubeWelldischarge)
 class TubeWelldischargeAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('tubewell', 'updated_average_discharge', 'updated_average_discharge_date', 'created_at')
     list_filter = ('tubewell', 'updated_average_discharge_date')
@@ -1948,7 +1948,7 @@ from .models import (
 # ===========================
 # Major Roads Admin
 # ===========================
-@admin.register(MajorRoad_Add)
+# @admin.register(MajorRoad_Add)
 class MajorRoadAddAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('id', 'road', 'location')
     search_fields = ('road',)
@@ -1959,7 +1959,7 @@ class MajorRoadAddAdmin(CustomAdminMixin, ImportExportModelAdmin):
 # ===========================
 # Trunk Sewer Admin
 # ===========================
-@admin.register(TrunkSewer_Add)
+# @admin.register(TrunkSewer_Add)
 class TrunkSewerAddAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('id', 'trunksewer', 'location')
     search_fields = ('trunksewer',)
@@ -1970,7 +1970,7 @@ class TrunkSewerAddAdmin(CustomAdminMixin, ImportExportModelAdmin):
 # ===========================
 # Storm Drain Admin
 # ===========================
-@admin.register(StormDrain_Add)
+# @admin.register(StormDrain_Add)
 class StormDrainAddAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('id', 'stormdrain', 'location')
     search_fields = ('stormdrain',)
@@ -1981,7 +1981,7 @@ class StormDrainAddAdmin(CustomAdminMixin, ImportExportModelAdmin):
 # ===========================
 # Ponding Points Admin
 # ===========================
-@admin.register(PondingPoints_Add)
+# @admin.register(PondingPoints_Add)
 class PondingPointsAddAdmin(CustomAdminMixin, ImportExportModelAdmin):
     list_display = ('id', 'pondingpoints', 'location')
     search_fields = ('pondingpoints',)
@@ -2030,7 +2030,7 @@ class ImagePreviewMixin:
 
 
 # ================= MAJOR ROADS =================
-@admin.register(MajorRoad_inspection)
+# @admin.register(MajorRoad_inspection)
 class MajorRoadInspectionAdmin(
     CustomAdminMixin,
     ImportExportModelAdmin,
@@ -2059,7 +2059,7 @@ class MajorRoadInspectionAdmin(
 
 
 # ================= TRUNK SEWER =================
-@admin.register(TrunkSewer_inspection)
+# @admin.register(TrunkSewer_inspection)
 class TrunkSewerInspectionAdmin(
     CustomAdminMixin,
     ImportExportModelAdmin,
@@ -2092,7 +2092,7 @@ class TrunkSewerInspectionAdmin(
 
 
 # ================= STORM DRAIN =================
-@admin.register(StormDrain_inspection)
+# @admin.register(StormDrain_inspection)
 class StormDrainInspectionAdmin(
     CustomAdminMixin,
     ImportExportModelAdmin,
@@ -2121,7 +2121,7 @@ class StormDrainInspectionAdmin(
 
 
 # ================= PONDING POINTS =================
-@admin.register(PondingPoints_inspection)
+# @admin.register(PondingPoints_inspection)
 class PondingPointsInspectionAdmin(
     CustomAdminMixin,
     ImportExportModelAdmin,
@@ -2153,7 +2153,7 @@ class PondingPointsInspectionAdmin(
 from .models import VisitSchedule, Manhole_inspection
 
 
-@admin.register(VisitSchedule)
+# @admin.register(VisitSchedule)
 class VisitScheduleAdmin(CustomAdminMixin, ImportExportModelAdmin):
     autocomplete_fields = ("employee",)
 
@@ -2208,7 +2208,7 @@ class VisitScheduleAdmin(CustomAdminMixin, ImportExportModelAdmin):
 
 
 # ================= Manhole_inspection =================
-@admin.register(Manhole_inspection)
+# @admin.register(Manhole_inspection)
 class Manhole_inspectionAdmin(
     CustomAdminMixin,
     ImportExportModelAdmin,
@@ -2248,21 +2248,21 @@ from django.db.models import Count
 
 
 # 🔹 Manhole Shape Admin
-@admin.register(ManholeShape)
+# @admin.register(ManholeShape)
 class ManholeShapeAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
     search_fields = ('name',)
 
 
 # 🔹 Manhole Cover Size Admin
-@admin.register(ManholeCoverSize)
+# @admin.register(ManholeCoverSize)
 class ManholeCoverSizeAdmin(admin.ModelAdmin):
     list_display = ('id', 'size')
     search_fields = ('size',)
 
 
 # 🔹 Manhole Cover Material Admin
-@admin.register(ManholeCoverMaterial)
+# @admin.register(ManholeCoverMaterial)
 class ManholeCoverMaterialAdmin(admin.ModelAdmin):
     list_display = ('id', 'material')
     search_fields = ('material',)
@@ -2339,7 +2339,7 @@ def export_manhole_excel(modeladmin, request, queryset):
 
 export_manhole_excel.short_description = "Download Excel"        
 
-@admin.register(Manhole)
+# @admin.register(Manhole)
 class ManholeAdmin(CustomAdminMixin, ImportExportModelAdmin):
 
 
