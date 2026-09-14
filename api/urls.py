@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from rest_framework_simplejwt.views import TokenRefreshView
 from .views import ApiStatusCheck, dshbMonthWiseData
 from . import views
@@ -28,5 +28,8 @@ urlpatterns = [
     path("cms/complaints/<int:complaint_id>/", CMSComplaintDetailView.as_view(), name="cms_complaint_detail"),
     path("cms/complaints/options/", CMSComplaintOptionsView.as_view(), name="cms_complaint_options"),
     path("cms/complaints/create/", CMSComplaintCreateView.as_view(), name="cms_complaint_create"),
+
+    # WSSP CMS API v1 Modular Namespace
+    path("cms/v1/", include("api.v1.urls")),
 ]
 
