@@ -5,11 +5,34 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 500000
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-^w6%&nnkv*ho^xyt4s%+$jxo6g!@vp3&@gc6gc+q8gfgis789g'
-DEBUG = True
-ALLOWED_HOSTS = ['*']
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-^w6%&nnkv*ho^xyt4s%+$jxo6g!@vp3&@gc6gc+q8gfgis789g'
+)
 
+# DEBUG flag: Defaults to True in dev, can be toggled via DJANGO_DEBUG=False
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('true', '1')
 
+# Allowed Hosts: Environment configurable with wildcard dev fallback
+raw_allowed_hosts = os.environ.get('DJANGO_ALLOWED_HOSTS', '*')
+ALLOWED_HOSTS = [h.strip() for h in raw_allowed_hosts.split(',')] if ',' in raw_allowed_hosts else [raw_allowed_hosts]
+
+# Production Security & HTTPS configuration
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+if not DEBUG:
+    SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'True').lower() in ('true', '1')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+# Upload limits (5MB per file)
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024  # 5 MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 MB
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -31,16 +54,11 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'api',
-
 ]
 
-
-FINTECH_API_USERNAME = "wssp_api_user"
-FINTECH_API_PASSWORD = "StrongPassword@123"
-FINTECH_API_KEY = "X-123ABC456"
-
-
-
+FINTECH_API_USERNAME = os.environ.get("FINTECH_API_USERNAME", "wssp_api_user")
+FINTECH_API_PASSWORD = os.environ.get("FINTECH_API_PASSWORD", "StrongPassword@123")
+FINTECH_API_KEY = os.environ.get("FINTECH_API_KEY", "X-123ABC456")
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
 SILENCED_SYSTEM_CHECKS = ["security.W019"]
@@ -73,6 +91,15 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'EXCEPTION_HANDLER': 'api.v1.exceptions.custom_api_exception_handler',
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/minute',
+        'user': '1000/minute',
+    },
 }
 
 # SimpleJWT configuration

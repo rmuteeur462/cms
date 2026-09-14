@@ -162,6 +162,12 @@ class ComplaintResolveSerializer(serializers.Serializer):
         help_text="Optional after-work photo evidence"
     )
 
+    def validate_after_image(self, value):
+        if value:
+            from api.v1.validators import validate_image_file
+            validate_image_file(value)
+        return value
+
 
 from Dashboard.models import ComplaintSubType, UC
 
