@@ -12,7 +12,6 @@ import {
   TextInput,
   Image,
 } from 'react-native';
-import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme';
 import { WSSPInput } from '../../components/common/WSSPInput';
 import { useAuth } from '../../store/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,7 +24,7 @@ export const LoginScreen: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  // Server settings modal state
+  // Hidden developer server settings modal (accessible via long-press on WSSP Logo)
   const [serverModalVisible, setServerModalVisible] = useState(false);
   const [serverInput, setServerInput] = useState(Config.BASE_URL);
 
@@ -72,15 +71,23 @@ export const LoginScreen: React.FC = () => {
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
-          {/* Top Corporate Navy Header */}
+          {/* Top Corporate Navy Blue Header Banner */}
           <View style={styles.headerBox}>
-            <View style={styles.logoContainer}>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onLongPress={() => {
+                setServerInput(Config.BASE_URL);
+                setServerModalVisible(true);
+              }}
+              style={styles.logoContainer}
+              accessibilityHint="Long press for developer server configuration"
+            >
               <Image
                 source={require('../../assets/imgs/wssp_logo.png')}
                 style={styles.logoImage}
                 resizeMode="contain"
               />
-            </View>
+            </TouchableOpacity>
 
             <Text style={styles.appTitle}>WSSP CMS</Text>
             <Text style={styles.deptSubtitle}>Water & Sanitation Services Peshawar</Text>
@@ -91,10 +98,9 @@ export const LoginScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* Full-Screen Seamless White Card Container */}
-          <View style={styles.cardContainer}>
-            {/* Top Portion: Form Content */}
-            <View style={styles.formSection}>
+          {/* Centered Modern Login Card Container */}
+          <View style={styles.centerCardWrapper}>
+            <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <Text style={styles.cardTitle}>Sign In</Text>
                 <View style={styles.titleUnderline} />
@@ -161,38 +167,28 @@ export const LoginScreen: React.FC = () => {
                 <Ionicons name="arrow-forward" size={18} color="#FFFFFF" style={{ marginLeft: 8 }} />
               </TouchableOpacity>
             </View>
+          </View>
 
-            {/* Anchored Footer Section */}
-            <View style={styles.footerSection}>
-              <View style={styles.helplineRow}>
-                <View style={styles.helplineContent}>
-                  <Ionicons name="call" size={14} color="#0080DF" style={{ marginRight: 6 }} />
-                  <Text style={styles.bottomHelplineText}>
-                    Landline Helpline: <Text style={styles.bottomHelplineNumber}>1334</Text>
-                  </Text>
-                </View>
-
-                <TouchableOpacity
-                  onPress={() => {
-                    setServerInput(Config.BASE_URL);
-                    setServerModalVisible(true);
-                  }}
-                  style={styles.gearBtn}
-                  accessibilityLabel="Server settings"
-                >
-                  <Ionicons name="settings-outline" size={16} color="#64748B" />
-                </TouchableOpacity>
-              </View>
-
-              <Text style={styles.copyrightText}>
-                Water & Sanitation Services Peshawar • Govt. of KP
+          {/* Bottom Helpline & Departmental Footer (Without Settings Gear) */}
+          <View style={styles.footerContainer}>
+            <View style={styles.helplinePill}>
+              <Ionicons name="call" size={14} color="#0080DF" style={{ marginRight: 6 }} />
+              <Text style={styles.bottomHelplineText}>
+                Landline Helpline: <Text style={styles.bottomHelplineNumber}>1334</Text>
               </Text>
             </View>
+
+            <Text style={styles.footerDepartment}>
+              Government of Khyber Pakhtunkhwa
+            </Text>
+            <Text style={styles.footerNote}>
+              Official Complaint Management System
+            </Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Discreet Server Settings Modal */}
+      {/* Hidden Developer Server Settings Modal (Access via long-press on Logo) */}
       <Modal
         visible={serverModalVisible}
         transparent
@@ -247,65 +243,70 @@ export const LoginScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0A3663', // Deep Corporate Navy Blue
+    backgroundColor: '#0A3663', // Top status area matching Navy Blue Header
   },
   keyboardView: {
     flex: 1,
+    backgroundColor: '#F0F6FB', // Light clean background matching image
   },
   scrollContent: {
     flexGrow: 1,
-    backgroundColor: '#0A3663', // Continuous Navy Blue background
+    justifyContent: 'space-between', // Perfectly balances header, card, and footer
+    backgroundColor: '#F0F6FB',
+    paddingBottom: Platform.OS === 'android' ? 24 : 20,
   },
 
-  // WSSP Blue Header Banner
+  // WSSP Deep Navy Blue Header Banner
   headerBox: {
     backgroundColor: '#0A3663',
     alignItems: 'center',
-    paddingTop: Platform.OS === 'android' ? 24 : 16,
-    paddingBottom: 24,
+    paddingTop: Platform.OS === 'android' ? 28 : 20,
+    paddingBottom: 38,
     paddingHorizontal: 20,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
   },
   logoContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 86,
+    height: 86,
+    borderRadius: 43,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 6,
-    padding: 3,
+    padding: 4,
   },
   logoImage: {
     width: '100%',
     height: '100%',
   },
   appTitle: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '900',
     color: '#FFFFFF',
     letterSpacing: 0.5,
   },
   deptSubtitle: {
-    fontSize: 13,
-    color: '#93C5FD',
+    fontSize: 13.5,
+    color: '#93C5FD', // Light sky blue
     fontWeight: '600',
-    marginTop: 2,
+    marginTop: 4,
     textAlign: 'center',
-    maxWidth: 280,
+    maxWidth: 290,
   },
   badgeLine: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 122, 0, 0.18)',
     paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: 20,
-    marginTop: 10,
+    marginTop: 12,
     borderWidth: 1,
     borderColor: '#FF7A00',
   },
@@ -318,59 +319,59 @@ const styles = StyleSheet.create({
   },
   badgeLineText: {
     color: '#FFA940',
-    fontSize: 10,
+    fontSize: 10.5,
     fontWeight: '800',
     letterSpacing: 0.8,
   },
 
-  // Full-Screen Card Container
-  cardContainer: {
-    flex: 1,
+  // Centered Card Section
+  centerCardWrapper: {
+    width: '100%',
+    paddingHorizontal: 18,
+    marginTop: -22, // Elegant overlap with curved header
+    marginBottom: 16,
+  },
+  card: {
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingHorizontal: 24,
-    paddingTop: 28,
-    paddingBottom: 24,
-    justifyContent: 'space-between',
-    minHeight: 450,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
+    borderRadius: 22,
+    paddingHorizontal: 22,
+    paddingVertical: 24,
+    shadowColor: '#0080DF',
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.12,
     shadowRadius: 16,
-    elevation: 8,
-  },
-  formSection: {
-    width: '100%',
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   cardHeader: {
     marginBottom: 4,
   },
   cardTitle: {
-    fontSize: 24,
+    fontSize: 23,
     fontWeight: '800',
     color: '#0F172A',
   },
   titleUnderline: {
-    width: 42,
-    height: 4,
-    backgroundColor: '#FF7A00',
+    width: 38,
+    height: 3.5,
+    backgroundColor: '#FF7A00', // Orange accent underline
     borderRadius: 2,
     marginTop: 4,
   },
   cardSubtitle: {
-    fontSize: 13.5,
+    fontSize: 13,
     color: '#64748B',
     marginTop: 6,
-    marginBottom: 22,
-    lineHeight: 19,
+    marginBottom: 20,
+    lineHeight: 18,
   },
   errorBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     backgroundColor: '#FEF2F2',
     padding: 12,
-    borderRadius: 10,
+    borderRadius: 8,
     marginBottom: 16,
     borderLeftWidth: 4,
     borderLeftColor: '#DC2626',
@@ -402,49 +403,49 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0080DF',
-    paddingVertical: 15,
-    borderRadius: 14,
-    marginTop: 12,
+    backgroundColor: '#0080DF', // WSSP Vibrant Blue
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginTop: 10,
     shadowColor: '#0080DF',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 5,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   loginBtnText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 15.5,
     fontWeight: '800',
     letterSpacing: 0.3,
   },
 
-  // Anchored Footer Section
-  footerSection: {
-    marginTop: 28,
+  // Bottom Section (Centered Helpline, No Settings Gear)
+  footerContainer: {
     alignItems: 'center',
-    width: '100%',
+    paddingHorizontal: 20,
+    marginTop: 8,
   },
-  helplineRow: {
+  helplinePill: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
-    marginBottom: 12,
-  },
-  helplineContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F1F5F9',
-    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 18,
     paddingVertical: 9,
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1,
     borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+    marginBottom: 10,
   },
   bottomHelplineText: {
     fontSize: 13,
-    color: '#334155',
+    color: '#475569',
     fontWeight: '500',
   },
   bottomHelplineNumber: {
@@ -452,17 +453,17 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0.5,
   },
-  gearBtn: {
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  copyrightText: {
+  footerDepartment: {
     fontSize: 11.5,
-    color: '#94A3B8',
+    color: '#64748B',
     fontWeight: '600',
+    textAlign: 'center',
+  },
+  footerNote: {
+    fontSize: 10.5,
+    color: '#94A3B8',
+    fontWeight: '500',
+    marginTop: 2,
     textAlign: 'center',
   },
 
