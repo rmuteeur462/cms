@@ -53,7 +53,13 @@ from api.v1.views.complaint_types import (
     ComplaintSourceListView,
 )
 from api.v1.views.locations import LocationListView, UCListView
-from api.v1.views.complaints import ComplaintListView, ComplaintDetailView
+from api.v1.views.complaints import (
+    ComplaintListView,
+    ComplaintDetailView,
+    ComplaintHistoryView,
+    ComplaintResponseView,
+    ComplaintResolveView,
+)
 
 urlpatterns = [
     # Health Check & Service Status
@@ -74,4 +80,9 @@ urlpatterns = [
     # Complaint Listing & Details (Phase API-6)
     path("complaints/", ComplaintListView.as_view(), name="complaint_list"),
     path("complaints/<int:complaint_id>/", ComplaintDetailView.as_view(), name="complaint_detail"),
+
+    # Complaint Actions & Management (Phase API-7)
+    path("complaints/<int:complaint_id>/history/", ComplaintHistoryView.as_view(), name="complaint_history"),
+    path("complaints/<int:complaint_id>/response/", ComplaintResponseView.as_view(), name="complaint_response"),
+    path("complaints/<int:complaint_id>/resolve/", ComplaintResolveView.as_view(), name="complaint_resolve"),
 ]

@@ -113,3 +113,80 @@ class ComplaintDetailSerializer(ComplaintListSerializer):
             except Exception:
                 return None
         return None
+
+
+class ComplaintResponseCreateSerializer(serializers.Serializer):
+    """
+    Validates official response submissions from mobile officers.
+    """
+    feedback = serializers.ChoiceField(
+        choices=[
+            ("yes", "Yes"),
+            ("no", "No"),
+            ("neutral", "Neutral"),
+            ("not_responded", "Call Not Responded"),
+        ],
+        required=True,
+        error_messages={"invalid_choice": "Invalid feedback status option."}
+    )
+    officer_name = serializers.CharField(
+        max_length=100,
+        required=False,
+        allow_blank=True,
+        help_text="Optional override for responding officer's name"
+    )
+
+
+class ComplaintResolveSerializer(serializers.Serializer):
+    """
+    Validates complaint resolution submissions including resolution remarks,
+    citizen satisfaction score, and after-work image evidence.
+    """
+    description = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="Detailed remarks on how the issue was resolved"
+    )
+    customer_satisfaction = serializers.ChoiceField(
+        choices=[
+            ("yes", "Yes"),
+            ("no", "No"),
+            ("call_no_response", "Call No Response"),
+        ],
+        default="yes",
+        required=False,
+    )
+    after_image = serializers.ImageField(
+        required=False,
+        allow_null=True,
+        help_text="Optional after-work photo evidence"
+    )
+
+
+from Dashboard.models import ComplaintSubType, UC
+
+class ComplaintUpdateSerializer(serializers.ModelSerializer):
+    """
+    Validates partial update (PATCH) payloads for complaints.
+    """
+    class Meta:
+        model = Complaint
+        fields = [
+            "title",
+            "complaint_detail",
+            "status",
+            "SubType",
+            "uc",
+            "address",
+            "area",
+        ]
+        extra_kwargs = {
+            "title": {"required": False},
+            "complaint_detail": {"required": False},
+            "status": {"required": False},
+            "SubType": {"required": False},
+            "uc": {"required": False},
+            "address": {"required": False},
+            "area": {"required": False},
+        }
+
