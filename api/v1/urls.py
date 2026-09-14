@@ -46,7 +46,14 @@ class APIStatusView(APIView):
         )
 
 
+from api.v1.views.auth import LoginView, UserProfileView, LogoutView
+
 urlpatterns = [
     # Health Check & Service Status
     path("status/", APIStatusView.as_view(), name="api_status"),
+
+    # Authentication & Profile (Existing WSSP Users)
+    path("auth/login/", LoginView.as_view(), name="auth_login"),
+    path("auth/me/", UserProfileView.as_view(), name="auth_me"),
+    path("auth/logout/", LogoutView.as_view(), name="auth_logout"),
 ]
