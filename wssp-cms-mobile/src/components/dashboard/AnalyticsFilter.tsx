@@ -4,19 +4,13 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
   Modal,
   TextInput,
+  ScrollView,
+  Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme';
-
-export interface FilterPeriodState {
-  year: number;
-  month: number | null; // null for full year
-  start_date?: string;
-  end_date?: string;
-}
 
 interface AnalyticsFilterProps {
   currentPeriodLabel?: string;
@@ -29,22 +23,22 @@ interface AnalyticsFilterProps {
   loading?: boolean;
 }
 
-const YEARS = [2026, 2025, 2024];
+const AVAILABLE_YEARS = [2026, 2025, 2024];
 
-const MONTHS = [
-  { num: null, label: 'All Year' },
-  { num: 1, label: 'Jan' },
-  { num: 2, label: 'Feb' },
-  { num: 3, label: 'Mar' },
-  { num: 4, label: 'Apr' },
-  { num: 5, label: 'May' },
-  { num: 6, label: 'Jun' },
-  { num: 7, label: 'Jul' },
-  { num: 8, label: 'Aug' },
-  { num: 9, label: 'Sep' },
-  { num: 10, label: 'Oct' },
-  { num: 11, label: 'Nov' },
-  { num: 12, label: 'Dec' },
+const MONTH_OPTIONS = [
+  { num: null, name: 'Full Year (All Months)', short: 'All Year' },
+  { num: 1, name: 'January', short: 'Jan' },
+  { num: 2, name: 'February', short: 'Feb' },
+  { num: 3, name: 'March', short: 'Mar' },
+  { num: 4, name: 'April', short: 'Apr' },
+  { num: 5, name: 'May', short: 'May' },
+  { num: 6, name: 'June', short: 'Jun' },
+  { num: 7, name: 'July', short: 'Jul' },
+  { num: 8, name: 'August', short: 'Aug' },
+  { num: 9, name: 'September', short: 'Sep' },
+  { num: 10, name: 'October', short: 'Oct' },
+  { num: 11, name: 'November', short: 'Nov' },
+  { num: 12, name: 'December', short: 'Dec' },
 ];
 
 export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
@@ -52,19 +46,23 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
   onFilterChange,
   loading = false,
 }) => {
-  const currentYear = new Date().getFullYear();
-  const currentMonth = new Date().getMonth() + 1;
-
   const [selectedYear, setSelectedYear] = useState<number>(2026);
-  const [selectedMonth, setSelectedMonth] = useState<number | null>(1); // Default Jan 2026 or current month
-  const [isCustomModalOpen, setIsCustomModalOpen] = useState<boolean>(false);
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(1); // Default Jan
+
+  const [yearDropdownOpen, setYearDropdownOpen] = useState<boolean>(false);
+  const [monthDropdownOpen, setMonthDropdownOpen] = useState<boolean>(false);
+  const [customModalOpen, setCustomModalOpen] = useState<boolean>(false);
+
   const [customStartDate, setCustomStartDate] = useState<string>('2026-01-01');
   const [customEndDate, setCustomEndDate] = useState<string>('2026-01-31');
   const [isCustomActive, setIsCustomActive] = useState<boolean>(false);
 
-  const handleYearSelect = (year: number) => {
+  const activeMonthObj = MONTH_OPTIONS.find((m) => m.num === selectedMonth) || MONTH_OPTIONS[0];
+
+  const handleSelectYear = (year: number) => {
     setIsCustomActive(false);
     setSelectedYear(year);
+    setYearDropdownOpen(false);
     if (selectedMonth !== null) {
       onFilterChange({ year, month: selectedMonth });
     } else {
@@ -72,20 +70,21 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
     }
   };
 
-  const handleMonthSelect = (month: number | null) => {
+  const handleSelectMonth = (monthNum: number | null) => {
     setIsCustomActive(false);
-    setSelectedMonth(month);
-    if (month === null) {
+    setSelectedMonth(monthNum);
+    setMonthDropdownOpen(false);
+    if (monthNum === null) {
       onFilterChange({ year: selectedYear });
     } else {
-      onFilterChange({ year: selectedYear, month });
+      onFilterChange({ year: selectedYear, month: monthNum });
     }
   };
 
-  const handleApplyCustomRange = () => {
+  const handleApplyCustom = () => {
     if (customStartDate && customEndDate) {
       setIsCustomActive(true);
-      setIsCustomModalOpen(false);
+      setCustomModalOpen(false);
       onFilterChange({
         start_date: customStartDate.trim(),
         end_date: customEndDate.trim(),
@@ -94,114 +93,280 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
   };
 
   return (
-    <View style={styles.container}>
-      {/* Top Header Row with Active Period Badge & Custom Range Button */}
-      <View style={styles.headerRow}>
-        <View style={styles.badgeContainer}>
-          <Ionicons name="calendar-outline" size={14} color={Colors.primary} />
-          <Text style={styles.badgeText}>
-            {currentPeriodLabel || `${selectedMonth ? MONTHS.find(m => m.num === selectedMonth)?.label : 'Full'} ${selectedYear}`}
-          </Text>
+    <View style={styles.card}>
+      {/* Top Title & Period Status Header */}
+      <View style={styles.topHeader}>
+        <View style={styles.titleWithIcon}>
+          <View style={styles.filterIconCircle}>
+            <Ionicons name="filter-outline" size={16} color={Colors.primary} />
+          </View>
+          <View>
+            <Text style={styles.filterSectionTitle}>Analytics Reporting Period</Text>
+            <Text style={styles.filterActiveLabel}>
+              Active: <Text style={styles.filterActiveLabelBold}>{currentPeriodLabel || `${activeMonthObj.short} ${selectedYear}`}</Text>
+            </Text>
+          </View>
         </View>
 
+        {/* Custom Range Action Pill */}
         <TouchableOpacity
-          style={[styles.customBtn, isCustomActive && styles.customBtnActive]}
-          onPress={() => setIsCustomModalOpen(true)}
-          activeOpacity={0.75}
+          style={[styles.customPill, isCustomActive && styles.customPillActive]}
+          onPress={() => setCustomModalOpen(true)}
+          activeOpacity={0.8}
         >
           <Ionicons
-            name="options-outline"
-            size={14}
+            name="calendar"
+            size={13}
             color={isCustomActive ? '#FFFFFF' : Colors.primaryDark}
           />
-          <Text
-            style={[styles.customBtnText, isCustomActive && styles.customBtnTextActive]}
-          >
+          <Text style={[styles.customPillText, isCustomActive && styles.customPillTextActive]}>
             Custom Range
           </Text>
         </TouchableOpacity>
       </View>
 
-      {/* Year Selector Row */}
-      <View style={styles.selectorSection}>
-        <Text style={styles.sectionLabel}>YEAR</Text>
-        <View style={styles.pillRow}>
-          {YEARS.map((year) => {
-            const isActive = !isCustomActive && selectedYear === year;
-            return (
-              <TouchableOpacity
-                key={year}
-                style={[styles.yearPill, isActive && styles.yearPillActive]}
-                onPress={() => handleYearSelect(year)}
-                disabled={loading}
-              >
-                <Text style={[styles.yearPillText, isActive && styles.yearPillTextActive]}>
-                  {year}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+      {/* Modern Side-by-Side Dropdown Selectors */}
+      <View style={styles.dropdownRow}>
+        {/* YEAR DROPDOWN FIELD */}
+        <View style={styles.dropdownFieldContainer}>
+          <Text style={styles.fieldLabel}>YEAR</Text>
+          <TouchableOpacity
+            style={[styles.dropdownButton, yearDropdownOpen && styles.dropdownButtonActive]}
+            onPress={() => setYearDropdownOpen(true)}
+            disabled={loading}
+            activeOpacity={0.75}
+          >
+            <View style={styles.btnContent}>
+              <Ionicons name="calendar-clear-outline" size={16} color={Colors.primary} />
+              <Text style={styles.dropdownSelectedText}>
+                {isCustomActive ? 'Custom' : selectedYear}
+              </Text>
+            </View>
+            <Ionicons
+              name={yearDropdownOpen ? 'chevron-up' : 'chevron-down'}
+              size={16}
+              color={Colors.textSecondary}
+            />
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ width: Spacing.sm }} />
+
+        {/* MONTH DROPDOWN FIELD */}
+        <View style={[styles.dropdownFieldContainer, { flex: 1.5 }]}>
+          <Text style={styles.fieldLabel}>MONTH / PERIOD</Text>
+          <TouchableOpacity
+            style={[styles.dropdownButton, monthDropdownOpen && styles.dropdownButtonActive]}
+            onPress={() => setMonthDropdownOpen(true)}
+            disabled={loading}
+            activeOpacity={0.75}
+          >
+            <View style={styles.btnContent}>
+              <Ionicons name="time-outline" size={16} color={Colors.secondary} />
+              <Text style={styles.dropdownSelectedText} numberOfLines={1}>
+                {isCustomActive ? 'Date Window' : activeMonthObj.name}
+              </Text>
+            </View>
+            <Ionicons
+              name={monthDropdownOpen ? 'chevron-up' : 'chevron-down'}
+              size={16}
+              color={Colors.textSecondary}
+            />
+          </TouchableOpacity>
         </View>
       </View>
 
-      {/* Month Selector Scroll */}
-      <View style={[styles.selectorSection, { marginTop: Spacing.xs }]}>
-        <Text style={styles.sectionLabel}>REPORTING PERIOD</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.monthScroll}
-        >
-          {MONTHS.map((m) => {
-            const isActive = !isCustomActive && selectedMonth === m.num;
-            return (
-              <TouchableOpacity
-                key={m.label}
-                style={[styles.monthPill, isActive && styles.monthPillActive]}
-                onPress={() => handleMonthSelect(m.num)}
-                disabled={loading}
-              >
-                <Text
-                  style={[styles.monthPillText, isActive && styles.monthPillTextActive]}
-                >
-                  {m.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </View>
-
-      {/* Custom Date Range Modal */}
+      {/* ------------------------------------------------------------- */}
+      {/* YEAR SELECTOR MODAL                                           */}
+      {/* ------------------------------------------------------------- */}
       <Modal
-        visible={isCustomModalOpen}
+        visible={yearDropdownOpen}
         transparent
         animationType="fade"
-        onRequestClose={() => setIsCustomModalOpen(false)}
+        onRequestClose={() => setYearDropdownOpen(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setYearDropdownOpen(false)}
+        >
+          <Pressable style={styles.modalContentCard} onPress={(e) => e.stopPropagation()}>
             <View style={styles.modalHeader}>
-              <View style={styles.modalHeaderLeft}>
-                <Ionicons name="calendar" size={20} color={Colors.primary} />
-                <Text style={styles.modalTitle}>Custom Date Range</Text>
+              <View style={styles.modalHeaderTitleGroup}>
+                <Ionicons name="calendar-outline" size={20} color={Colors.primary} />
+                <Text style={styles.modalTitle}>Select Reporting Year</Text>
               </View>
               <TouchableOpacity
-                onPress={() => setIsCustomModalOpen(false)}
-                style={styles.closeBtn}
+                onPress={() => setYearDropdownOpen(false)}
+                style={styles.modalCloseBtn}
               >
                 <Ionicons name="close" size={20} color={Colors.textMuted} />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.modalDesc}>
+            <Text style={styles.modalSubtitle}>
+              Filter all departmental analytics and complaint frequency by fiscal year:
+            </Text>
+
+            <View style={styles.optionsList}>
+              {AVAILABLE_YEARS.map((yr) => {
+                const isSelected = !isCustomActive && selectedYear === yr;
+                return (
+                  <TouchableOpacity
+                    key={yr}
+                    style={[styles.optionItem, isSelected && styles.optionItemActive]}
+                    onPress={() => handleSelectYear(yr)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.optionLeft}>
+                      <View
+                        style={[
+                          styles.optionRadio,
+                          isSelected && styles.optionRadioActive,
+                        ]}
+                      >
+                        {isSelected && <View style={styles.optionRadioInner} />}
+                      </View>
+                      <Text
+                        style={[
+                          styles.optionText,
+                          isSelected && styles.optionTextActive,
+                        ]}
+                      >
+                        Year {yr}
+                      </Text>
+                    </View>
+
+                    {isSelected && (
+                      <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* ------------------------------------------------------------- */}
+      {/* MONTH / REPORTING PERIOD SELECTOR MODAL                       */}
+      {/* ------------------------------------------------------------- */}
+      <Modal
+        visible={monthDropdownOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setMonthDropdownOpen(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setMonthDropdownOpen(false)}
+        >
+          <Pressable style={[styles.modalContentCard, { maxHeight: '82%' }]} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHeaderTitleGroup}>
+                <Ionicons name="calendar" size={20} color={Colors.secondary} />
+                <Text style={styles.modalTitle}>Select Reporting Month</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setMonthDropdownOpen(false)}
+                style={styles.modalCloseBtn}
+              >
+                <Ionicons name="close" size={20} color={Colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalSubtitle}>
+              Select an individual month or evaluate the full year aggregated:
+            </Text>
+
+            <ScrollView showsVerticalScrollIndicator={false} style={styles.modalScroll}>
+              {MONTH_OPTIONS.map((m) => {
+                const isSelected = !isCustomActive && selectedMonth === m.num;
+                const isAllYear = m.num === null;
+
+                return (
+                  <TouchableOpacity
+                    key={m.name}
+                    style={[
+                      styles.optionItem,
+                      isSelected && styles.optionItemActive,
+                      isAllYear && styles.allYearOptionItem,
+                    ]}
+                    onPress={() => handleSelectMonth(m.num)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.optionLeft}>
+                      <View
+                        style={[
+                          styles.optionRadio,
+                          isSelected && styles.optionRadioActive,
+                        ]}
+                      >
+                        {isSelected && <View style={styles.optionRadioInner} />}
+                      </View>
+                      <View>
+                        <Text
+                          style={[
+                            styles.optionText,
+                            isSelected && styles.optionTextActive,
+                            isAllYear && styles.allYearText,
+                          ]}
+                        >
+                          {m.name}
+                        </Text>
+                        {isAllYear && (
+                          <Text style={styles.optionDescription}>
+                            Aggregated metrics for all 12 months in {selectedYear}
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+
+                    {isSelected && (
+                      <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* ------------------------------------------------------------- */}
+      {/* CUSTOM DATE RANGE MODAL                                       */}
+      {/* ------------------------------------------------------------- */}
+      <Modal
+        visible={customModalOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setCustomModalOpen(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setCustomModalOpen(false)}
+        >
+          <Pressable style={styles.modalContentCard} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHeaderTitleGroup}>
+                <Ionicons name="options" size={20} color={Colors.primary} />
+                <Text style={styles.modalTitle}>Custom Date Range</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setCustomModalOpen(false)}
+                style={styles.modalCloseBtn}
+              >
+                <Ionicons name="close" size={20} color={Colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalSubtitle}>
               Specify custom start and end dates (YYYY-MM-DD) for complaint analytics:
             </Text>
 
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>START DATE (From)</Text>
               <TextInput
-                style={styles.input}
+                style={styles.textInput}
                 value={customStartDate}
                 onChangeText={setCustomStartDate}
                 placeholder="2026-01-01"
@@ -213,7 +378,7 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>END DATE (To)</Text>
               <TextInput
-                style={styles.input}
+                style={styles.textInput}
                 value={customEndDate}
                 onChangeText={setCustomEndDate}
                 placeholder="2026-01-31"
@@ -222,8 +387,9 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
               />
             </View>
 
-            {/* Quick preset buttons */}
-            <View style={styles.presetsRow}>
+            {/* Quick Presets */}
+            <Text style={[styles.fieldLabel, { marginTop: Spacing.sm }]}>QUICK PRESETS</Text>
+            <View style={styles.presetRow}>
               <TouchableOpacity
                 style={styles.presetChip}
                 onPress={() => {
@@ -231,8 +397,9 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
                   setCustomEndDate('2026-01-15');
                 }}
               >
-                <Text style={styles.presetText}>01-15 Jan 2026</Text>
+                <Text style={styles.presetChipText}>01–15 Jan 2026</Text>
               </TouchableOpacity>
+
               <TouchableOpacity
                 style={styles.presetChip}
                 onPress={() => {
@@ -240,34 +407,45 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
                   setCustomEndDate('2026-06-30');
                 }}
               >
-                <Text style={styles.presetText}>H1 2026 (Jan-Jun)</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={styles.cancelBtn}
-                onPress={() => setIsCustomModalOpen(false)}
-              >
-                <Text style={styles.cancelBtnText}>Cancel</Text>
+                <Text style={styles.presetChipText}>H1 2026 (Jan–Jun)</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.applyBtn}
-                onPress={handleApplyCustomRange}
+                style={styles.presetChip}
+                onPress={() => {
+                  setCustomStartDate('2025-01-01');
+                  setCustomEndDate('2025-12-31');
+                }}
               >
-                <Text style={styles.applyBtnText}>Apply Filter</Text>
+                <Text style={styles.presetChipText}>Full Year 2025</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
+
+            {/* Modal Actions */}
+            <View style={styles.modalActionRow}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setCustomModalOpen(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.applyButton}
+                onPress={handleApplyCustom}
+              >
+                <Text style={styles.applyButtonText}>Apply Filter</Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  card: {
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
@@ -275,117 +453,116 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
     elevation: 2,
   },
-  headerRow: {
+  topHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.md,
+    paddingBottom: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
   },
-  badgeContainer: {
+  titleWithIcon: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EFF6FF',
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 5,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-    borderColor: '#BFDBFE',
+    flex: 1,
   },
-  badgeText: {
+  filterIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.sm,
+  },
+  filterSectionTitle: {
     fontSize: Typography.fontSize.xs,
     fontWeight: '800',
-    color: Colors.primaryDark,
-    marginLeft: 5,
+    color: Colors.textPrimary,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
   },
-  customBtn: {
+  filterActiveLabel: {
+    fontSize: 11,
+    color: Colors.textMuted,
+    marginTop: 1,
+  },
+  filterActiveLabelBold: {
+    color: Colors.primaryDark,
+    fontWeight: '700',
+  },
+  customPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F1F5F9',
-    paddingHorizontal: Spacing.sm,
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: Spacing.sm + 2,
     paddingVertical: 6,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.full,
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  customBtnActive: {
+  customPillActive: {
     backgroundColor: Colors.primary,
     borderColor: Colors.primary,
   },
-  customBtnText: {
-    fontSize: Typography.fontSize.xs,
+  customPillText: {
+    fontSize: 11,
     fontWeight: '700',
     color: Colors.textSecondary,
-    marginLeft: 4,
+    marginLeft: 5,
   },
-  customBtnTextActive: {
+  customPillTextActive: {
     color: '#FFFFFF',
   },
-  selectorSection: {
-    marginTop: 2,
+  dropdownRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  sectionLabel: {
+  dropdownFieldContainer: {
+    flex: 1,
+  },
+  fieldLabel: {
     fontSize: 10,
     fontWeight: '800',
     color: Colors.textMuted,
     letterSpacing: 0.8,
-    marginBottom: 6,
+    marginBottom: 5,
+    textTransform: 'uppercase',
   },
-  pillRow: {
+  dropdownButton: {
     flexDirection: 'row',
-  },
-  yearPill: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 6,
+    justifyContent: 'space-between',
+    alignItems: 'center',
     backgroundColor: '#F8FAFC',
+    borderWidth: 1.2,
+    borderColor: '#CBD5E1',
     borderRadius: BorderRadius.md,
-    marginRight: Spacing.sm,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    paddingHorizontal: Spacing.sm + 2,
+    paddingVertical: 10,
   },
-  yearPillActive: {
-    backgroundColor: Colors.primaryDark,
-    borderColor: Colors.primaryDark,
-  },
-  yearPillText: {
-    fontSize: Typography.fontSize.xs,
-    fontWeight: '700',
-    color: Colors.textSecondary,
-  },
-  yearPillTextActive: {
-    color: '#FFFFFF',
-  },
-  monthScroll: {
-    paddingVertical: 2,
-  },
-  monthPill: {
-    paddingHorizontal: Spacing.sm + 4,
-    paddingVertical: 6,
-    backgroundColor: '#F8FAFC',
-    borderRadius: BorderRadius.md,
-    marginRight: 6,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  monthPillActive: {
-    backgroundColor: Colors.primary,
+  dropdownButtonActive: {
     borderColor: Colors.primary,
+    backgroundColor: '#EFF6FF',
   },
-  monthPillText: {
-    fontSize: Typography.fontSize.xs,
-    fontWeight: '600',
-    color: Colors.textSecondary,
+  btnContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
-  monthPillTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '800',
+  dropdownSelectedText: {
+    fontSize: Typography.fontSize.sm,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    marginLeft: Spacing.xs + 2,
   },
+
+  // Modals
   modalOverlay: {
     flex: 1,
     backgroundColor: Colors.overlay,
@@ -393,43 +570,114 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: Spacing.lg,
   },
-  modalCard: {
+  modalContentCard: {
     width: '100%',
-    maxWidth: 380,
+    maxWidth: 390,
     backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.xl,
     padding: Spacing.lg,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 10,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
-  modalHeaderLeft: {
+  modalHeaderTitleGroup: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   modalTitle: {
     fontSize: Typography.fontSize.md,
-    fontWeight: '800',
+    fontWeight: '900',
     color: Colors.textPrimary,
     marginLeft: Spacing.xs,
   },
-  closeBtn: {
+  modalCloseBtn: {
     padding: 4,
   },
-  modalDesc: {
+  modalSubtitle: {
     fontSize: Typography.fontSize.xs,
     color: Colors.textMuted,
-    marginBottom: Spacing.md,
     lineHeight: 18,
+    marginBottom: Spacing.md,
   },
+  modalScroll: {
+    maxHeight: 340,
+  },
+  optionsList: {
+    marginVertical: Spacing.xs,
+  },
+  optionItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.md,
+    backgroundColor: '#F8FAFC',
+    marginBottom: Spacing.xs,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  optionItemActive: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#93C5FD',
+  },
+  allYearOptionItem: {
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.secondary,
+    marginBottom: Spacing.sm,
+  },
+  allYearText: {
+    color: Colors.primaryDark,
+    fontWeight: '800',
+  },
+  optionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  optionRadio: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    borderColor: '#94A3B8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.sm,
+  },
+  optionRadioActive: {
+    borderColor: Colors.primary,
+  },
+  optionRadioInner: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.primary,
+  },
+  optionText: {
+    fontSize: Typography.fontSize.sm,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+  },
+  optionTextActive: {
+    fontWeight: '800',
+    color: Colors.primaryDark,
+  },
+  optionDescription: {
+    fontSize: 10,
+    color: Colors.textMuted,
+    marginTop: 2,
+  },
+
+  // Custom Range Modal Inputs
   inputGroup: {
     marginBottom: Spacing.sm,
   },
@@ -440,17 +688,17 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     letterSpacing: 0.5,
   },
-  input: {
+  textInput: {
     backgroundColor: '#F8FAFC',
     borderWidth: 1,
     borderColor: Colors.border,
     borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 8,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 9,
     fontSize: Typography.fontSize.sm,
     color: Colors.textPrimary,
   },
-  presetsRow: {
+  presetRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     marginTop: 4,
@@ -458,39 +706,39 @@ const styles = StyleSheet.create({
   },
   presetChip: {
     backgroundColor: '#F1F5F9',
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 4,
+    paddingHorizontal: Spacing.sm + 2,
+    paddingVertical: 6,
     borderRadius: BorderRadius.sm,
     marginRight: Spacing.xs,
     marginTop: 4,
   },
-  presetText: {
+  presetChipText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '700',
     color: Colors.primary,
   },
-  modalActions: {
+  modalActionRow: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
     marginTop: Spacing.sm,
   },
-  cancelBtn: {
+  cancelButton: {
     paddingHorizontal: Spacing.md,
     paddingVertical: 10,
     marginRight: Spacing.sm,
   },
-  cancelBtnText: {
+  cancelButtonText: {
     fontSize: Typography.fontSize.sm,
     fontWeight: '600',
     color: Colors.textSecondary,
   },
-  applyBtn: {
+  applyButton: {
     backgroundColor: Colors.primary,
     paddingHorizontal: Spacing.lg,
     paddingVertical: 10,
     borderRadius: BorderRadius.md,
   },
-  applyBtnText: {
+  applyButtonText: {
     fontSize: Typography.fontSize.sm,
     fontWeight: '800',
     color: '#FFFFFF',
