@@ -185,8 +185,8 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
               numberOfLines={1}
             >
               {isCustomActive
-                ? `Custom Range: ${customStartDate}  →  ${customEndDate}`
-                : 'Filter by Specific Date Range (From – To)'}
+                ? `From: ${customStartDate}   To: ${customEndDate}`
+                : 'From Date — To Date'}
             </Text>
           </View>
 
@@ -207,7 +207,7 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
             </TouchableOpacity>
           ) : (
             <View style={styles.setDatesBadge}>
-              <Text style={styles.setDatesText}>Set Dates</Text>
+              <Text style={styles.setDatesText}>Select</Text>
             </View>
           )}
         </TouchableOpacity>
@@ -407,12 +407,8 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.modalSubtitle}>
-              Specify custom start and end dates (YYYY-MM-DD) for complaint analytics:
-            </Text>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>START DATE (From)</Text>
+            <View style={[styles.inputGroup, { marginTop: Spacing.md }]}>
+              <Text style={styles.inputLabel}>FROM DATE</Text>
               <TextInput
                 style={styles.textInput}
                 value={customStartDate}
@@ -424,7 +420,7 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>END DATE (To)</Text>
+              <Text style={styles.inputLabel}>TO DATE</Text>
               <TextInput
                 style={styles.textInput}
                 value={customEndDate}
@@ -435,42 +431,8 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
               />
             </View>
 
-            {/* Quick Presets */}
-            <Text style={[styles.fieldLabel, { marginTop: Spacing.sm }]}>QUICK PRESETS</Text>
-            <View style={styles.presetRow}>
-              <TouchableOpacity
-                style={styles.presetChip}
-                onPress={() => {
-                  setCustomStartDate('2026-01-01');
-                  setCustomEndDate('2026-01-15');
-                }}
-              >
-                <Text style={styles.presetChipText}>01–15 Jan 2026</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.presetChip}
-                onPress={() => {
-                  setCustomStartDate('2026-01-01');
-                  setCustomEndDate('2026-06-30');
-                }}
-              >
-                <Text style={styles.presetChipText}>H1 2026 (Jan–Jun)</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.presetChip}
-                onPress={() => {
-                  setCustomStartDate('2025-01-01');
-                  setCustomEndDate('2025-12-31');
-                }}
-              >
-                <Text style={styles.presetChipText}>Full Year 2025</Text>
-              </TouchableOpacity>
-            </View>
-
             {/* Modal Actions */}
-            <View style={styles.modalActionRow}>
+            <View style={[styles.modalActionRow, { marginTop: Spacing.md }]}>
               <TouchableOpacity
                 style={styles.cancelButton}
                 onPress={() => setCustomModalOpen(false)}

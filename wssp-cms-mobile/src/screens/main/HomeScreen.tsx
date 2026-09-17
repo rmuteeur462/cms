@@ -218,59 +218,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             />
           </View>
         )}
-
-        {/* Quick Departmental Utilities */}
-        <View style={styles.servicesContainer}>
-          <Text style={styles.servicesTitle}>Quick Navigation</Text>
-
-          <View style={styles.serviceRow}>
-            <TouchableOpacity
-              style={styles.serviceCard}
-              onPress={() => navigation?.navigate('Complaints')}
-              activeOpacity={0.75}
-            >
-              <View style={[styles.serviceIconCircle, { backgroundColor: '#F0FDF4' }]}>
-                <Ionicons name="folder-open" size={22} color={Colors.primary} />
-              </View>
-              <Text style={styles.serviceCardTitle}>Complaint Directory</Text>
-              <Text style={styles.serviceCardSubtitle}>Search & filter all cases</Text>
-            </TouchableOpacity>
-
-            <View style={{ width: Spacing.md }} />
-
-            <TouchableOpacity
-              style={styles.serviceCard}
-              onPress={() => navigation?.navigate('Reports')}
-              activeOpacity={0.75}
-            >
-              <View style={[styles.serviceIconCircle, { backgroundColor: '#EFF6FF' }]}>
-                <Ionicons name="pie-chart" size={22} color={Colors.secondary} />
-              </View>
-              <Text style={styles.serviceCardTitle}>Analytics & Reports</Text>
-              <Text style={styles.serviceCardSubtitle}>Full performance review</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Helpline 1334 banner */}
-          <TouchableOpacity
-            style={styles.helplineBanner}
-            onPress={() => Linking.openURL('tel:1334')}
-            activeOpacity={0.8}
-          >
-            <View style={styles.helplineLeft}>
-              <View style={styles.helplineIconBox}>
-                <Ionicons name="call" size={18} color="#FFFFFF" />
-              </View>
-              <View>
-                <Text style={styles.helplineTitle}>WSSP Citizen Toll-Free Helpline</Text>
-                <Text style={styles.helplineSubtitle}>Dial 1334 for immediate public inquiries</Text>
-              </View>
-            </View>
-            <View style={styles.helplineNumberBadge}>
-              <Text style={styles.helplineNumberText}>1334</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
     </View>
   );
