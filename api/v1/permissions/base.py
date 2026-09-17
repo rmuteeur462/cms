@@ -84,7 +84,7 @@ def get_user_role_context(user):
         department_name = "Water Supply"
     elif "sds" in username or "drainage" in username or "sewerage" in username:
         department_name = "Drainage"
-    elif "billing" in username:
+    elif "billing" in username or "bill" in username:
         department_name = "Billing"
 
     if department_name:
@@ -142,7 +142,7 @@ def scope_complaint_queryset(user, queryset=None):
     Guarantees:
     - Head Office: Sees complaints across all allowed zones.
     - Zonal Manager: Sees ALL complaints strictly inside their assigned zone.
-    - Department Manager (SWM / WS / SDS): Sees ONLY complaints inside their zone AND their department.
+    - Department Manager (SWM / WS / SDS / BILL): Sees ONLY complaints inside their zone AND their department.
     """
     if queryset is None:
         queryset = Complaint.objects.all()
@@ -185,3 +185,7 @@ def scope_complaint_queryset(user, queryset=None):
         return queryset.filter(location_id__in=loc_ids)
 
     return queryset.none()
+
+
+# Canonical alias for architectural clarity
+get_allowed_complaints = scope_complaint_queryset

@@ -161,3 +161,97 @@ When submitting complaint photos or response attachments:
 ### Service Status
 - **GET** `/api/cms/v1/status/`
   - Public health check confirming API v1 availability.
+
+---
+
+## 10. Dashboard Analytics
+
+### Dynamic Role-Scoped Analytics
+- **GET** `/api/cms/v1/dashboard/analytics/`
+  - **Authentication**: Required (`Bearer <access_token>`)
+  - **Permissions**: `IsCMSStaffUser` (Active WSSP staff with location privileges)
+  - **Query Parameters**:
+    - `year` (optional, integer): Calendar year (e.g. `2026`)
+    - `month` (optional, integer): Month number 1–12 (e.g. `1` for January)
+    - `start_date` (optional, string): Custom start date `YYYY-MM-DD`
+    - `end_date` (optional, string): Custom end date `YYYY-MM-DD`
+  - **Security Guarantee**:
+    - Queryset is scoped strictly at the database level via `get_allowed_complaints(request.user)`.
+    - Head Office sees all zones and all 4 departments.
+    - Zonal Managers see only their assigned zone (all departments).
+    - Department Managers see only their zone + department (e.g. SWM sees only Solid Waste).
+    - Client-supplied parameters can never expand access.
+  - **Success Response (200 OK)**:
+```json
+{
+  "success": true,
+  "period": {
+    "year": 2026,
+    "month": 1,
+    "start_date": "2026-01-01",
+    "end_date": "2026-01-31",
+    "label": "January 2026",
+    "period_type": "month"
+  },
+  "scope": {
+    "role": "department_manager",
+    "role_title": "Zone A Solid Waste Manager",
+    "zone": "Zone A",
+    "department": "Solid Waste",
+    "is_single_department": true
+  },
+  "summary": {
+    "total": 46,
+    "pending": 0,
+    "in_progress": 0,
+    "resolved": 46,
+    "registered_this_period": 46
+  },
+  "status_distribution": [
+    {
+      "status": "pending",
+      "label": "Pending",
+      "count": 0,
+      "percentage": 0.0,
+      "color": "#F59E0B"
+    },
+    {
+      "status": "resolved",
+      "label": "Resolved",
+      "count": 46,
+      "percentage": 100.0,
+      "color": "#10B981"
+    }
+  ],
+  "type_distribution": [],
+  "subtype_distribution": [
+    {
+      "id": 14,
+      "name": "Garbage Collection",
+      "count": 34,
+      "percentage": 73.9
+    },
+    {
+      "id": 16,
+      "name": "Street Sweeping",
+      "count": 6,
+      "percentage": 13.0
+    },
+    {
+      "id": 18,
+      "name": "Stray Dogs Catching",
+      "count": 6,
+      "percentage": 13.0
+    }
+  ],
+  "trend": [
+    {
+      "date": "2026-01-01",
+      "label": "01",
+      "full_label": "01 Jan",
+      "count": 2
+    }
+  ]
+}
+```
+

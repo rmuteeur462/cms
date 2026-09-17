@@ -60,6 +60,7 @@ from api.v1.views.complaints import (
     ComplaintResponseView,
     ComplaintResolveView,
 )
+from api.v1.views.dashboard import CMSDashboardAnalyticsView
 
 urlpatterns = [
     # Health Check & Service Status
@@ -69,6 +70,9 @@ urlpatterns = [
     path("auth/login/", LoginView.as_view(), name="auth_login"),
     path("auth/me/", UserProfileView.as_view(), name="auth_me"),
     path("auth/logout/", LogoutView.as_view(), name="auth_logout"),
+
+    # Dashboard Role-Scoped Analytics
+    path("dashboard/analytics/", CMSDashboardAnalyticsView.as_view(), name="dashboard_analytics"),
 
     # Reference Metadata & Dropdowns (Phase API-5)
     path("complaint-types/", ComplaintTypeListView.as_view(), name="complaint_types"),

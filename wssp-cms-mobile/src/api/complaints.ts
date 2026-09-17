@@ -36,6 +36,72 @@ export interface DashboardData {
   zone_distribution: { zone: string; count: number }[];
 }
 
+export interface AnalyticsPeriod {
+  year: number | null;
+  month: number | null;
+  start_date: string;
+  end_date: string;
+  label: string;
+  period_type: 'year' | 'month' | 'custom';
+}
+
+export interface AnalyticsScope {
+  role: 'head_office' | 'zonal_manager' | 'department_manager' | 'staff';
+  role_title: string;
+  zone: string;
+  department: string;
+  is_single_department: boolean;
+}
+
+export interface AnalyticsSummary {
+  total: number;
+  pending: number;
+  in_progress: number;
+  resolved: number;
+  registered_this_period: number;
+}
+
+export interface StatusDistributionItem {
+  status: string;
+  label: string;
+  count: number;
+  percentage: number;
+  color: string;
+}
+
+export interface TypeDistributionItem {
+  id: number;
+  name: string;
+  count: number;
+  percentage: number;
+}
+
+export interface SubtypeDistributionItem {
+  id: number | null;
+  name: string;
+  count: number;
+  percentage: number;
+}
+
+export interface TrendItem {
+  date?: string;
+  month?: number;
+  label: string;
+  full_label?: string;
+  count: number;
+}
+
+export interface DashboardAnalyticsResponse {
+  success: boolean;
+  period: AnalyticsPeriod;
+  scope: AnalyticsScope;
+  summary: AnalyticsSummary;
+  status_distribution: StatusDistributionItem[];
+  type_distribution: TypeDistributionItem[];
+  subtype_distribution: SubtypeDistributionItem[];
+  trend: TrendItem[];
+}
+
 export interface ComplaintListResponse {
   total_count: number;
   num_pages: number;
@@ -48,6 +114,18 @@ export interface ComplaintListResponse {
 export const ComplaintsApi = {
   async getDashboard(): Promise<DashboardData> {
     const response = await apiClient.get<DashboardData>('/api/cms/dashboard/');
+    return response.data;
+  },
+
+  async getDashboardAnalytics(params?: {
+    year?: number;
+    month?: number;
+    start_date?: string;
+    end_date?: string;
+  }): Promise<DashboardAnalyticsResponse> {
+    const response = await apiClient.get<DashboardAnalyticsResponse>('/api/cms/v1/dashboard/analytics/', {
+      params,
+    });
     return response.data;
   },
 

@@ -12,8 +12,15 @@ import {
 import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme';
 import { StatCard } from '../../components/common/StatCard';
 import { useAuth } from '../../store/AuthContext';
-import { ComplaintsApi, DashboardData } from '../../api/complaints';
+import {
+  ComplaintsApi,
+  DashboardAnalyticsResponse,
+} from '../../api/complaints';
 import { Ionicons } from '@expo/vector-icons';
+import { AnalyticsFilter } from '../../components/dashboard/AnalyticsFilter';
+import { ComplaintTrendChart } from '../../components/dashboard/ComplaintTrendChart';
+import { StatusDistributionChart } from '../../components/dashboard/StatusDistributionChart';
+import { CategoryDistributionChart } from '../../components/dashboard/CategoryDistributionChart';
 
 interface HomeScreenProps {
   navigation?: any;
@@ -22,9 +29,21 @@ interface HomeScreenProps {
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { user } = useAuth();
 
-  const [dashboard, setDashboard] = useState<DashboardData | null>(null);
+  const [analytics, setAnalytics] = useState<DashboardAnalyticsResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Default filter: Year 2026, Month 1 (or current reporting period)
+  const [filter, setFilter] = useState<{
+    year?: number;
+    month?: number;
+    start_date?: string;
+    end_date?: string;
+  }>({
+    year: 2026,
+    month: 1,
+  });
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -33,12 +52,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     return 'Good Evening';
   };
 
-  const loadDashboardData = async () => {
+  const loadAnalyticsData = async (activeFilter = filter) => {
+    setError(null);
     try {
-      const data = await ComplaintsApi.getDashboard();
-      setDashboard(data);
-    } catch (err) {
-      console.warn('[HomeScreen] Failed to load dashboard:', err);
+      const data = await ComplaintsApi.getDashboardAnalytics(activeFilter);
+      setAnalytics(data);
+    } catch (err: any) {
+      console.warn('[HomeScreen] Failed to load dashboard analytics:', err);
+      setError('Unable to load analytics for the selected period.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -46,13 +67,27 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   };
 
   useEffect(() => {
-    loadDashboardData();
+    loadAnalyticsData(filter);
   }, []);
+
+  const handleFilterChange = (newFilter: {
+    year?: number;
+    month?: number;
+    start_date?: string;
+    end_date?: string;
+  }) => {
+    setFilter(newFilter);
+    setLoading(true);
+    loadAnalyticsData(newFilter);
+  };
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    loadDashboardData();
-  }, []);
+    loadAnalyticsData(filter);
+  }, [filter]);
+
+  const summary = analytics?.summary;
+  const isSingleDept = analytics?.scope?.is_single_department ?? false;
 
   return (
     <View style={styles.container}>
@@ -68,23 +103,52 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           <Text style={styles.sectionSubtitle}>Complaint Management</Text>
           <Text style={styles.officerNameText}>
             {user?.full_name || user?.username} •{' '}
-            <Text style={styles.officerRoleText}>{user?.role || 'Departmental Officer'}</Text>
+            <Text style={styles.officerRoleText}>
+              {analytics?.scope?.role_title || user?.role || 'Departmental Officer'}
+            </Text>
           </Text>
         </View>
 
-        {/* Loading indicator */}
+        {/* Analytics Filter Section */}
+        <View style={styles.filterSectionWrapper}>
+          <AnalyticsFilter
+            currentPeriodLabel={analytics?.period?.label}
+            onFilterChange={handleFilterChange}
+            loading={loading}
+          />
+        </View>
+
+        {/* Loading Indicator */}
         {loading && (
-          <View style={styles.statsHeaderRow}>
+          <View style={styles.loadingBanner}>
             <ActivityIndicator size="small" color={Colors.primary} />
+            <Text style={styles.loadingBannerText}>Updating analytics for selected period...</Text>
           </View>
         )}
 
-        {/* 2x2 Metric Cards Grid */}
+        {/* Error State with Retry Button */}
+        {error && !loading && (
+          <View style={styles.errorCard}>
+            <Ionicons name="alert-circle-outline" size={24} color={Colors.status.rejected} />
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity
+              style={styles.retryBtn}
+              onPress={() => {
+                setLoading(true);
+                loadAnalyticsData(filter);
+              }}
+            >
+              <Text style={styles.retryBtnText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* 2x2 Metric Summary Cards Grid */}
         <View style={styles.gridContainer}>
           <View style={styles.gridRow}>
             <StatCard
               title="Total Complaints"
-              value={dashboard?.metrics.total ?? (loading ? '...' : 0)}
+              value={summary?.total ?? (loading ? '...' : 0)}
               icon="layers-outline"
               color={Colors.primary}
               bgColor="#DCFCE7"
@@ -93,7 +157,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             <View style={{ width: Spacing.md }} />
             <StatCard
               title="Pending Issues"
-              value={dashboard?.metrics.pending ?? (loading ? '...' : 0)}
+              value={summary?.pending ?? (loading ? '...' : 0)}
               icon="time-outline"
               color={Colors.status.pending}
               bgColor={Colors.status.pendingBg}
@@ -104,7 +168,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           <View style={[styles.gridRow, { marginTop: Spacing.md }]}>
             <StatCard
               title="Resolved"
-              value={dashboard?.metrics.resolved ?? (loading ? '...' : 0)}
+              value={summary?.resolved ?? (loading ? '...' : 0)}
               icon="checkmark-circle-outline"
               color={Colors.status.resolved}
               bgColor={Colors.status.resolvedBg}
@@ -112,8 +176,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             />
             <View style={{ width: Spacing.md }} />
             <StatCard
-              title="Registered Today"
-              value={dashboard?.metrics.today ?? (loading ? '...' : 0)}
+              title="Registered This Period"
+              value={summary?.registered_this_period ?? (loading ? '...' : 0)}
               icon="calendar-outline"
               color={Colors.secondary}
               bgColor="#E0F2FE"
@@ -121,6 +185,43 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             />
           </View>
         </View>
+
+        {/* Empty Period State */}
+        {!loading && analytics && summary?.total === 0 && (
+          <View style={styles.emptyCard}>
+            <Ionicons name="folder-open-outline" size={36} color={Colors.textMuted} />
+            <Text style={styles.emptyTitle}>No Complaints Found</Text>
+            <Text style={styles.emptySubtitle}>
+              No complaints were registered within your authorized scope for {analytics.period.label}.
+            </Text>
+          </View>
+        )}
+
+        {/* Dynamic Charts Section */}
+        {analytics && summary && summary.total > 0 && (
+          <View style={styles.chartsContainer}>
+            {/* Chart 1: Time Trend Bar Chart */}
+            <ComplaintTrendChart
+              data={analytics.trend}
+              periodLabel={analytics.period.label}
+              isMonthlyView={analytics.period.period_type === 'month'}
+            />
+
+            {/* Chart 2: Status Distribution (Resolution vs Pending) */}
+            <StatusDistributionChart
+              statusDistribution={analytics.status_distribution}
+              summary={summary}
+            />
+
+            {/* Chart 3: Role-Aware Category / Subtype Distribution */}
+            <CategoryDistributionChart
+              isSingleDepartment={isSingleDept}
+              typeDistribution={analytics.type_distribution}
+              subtypeDistribution={analytics.subtype_distribution}
+              departmentName={analytics.scope.department}
+            />
+          </View>
+        )}
 
         {/* Quick Departmental Utilities */}
         <View style={styles.servicesContainer}>
@@ -150,7 +251,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 <Ionicons name="pie-chart" size={22} color={Colors.secondary} />
               </View>
               <Text style={styles.serviceCardTitle}>Analytics & Reports</Text>
-              <Text style={styles.serviceCardSubtitle}>Zonal & type statistics</Text>
+              <Text style={styles.serviceCardSubtitle}>Full performance review</Text>
             </TouchableOpacity>
           </View>
 
@@ -176,7 +277,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         </View>
       </ScrollView>
 
-      {/* Floating Plus Sign Button on Front Page */}
+      {/* Floating Plus Sign Button */}
       <TouchableOpacity
         style={styles.floatingAddButton}
         onPress={() => navigation?.navigate('NewComplaint')}
@@ -194,7 +295,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   scrollContent: {
-    paddingBottom: 90, // extra clearance for floating button & bottom tabs
+    paddingBottom: 90, // Clearance for bottom tabs & floating button
   },
   greetingHeader: {
     paddingHorizontal: Spacing.md,
@@ -225,21 +326,55 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     fontWeight: '500',
   },
-
-  // KPI Section
-  statsHeaderRow: {
+  filterSectionWrapper: {
+    paddingHorizontal: Spacing.md,
+    marginTop: Spacing.sm,
+  },
+  loadingBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    paddingVertical: 6,
     paddingHorizontal: Spacing.md,
+    marginHorizontal: Spacing.md,
     marginBottom: Spacing.sm,
+    backgroundColor: '#EFF6FF',
+    borderRadius: BorderRadius.md,
   },
-  statsHeaderTitle: {
-    fontSize: Typography.fontSize.sm,
+  loadingBannerText: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.primary,
+    fontWeight: '600',
+    marginLeft: 6,
+  },
+  errorCard: {
+    backgroundColor: '#FEF2F2',
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    marginHorizontal: Spacing.md,
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    alignItems: 'center',
+  },
+  errorText: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.status.rejected,
+    fontWeight: '600',
+    marginVertical: Spacing.xs,
+    textAlign: 'center',
+  },
+  retryBtn: {
+    backgroundColor: Colors.status.rejected,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 6,
+    borderRadius: BorderRadius.sm,
+    marginTop: 4,
+  },
+  retryBtnText: {
+    fontSize: 11,
     fontWeight: '800',
-    color: Colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    color: '#FFFFFF',
   },
   gridContainer: {
     paddingHorizontal: Spacing.md,
@@ -249,8 +384,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-
-  // Quick Services Section
+  emptyCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.xl,
+    marginHorizontal: Spacing.md,
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyTitle: {
+    fontSize: Typography.fontSize.md,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    marginTop: Spacing.sm,
+  },
+  emptySubtitle: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.textMuted,
+    textAlign: 'center',
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  chartsContainer: {
+    paddingHorizontal: Spacing.md,
+  },
   servicesContainer: {
     paddingHorizontal: Spacing.md,
   },
@@ -298,8 +458,6 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     marginTop: 2,
   },
-
-  // Helpline 1334
   helplineBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -344,8 +502,6 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#000000',
   },
-
-  // Floating Plus Button (Circle)
   floatingAddButton: {
     position: 'absolute',
     bottom: 24,
