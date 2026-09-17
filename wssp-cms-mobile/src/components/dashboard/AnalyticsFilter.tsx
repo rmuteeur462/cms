@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   Modal,
-  TextInput,
   ScrollView,
   Pressable,
 } from 'react-native';
@@ -46,6 +45,11 @@ const MONTH_OPTIONS = [
   { num: 12, name: 'December', short: 'Dec' },
 ];
 
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
 export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
   currentPeriodLabel,
   onFilterChange,
@@ -62,7 +66,97 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
   const [customEndDate, setCustomEndDate] = useState<string>('2026-01-31');
   const [isCustomActive, setIsCustomActive] = useState<boolean>(false);
 
+  // Visual Calendar states
+  const [activeTarget, setActiveTarget] = useState<'from' | 'to'>('from');
+  const [calendarYear, setCalendarYear] = useState<number>(2026);
+  const [calendarMonth, setCalendarMonth] = useState<number>(1); // 1-12
+
   const activeMonthObj = MONTH_OPTIONS.find((m) => m.num === selectedMonth) || MONTH_OPTIONS[0];
+
+  const handlePrevMonth = () => {
+    if (calendarMonth === 1) {
+      setCalendarMonth(12);
+      setCalendarYear((y) => y - 1);
+    } else {
+      setCalendarMonth((m) => m - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (calendarMonth === 12) {
+      setCalendarMonth(1);
+      setCalendarYear((y) => y + 1);
+    } else {
+      setCalendarMonth((m) => m + 1);
+    }
+  };
+
+  const formatYMD = (year: number, month: number, day: number) => {
+    const mm = String(month).padStart(2, '0');
+    const dd = String(day).padStart(2, '0');
+    return `${year}-${mm}-${dd}`;
+  };
+
+  // Build grid of days for the current calendarYear & calendarMonth
+  const firstDayIndex = (new Date(calendarYear, calendarMonth - 1, 1).getDay() + 6) % 7;
+  const daysInCurrentMonth = new Date(calendarYear, calendarMonth, 0).getDate();
+
+  const calendarCells: { empty?: boolean; day?: number; dateStr: string }[] = [];
+  for (let i = 0; i < firstDayIndex; i++) {
+    calendarCells.push({ empty: true, dateStr: `empty-${i}` });
+  }
+  for (let d = 1; d <= daysInCurrentMonth; d++) {
+    calendarCells.push({
+      empty: false,
+      day: d,
+      dateStr: formatYMD(calendarYear, calendarMonth, d),
+    });
+  }
+
+  const handleDayPress = (dateStr: string) => {
+    if (activeTarget === 'from') {
+      setCustomStartDate(dateStr);
+      if (customEndDate && customEndDate < dateStr) {
+        setCustomEndDate(dateStr);
+      }
+      setActiveTarget('to');
+    } else {
+      if (customStartDate && dateStr < customStartDate) {
+        setCustomStartDate(dateStr);
+      } else {
+        setCustomEndDate(dateStr);
+      }
+    }
+  };
+
+  const handlePresetSelect = (preset: 'thisMonth' | 'lastMonth' | 'last7Days' | 'last30Days' | 'year2025') => {
+    if (preset === 'thisMonth') {
+      setCustomStartDate('2026-01-01');
+      setCustomEndDate('2026-01-31');
+      setCalendarYear(2026);
+      setCalendarMonth(1);
+    } else if (preset === 'lastMonth') {
+      setCustomStartDate('2025-12-01');
+      setCustomEndDate('2025-12-31');
+      setCalendarYear(2025);
+      setCalendarMonth(12);
+    } else if (preset === 'last7Days') {
+      setCustomStartDate('2026-01-25');
+      setCustomEndDate('2026-01-31');
+      setCalendarYear(2026);
+      setCalendarMonth(1);
+    } else if (preset === 'last30Days') {
+      setCustomStartDate('2026-01-01');
+      setCustomEndDate('2026-01-31');
+      setCalendarYear(2026);
+      setCalendarMonth(1);
+    } else if (preset === 'year2025') {
+      setCustomStartDate('2025-01-01');
+      setCustomEndDate('2025-12-31');
+      setCalendarYear(2025);
+      setCalendarMonth(1);
+    }
+  };
 
   const handleSelectYear = (year: number | 'all') => {
     setIsCustomActive(false);
@@ -381,7 +475,7 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
       </Modal>
 
       {/* ------------------------------------------------------------- */}
-      {/* CUSTOM DATE RANGE MODAL                                       */}
+      {/* CUSTOM DATE RANGE MODAL — VISUAL CALENDAR PICKER              */}
       {/* ------------------------------------------------------------- */}
       <Modal
         visible={customModalOpen}
@@ -393,11 +487,12 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
           style={styles.modalOverlay}
           onPress={() => setCustomModalOpen(false)}
         >
-          <Pressable style={styles.modalContentCard} onPress={(e) => e.stopPropagation()}>
+          <Pressable style={[styles.modalContentCard, { maxWidth: 400, padding: Spacing.md }]} onPress={(e) => e.stopPropagation()}>
+            {/* Header */}
             <View style={styles.modalHeader}>
               <View style={styles.modalHeaderTitleGroup}>
-                <Ionicons name="options" size={20} color={Colors.primary} />
-                <Text style={styles.modalTitle}>Custom Date Range</Text>
+                <Ionicons name="calendar" size={20} color={Colors.primary} />
+                <Text style={styles.modalTitle}>Select Date Range</Text>
               </View>
               <TouchableOpacity
                 onPress={() => setCustomModalOpen(false)}
@@ -407,32 +502,180 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
               </TouchableOpacity>
             </View>
 
-            <View style={[styles.inputGroup, { marginTop: Spacing.md }]}>
-              <Text style={styles.inputLabel}>FROM DATE</Text>
-              <TextInput
-                style={styles.textInput}
-                value={customStartDate}
-                onChangeText={setCustomStartDate}
-                placeholder="2026-01-01"
-                placeholderTextColor={Colors.textMuted}
-                autoCapitalize="none"
-              />
+            {/* Target Selector Tabs: FROM DATE vs TO DATE */}
+            <View style={styles.rangeSelectorRow}>
+              <TouchableOpacity
+                style={[
+                  styles.rangeTab,
+                  activeTarget === 'from' && styles.rangeTabActive,
+                ]}
+                onPress={() => {
+                  setActiveTarget('from');
+                  const parts = customStartDate.split('-');
+                  if (parts.length === 3) {
+                    setCalendarYear(parseInt(parts[0], 10));
+                    setCalendarMonth(parseInt(parts[1], 10));
+                  }
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.rangeTabLabel, activeTarget === 'from' && styles.rangeTabLabelActive]}>
+                  FROM DATE
+                </Text>
+                <Text style={[styles.rangeTabValue, activeTarget === 'from' && styles.rangeTabValueActive]}>
+                  {customStartDate || 'Select date'}
+                </Text>
+              </TouchableOpacity>
+
+              <View style={styles.rangeTabArrow}>
+                <Ionicons name="arrow-forward" size={16} color={Colors.textMuted} />
+              </View>
+
+              <TouchableOpacity
+                style={[
+                  styles.rangeTab,
+                  activeTarget === 'to' && styles.rangeTabActive,
+                ]}
+                onPress={() => {
+                  setActiveTarget('to');
+                  const parts = customEndDate.split('-');
+                  if (parts.length === 3) {
+                    setCalendarYear(parseInt(parts[0], 10));
+                    setCalendarMonth(parseInt(parts[1], 10));
+                  }
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.rangeTabLabel, activeTarget === 'to' && styles.rangeTabLabelActive]}>
+                  TO DATE
+                </Text>
+                <Text style={[styles.rangeTabValue, activeTarget === 'to' && styles.rangeTabValueActive]}>
+                  {customEndDate || 'Select date'}
+                </Text>
+              </TouchableOpacity>
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>TO DATE</Text>
-              <TextInput
-                style={styles.textInput}
-                value={customEndDate}
-                onChangeText={setCustomEndDate}
-                placeholder="2026-01-31"
-                placeholderTextColor={Colors.textMuted}
-                autoCapitalize="none"
-              />
+            {/* Quick Presets */}
+            <View style={styles.presetRow}>
+              <TouchableOpacity
+                style={styles.presetChip}
+                onPress={() => handlePresetSelect('thisMonth')}
+              >
+                <Text style={styles.presetChipText}>This Month</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.presetChip}
+                onPress={() => handlePresetSelect('lastMonth')}
+              >
+                <Text style={styles.presetChipText}>Last Month</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.presetChip}
+                onPress={() => handlePresetSelect('last7Days')}
+              >
+                <Text style={styles.presetChipText}>Last 7 Days</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.presetChip}
+                onPress={() => handlePresetSelect('last30Days')}
+              >
+                <Text style={styles.presetChipText}>Last 30 Days</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.presetChip}
+                onPress={() => handlePresetSelect('year2025')}
+              >
+                <Text style={styles.presetChipText}>2025 Full</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Calendar Navigation Header */}
+            <View style={styles.calNavRow}>
+              <TouchableOpacity
+                style={styles.calNavBtn}
+                onPress={handlePrevMonth}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="chevron-back" size={18} color={Colors.primary} />
+              </TouchableOpacity>
+
+              <View style={styles.calMonthTitleGroup}>
+                <Text style={styles.calMonthTitle}>
+                  {MONTH_NAMES[calendarMonth - 1]} {calendarYear}
+                </Text>
+                <Text style={styles.calSelectHint}>
+                  {activeTarget === 'from' ? 'Tap start date' : 'Tap end date'}
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={styles.calNavBtn}
+                onPress={handleNextMonth}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="chevron-forward" size={18} color={Colors.primary} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Calendar Day Labels */}
+            <View style={styles.calDaysHeaderRow}>
+              {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map((d) => (
+                <Text key={d} style={styles.calDayLabel}>
+                  {d}
+                </Text>
+              ))}
+            </View>
+
+            {/* Calendar Days Grid */}
+            <View style={styles.calGrid}>
+              {calendarCells.map((cell, idx) => {
+                if (cell.empty) {
+                  return <View key={`empty-${idx}`} style={styles.calCell} />;
+                }
+
+                const isStart = cell.dateStr === customStartDate;
+                const isEnd = cell.dateStr === customEndDate;
+                const inRange =
+                  customStartDate &&
+                  customEndDate &&
+                  cell.dateStr > customStartDate &&
+                  cell.dateStr < customEndDate;
+
+                return (
+                  <TouchableOpacity
+                    key={cell.dateStr}
+                    style={[
+                      styles.calCell,
+                      inRange && styles.calCellInRange,
+                      isStart && styles.calCellStart,
+                      isEnd && styles.calCellEnd,
+                    ]}
+                    onPress={() => handleDayPress(cell.dateStr)}
+                    activeOpacity={0.75}
+                  >
+                    <View
+                      style={[
+                        styles.calDayCircle,
+                        (isStart || isEnd) && styles.calDayCircleActive,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.calDayText,
+                          inRange && styles.calDayTextInRange,
+                          (isStart || isEnd) && styles.calDayTextActive,
+                        ]}
+                      >
+                        {cell.day}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
 
             {/* Modal Actions */}
-            <View style={[styles.modalActionRow, { marginTop: Spacing.md }]}>
+            <View style={styles.modalActionRow}>
               <TouchableOpacity
                 style={styles.cancelButton}
                 onPress={() => setCustomModalOpen(false)}
@@ -681,43 +924,178 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  // Custom Range Modal Inputs
-  inputGroup: {
-    marginBottom: Spacing.sm,
-  },
-  inputLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: Colors.textSecondary,
-    marginBottom: 4,
-    letterSpacing: 0.5,
-  },
-  textInput: {
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: Colors.border,
+  // Range Selector Tabs
+  rangeSelectorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F1F5F9',
     borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 9,
-    fontSize: Typography.fontSize.sm,
+    padding: 3,
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.xs,
+  },
+  rangeTab: {
+    flex: 1,
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+    borderRadius: BorderRadius.sm,
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  rangeTabActive: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  rangeTabLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: Colors.textMuted,
+    letterSpacing: 0.6,
+  },
+  rangeTabLabelActive: {
+    color: Colors.primary,
+  },
+  rangeTabValue: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  rangeTabValueActive: {
+    color: Colors.primaryDark,
+    fontWeight: '900',
+  },
+  rangeTabArrow: {
+    paddingHorizontal: 4,
+  },
+
+  // Calendar Header & Navigation
+  calNavRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+    paddingHorizontal: 2,
+    marginTop: Spacing.xs,
+    marginBottom: 4,
+  },
+  calNavBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  calMonthTitleGroup: {
+    alignItems: 'center',
+  },
+  calMonthTitle: {
+    fontSize: Typography.fontSize.sm + 1,
+    fontWeight: '800',
     color: Colors.textPrimary,
   },
+  calSelectHint: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Colors.primary,
+    marginTop: 1,
+  },
+  calDaysHeaderRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    paddingBottom: 4,
+    marginBottom: 4,
+  },
+  calDayLabel: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 11,
+    fontWeight: '700',
+    color: Colors.textMuted,
+  },
+
+  // Calendar Days Grid & Range Highlights
+  calGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: Spacing.xs,
+  },
+  calCell: {
+    width: '14.28%',
+    height: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 1,
+  },
+  calCellInRange: {
+    backgroundColor: '#EFF6FF',
+  },
+  calCellStart: {
+    borderTopLeftRadius: 17,
+    borderBottomLeftRadius: 17,
+    backgroundColor: '#EFF6FF',
+  },
+  calCellEnd: {
+    borderTopRightRadius: 17,
+    borderBottomRightRadius: 17,
+    backgroundColor: '#EFF6FF',
+  },
+  calDayCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  calDayCircleActive: {
+    backgroundColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  calDayText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+  },
+  calDayTextInRange: {
+    color: Colors.primaryDark,
+    fontWeight: '700',
+  },
+  calDayTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+  },
+
   presetRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     marginTop: 4,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.xs,
   },
   presetChip: {
     backgroundColor: '#F1F5F9',
-    paddingHorizontal: Spacing.sm + 2,
-    paddingVertical: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
     borderRadius: BorderRadius.sm,
-    marginRight: Spacing.xs,
+    marginRight: 6,
     marginTop: 4,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   presetChipText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
     color: Colors.primary,
   },
