@@ -158,6 +158,19 @@ def run_tests():
     assert len(data_custom["trend"]) == 15, "15 day range must have 15 daily points"
     print("  --> PASS [OK]")
 
+    # -------------------------------------------------------------
+    # TEST 7: All Years (Lifetime) Filter
+    # -------------------------------------------------------------
+    print("\n[TEST 7] All Years (Lifetime) Analytics:")
+    data_all_years = DashboardAnalyticsService.get_analytics(ccho, {"year": "all"})
+    print(f"  All Years Total: {data_all_years['summary']['total']}")
+    print(f"  All Years Label: {data_all_years['period']['label']}")
+    print(f"  All Years Trend (by Year): {[t['label'] + ': ' + str(t['count']) for t in data_all_years['trend']]}")
+
+    assert data_all_years["summary"]["total"] == 27147, f"Expected 27147 all-time complaints, got {data_all_years['summary']['total']}"
+    assert len(data_all_years["trend"]) == 4, "Expected 4 years in lifetime trend (2021, 2024, 2025, 2026)"
+    print("  --> PASS [OK]")
+
     print("\n" + "=" * 80)
     print("  ALL DASHBOARD ANALYTICS SECURITY & ISOLATION TESTS PASSED [100% OK]")
     print("=" * 80 + "\n")

@@ -14,7 +14,7 @@ import calendar
 from datetime import date, datetime, timedelta
 from django.utils import timezone
 from django.db.models import Count, Q
-from django.db.models.functions import ExtractMonth, ExtractDay
+from django.db.models.functions import ExtractMonth, ExtractDay, ExtractYear
 
 from Dashboard.models import Complaint, ComplaintType, ComplaintSubType, Location
 from api.v1.permissions.base import (
@@ -47,6 +47,19 @@ class DashboardAnalyticsService:
         month_param = params.get("month")
         start_date_param = params.get("start_date")
         end_date_param = params.get("end_date")
+
+        # 0. All Years (Lifetime)
+        if str(year_param).lower() in ["all", "all_years", "-1"] or params.get("all_years") in [True, "true", "1"]:
+            start_date = date(2021, 1, 1)
+            end_date = date(current_year, 12, 31)
+            return {
+                "year": "all",
+                "month": None,
+                "start_date": start_date,
+                "end_date": end_date,
+                "label": "All Years (Lifetime)",
+                "period_type": "all_years",
+            }
 
         # 1. Custom Date Range
         if start_date_param and end_date_param:
@@ -273,7 +286,26 @@ class DashboardAnalyticsService:
         end_date = period["end_date"]
         delta_days = (end_date - start_date).days + 1
 
-        # A. DAILY BREAKDOWN (Monthly view or custom <= 31 days)
+        # A. ALL YEARS BREAKDOWN (by Year)
+        if period["period_type"] == "all_years":
+            year_counts_qs = (
+                period_qs.annotate(y=ExtractYear("date"))
+                .values("y")
+                .annotate(count=Count("id"))
+                .order_by("y")
+            )
+            count_map = {item["y"]: item["count"] for item in year_counts_qs if item["y"]}
+            trend = []
+            for y in sorted(count_map.keys()):
+                trend.append({
+                    "year": y,
+                    "label": str(y),
+                    "full_label": f"Year {y}",
+                    "count": count_map[y],
+                })
+            return trend
+
+        # B. DAILY BREAKDOWN (Monthly view or custom <= 31 days)
         if period["period_type"] == "month" or delta_days <= 31:
             day_counts_qs = (
                 period_qs.values("date")

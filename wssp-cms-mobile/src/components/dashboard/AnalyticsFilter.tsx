@@ -23,7 +23,12 @@ interface AnalyticsFilterProps {
   loading?: boolean;
 }
 
-const AVAILABLE_YEARS = [2026, 2025, 2024];
+const AVAILABLE_YEARS: { id: number | 'all'; label: string; desc?: string }[] = [
+  { id: 'all', label: 'All Years (All Time)', desc: 'Aggregate data across all recorded years (2021 – 2026)' },
+  { id: 2026, label: 'Year 2026', desc: 'Current operating year' },
+  { id: 2025, label: 'Year 2025', desc: 'Previous operating year' },
+  { id: 2024, label: 'Year 2024', desc: 'Historical operating year' },
+];
 
 const MONTH_OPTIONS = [
   { num: null, name: 'Full Year (All Months)', short: 'All Year' },
@@ -46,7 +51,7 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
   onFilterChange,
   loading = false,
 }) => {
-  const [selectedYear, setSelectedYear] = useState<number>(2026);
+  const [selectedYear, setSelectedYear] = useState<number | 'all'>(2026);
   const [selectedMonth, setSelectedMonth] = useState<number | null>(1); // Default Jan
 
   const [yearDropdownOpen, setYearDropdownOpen] = useState<boolean>(false);
@@ -59,14 +64,20 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
 
   const activeMonthObj = MONTH_OPTIONS.find((m) => m.num === selectedMonth) || MONTH_OPTIONS[0];
 
-  const handleSelectYear = (year: number) => {
+  const handleSelectYear = (year: number | 'all') => {
     setIsCustomActive(false);
     setSelectedYear(year);
     setYearDropdownOpen(false);
-    if (selectedMonth !== null) {
-      onFilterChange({ year, month: selectedMonth });
+
+    if (year === 'all') {
+      setSelectedMonth(null);
+      onFilterChange({ year: 'all' as any });
     } else {
-      onFilterChange({ year });
+      if (selectedMonth !== null) {
+        onFilterChange({ year, month: selectedMonth });
+      } else {
+        onFilterChange({ year });
+      }
     }
   };
 
@@ -74,10 +85,17 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
     setIsCustomActive(false);
     setSelectedMonth(monthNum);
     setMonthDropdownOpen(false);
+
+    // If previously in 'all' years mode, switch to 2026 when picking a specific month
+    const effectiveYear = selectedYear === 'all' ? 2026 : selectedYear;
+    if (selectedYear === 'all') {
+      setSelectedYear(2026);
+    }
+
     if (monthNum === null) {
-      onFilterChange({ year: selectedYear });
+      onFilterChange({ year: effectiveYear });
     } else {
-      onFilterChange({ year: selectedYear, month: monthNum });
+      onFilterChange({ year: effectiveYear, month: monthNum });
     }
   };
 
@@ -138,8 +156,8 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
           >
             <View style={styles.btnContent}>
               <Ionicons name="calendar-clear-outline" size={16} color={Colors.primary} />
-              <Text style={styles.dropdownSelectedText}>
-                {isCustomActive ? 'Custom' : selectedYear}
+              <Text style={styles.dropdownSelectedText} numberOfLines={1}>
+                {isCustomActive ? 'Custom' : selectedYear === 'all' ? 'All Years' : `Year ${selectedYear}`}
               </Text>
             </View>
             <Ionicons
@@ -164,7 +182,7 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
             <View style={styles.btnContent}>
               <Ionicons name="time-outline" size={16} color={Colors.secondary} />
               <Text style={styles.dropdownSelectedText} numberOfLines={1}>
-                {isCustomActive ? 'Date Window' : activeMonthObj.name}
+                {isCustomActive ? 'Date Window' : selectedYear === 'all' ? 'All Months' : activeMonthObj.name}
               </Text>
             </View>
             <Ionicons
@@ -204,17 +222,22 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
             </View>
 
             <Text style={styles.modalSubtitle}>
-              Filter all departmental analytics and complaint frequency by fiscal year:
+              Filter all departmental analytics and complaint frequency by fiscal year or all time:
             </Text>
 
             <View style={styles.optionsList}>
               {AVAILABLE_YEARS.map((yr) => {
-                const isSelected = !isCustomActive && selectedYear === yr;
+                const isSelected = !isCustomActive && selectedYear === yr.id;
+                const isAll = yr.id === 'all';
                 return (
                   <TouchableOpacity
-                    key={yr}
-                    style={[styles.optionItem, isSelected && styles.optionItemActive]}
-                    onPress={() => handleSelectYear(yr)}
+                    key={String(yr.id)}
+                    style={[
+                      styles.optionItem,
+                      isSelected && styles.optionItemActive,
+                      isAll && styles.allYearOptionItem,
+                    ]}
+                    onPress={() => handleSelectYear(yr.id)}
                     activeOpacity={0.7}
                   >
                     <View style={styles.optionLeft}>
@@ -226,14 +249,20 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
                       >
                         {isSelected && <View style={styles.optionRadioInner} />}
                       </View>
-                      <Text
-                        style={[
-                          styles.optionText,
-                          isSelected && styles.optionTextActive,
-                        ]}
-                      >
-                        Year {yr}
-                      </Text>
+                      <View>
+                        <Text
+                          style={[
+                            styles.optionText,
+                            isSelected && styles.optionTextActive,
+                            isAll && styles.allYearText,
+                          ]}
+                        >
+                          {yr.label}
+                        </Text>
+                        {yr.desc && (
+                          <Text style={styles.optionDescription}>{yr.desc}</Text>
+                        )}
+                      </View>
                     </View>
 
                     {isSelected && (
