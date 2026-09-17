@@ -112,37 +112,6 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
 
   return (
     <View style={styles.card}>
-      {/* Top Title & Period Status Header */}
-      <View style={styles.topHeader}>
-        <View style={styles.titleWithIcon}>
-          <View style={styles.filterIconCircle}>
-            <Ionicons name="filter-outline" size={16} color={Colors.primary} />
-          </View>
-          <View>
-            <Text style={styles.filterSectionTitle}>Analytics Reporting Period</Text>
-            <Text style={styles.filterActiveLabel}>
-              Active: <Text style={styles.filterActiveLabelBold}>{currentPeriodLabel || `${activeMonthObj.short} ${selectedYear}`}</Text>
-            </Text>
-          </View>
-        </View>
-
-        {/* Custom Range Action Pill */}
-        <TouchableOpacity
-          style={[styles.customPill, isCustomActive && styles.customPillActive]}
-          onPress={() => setCustomModalOpen(true)}
-          activeOpacity={0.8}
-        >
-          <Ionicons
-            name="calendar"
-            size={13}
-            color={isCustomActive ? '#FFFFFF' : Colors.primaryDark}
-          />
-          <Text style={[styles.customPillText, isCustomActive && styles.customPillTextActive]}>
-            Custom Range
-          </Text>
-        </TouchableOpacity>
-      </View>
-
       {/* Modern Side-by-Side Dropdown Selectors */}
       <View style={styles.dropdownRow}>
         {/* YEAR DROPDOWN FIELD */}
@@ -182,7 +151,11 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
             <View style={styles.btnContent}>
               <Ionicons name="time-outline" size={16} color={Colors.secondary} />
               <Text style={styles.dropdownSelectedText} numberOfLines={1}>
-                {isCustomActive ? 'Date Window' : selectedYear === 'all' ? 'All Months' : activeMonthObj.name}
+                {isCustomActive
+                  ? `${customStartDate.slice(5)} → ${customEndDate.slice(5)}`
+                  : selectedYear === 'all'
+                  ? 'All Months'
+                  : activeMonthObj.name}
               </Text>
             </View>
             <Ionicons
@@ -192,6 +165,52 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
             />
           </TouchableOpacity>
         </View>
+      </View>
+
+      {/* Date Range Custom Filter Action (Properly Integrated) */}
+      <View style={styles.customDateRow}>
+        <TouchableOpacity
+          style={[styles.customDateBtn, isCustomActive && styles.customDateBtnActive]}
+          onPress={() => setCustomModalOpen(true)}
+          activeOpacity={0.75}
+        >
+          <View style={styles.customDateLeft}>
+            <Ionicons
+              name="calendar-outline"
+              size={15}
+              color={isCustomActive ? Colors.primaryDark : Colors.textSecondary}
+            />
+            <Text
+              style={[styles.customDateText, isCustomActive && styles.customDateTextActive]}
+              numberOfLines={1}
+            >
+              {isCustomActive
+                ? `Custom Range: ${customStartDate}  →  ${customEndDate}`
+                : 'Filter by Specific Date Range (From – To)'}
+            </Text>
+          </View>
+
+          {isCustomActive ? (
+            <TouchableOpacity
+              style={styles.resetBadge}
+              onPress={(e) => {
+                e.stopPropagation();
+                setIsCustomActive(false);
+                onFilterChange({
+                  year: selectedYear === 'all' ? ('all' as any) : selectedYear,
+                  month: selectedMonth ?? undefined,
+                });
+              }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.resetBadgeText}>Reset ✕</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.setDatesBadge}>
+              <Text style={styles.setDatesText}>Set Dates</Text>
+            </View>
+          )}
+        </TouchableOpacity>
       </View>
 
       {/* ------------------------------------------------------------- */}
@@ -487,66 +506,60 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 2,
   },
-  topHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: Spacing.md,
-    paddingBottom: Spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+  customDateRow: {
+    marginTop: Spacing.sm,
   },
-  titleWithIcon: {
+  customDateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.sm + 2,
+    paddingVertical: 8,
+  },
+  customDateBtnActive: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#BFDBFE',
+  },
+  customDateLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    marginRight: Spacing.xs,
   },
-  filterIconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#EFF6FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: Spacing.sm,
-  },
-  filterSectionTitle: {
-    fontSize: Typography.fontSize.xs,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-  filterActiveLabel: {
+  customDateText: {
     fontSize: 11,
-    color: Colors.textMuted,
-    marginTop: 1,
+    fontWeight: '600',
+    color: Colors.textSecondary,
+    marginLeft: 6,
   },
-  filterActiveLabelBold: {
+  customDateTextActive: {
     color: Colors.primaryDark,
     fontWeight: '700',
   },
-  customPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F8FAFC',
-    paddingHorizontal: Spacing.sm + 2,
-    paddingVertical: 6,
-    borderRadius: BorderRadius.full,
-    borderWidth: 1,
-    borderColor: Colors.border,
+  setDatesBadge: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: BorderRadius.sm,
   },
-  customPillActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-  customPillText: {
-    fontSize: 11,
+  setDatesText: {
+    fontSize: 10,
     fontWeight: '700',
     color: Colors.textSecondary,
-    marginLeft: 5,
   },
-  customPillTextActive: {
+  resetBadge: {
+    backgroundColor: Colors.secondary,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: BorderRadius.sm,
+  },
+  resetBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
     color: '#FFFFFF',
   },
   dropdownRow: {

@@ -97,15 +97,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />
         }
       >
-        {/* Officer Greeting Header */}
+        {/* Clean Executive Header */}
         <View style={styles.greetingHeader}>
-          <Text style={styles.greetingText}>{getGreeting()}</Text>
           <Text style={styles.sectionSubtitle}>Complaint Management</Text>
-          <Text style={styles.officerNameText}>
-            {user?.full_name || user?.username} •{' '}
-            <Text style={styles.officerRoleText}>
-              {analytics?.scope?.role_title || user?.role || 'Departmental Officer'}
-            </Text>
+          <Text style={styles.officerRoleText}>
+            {analytics?.scope?.role_title || user?.role || 'Departmental Officer'}
           </Text>
         </View>
 
@@ -276,15 +272,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       </ScrollView>
-
-      {/* Floating Plus Sign Button */}
-      <TouchableOpacity
-        style={styles.floatingAddButton}
-        onPress={() => navigation?.navigate('NewComplaint')}
-        activeOpacity={0.85}
-      >
-        <Ionicons name="add" size={32} color="#FFFFFF" />
-      </TouchableOpacity>
     </View>
   );
 };
