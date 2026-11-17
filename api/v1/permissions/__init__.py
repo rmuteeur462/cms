@@ -20,6 +20,9 @@ from .staff import (
     IsZonalManager,
     IsDepartmentManager,
 )
+from .citizen import (
+    IsCitizenUser,
+)
 from .complaints import (
     CanViewComplaint,
     CanUpdateComplaint,
@@ -33,6 +36,7 @@ __all__ = [
     "get_user_allowed_department_type_ids",
     "scope_complaint_queryset",
     "IsCMSStaffUser",
+    "IsCitizenUser",
     "IsHeadOffice",
     "IsZonalManager",
     "IsDepartmentManager",

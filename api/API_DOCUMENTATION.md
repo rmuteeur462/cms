@@ -248,8 +248,12 @@ When submitting complaint photos or response attachments:
     {
       "date": "2026-01-01",
       "label": "01",
-      "full_label": "01 Jan",
-      "count": 2
+      "full_label": "01 Jan 2026",
+      "count": 2,
+      "resolved": 2,
+      "pending": 0,
+      "resolved_percentage": 100.0,
+      "pending_percentage": 0.0
     }
   ]
 }

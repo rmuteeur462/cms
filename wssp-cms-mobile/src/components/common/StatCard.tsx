@@ -20,6 +20,12 @@ export const StatCard: React.FC<StatCardProps> = ({
   bgColor = '#F1F5F9',
   onPress,
 }) => {
+  const formattedValue = typeof value === 'number' ? value.toLocaleString() : String(value);
+
+  // Dynamic font sizing depending on text length to guarantee it always fits comfortably
+  const isLargeNumber = formattedValue.length > 5;
+  const isMediumNumber = formattedValue.length > 4;
+
   return (
     <TouchableOpacity
       activeOpacity={onPress ? 0.75 : 1}
@@ -28,9 +34,21 @@ export const StatCard: React.FC<StatCardProps> = ({
     >
       <View style={styles.topRow}>
         <View style={[styles.iconBox, { backgroundColor: bgColor }]}>
-          <Ionicons name={icon} size={16} color={color} />
+          <Ionicons name={icon} size={14} color={color} />
         </View>
-        <Text style={[styles.valueText, { color }]}>{typeof value === 'number' ? value.toLocaleString() : value}</Text>
+        <Text
+          style={[
+            styles.valueText,
+            { color },
+            isMediumNumber && styles.valueTextMedium,
+            isLargeNumber && styles.valueTextLarge,
+          ]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.65}
+        >
+          {formattedValue}
+        </Text>
       </View>
       <Text style={styles.titleText} numberOfLines={1}>{title}</Text>
     </TouchableOpacity>
@@ -42,8 +60,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.md,
-    padding: Spacing.sm,
-    paddingBottom: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 10,
     borderWidth: 1,
     borderColor: Colors.border,
     borderTopWidth: 3,
@@ -52,32 +70,43 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 4,
     elevation: 1,
-    minHeight: 78,
+    minHeight: 76,
     justifyContent: 'space-between',
+    overflow: 'hidden',
   },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 6,
+    gap: 4,
   },
   iconBox: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   valueText: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '900',
-    letterSpacing: 0.5,
+    letterSpacing: -0.3,
+    flexShrink: 1,
+    textAlign: 'right',
+  },
+  valueTextMedium: {
+    fontSize: 16,
+  },
+  valueTextLarge: {
+    fontSize: 14,
   },
   titleText: {
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: '800',
     color: Colors.textSecondary,
     textTransform: 'uppercase',
-    letterSpacing: 0.6,
+    letterSpacing: 0.5,
   },
 });

@@ -124,12 +124,33 @@ class DashboardAnalyticsService:
         Main entry point for dashboard analytics.
         Enforces backend permission scoping first, then calculates
         all metrics within the requested date window.
+
+        Optional param: location_id (int) — further narrow to one zone.
+        Security: location_id is validated against the user's allowed locations.
         """
         # ---------------------------------------------------------
         # 1. SCOPED BASE QUERYSET
         # ---------------------------------------------------------
         base_qs = get_allowed_complaints(user)
         role_ctx = get_user_role_context(user)
+
+        # ---------------------------------------------------------
+        # 1b. OPTIONAL ZONE FILTER (secure — must be within allowed)
+        # ---------------------------------------------------------
+        requested_location_id = None
+        location_id_param = params.get("location_id")
+        if location_id_param:
+            try:
+                requested_location_id = int(location_id_param)
+            except (ValueError, TypeError):
+                requested_location_id = None
+
+        if requested_location_id:
+            allowed_ids = role_ctx["allowed_location_ids"]
+            # Security: only allow filtering to zones the user can access
+            if not allowed_ids or requested_location_id in allowed_ids:
+                base_qs = base_qs.filter(location_id=requested_location_id)
+            # If the user tries a zone they don't have access to, silently ignore
 
         # ---------------------------------------------------------
         # 2. DATE FILTERING
@@ -139,6 +160,7 @@ class DashboardAnalyticsService:
         end_date = period["end_date"]
 
         period_qs = base_qs.filter(date__gte=start_date, date__lte=end_date)
+
 
         # ---------------------------------------------------------
         # 3. SUMMARY METRICS
@@ -279,6 +301,8 @@ class DashboardAnalyticsService:
     def _calculate_trend(period_qs, period):
         """
         Constructs continuous time trend data matching the selected period.
+        Includes total count, resolved count, pending count, and their respective percentages.
+        - All Years: Breakdown by year (e.g. 2021, 2024, 2025, 2026)
         - Month / Short Range (<= 31 days): Daily breakdown (e.g. Day 01 .. Day 31)
         - Year / Long Range (> 31 days): Monthly breakdown (e.g. Jan .. Dec)
         """
@@ -291,17 +315,31 @@ class DashboardAnalyticsService:
             year_counts_qs = (
                 period_qs.annotate(y=ExtractYear("date"))
                 .values("y")
-                .annotate(count=Count("id"))
+                .annotate(
+                    count=Count("id"),
+                    resolved=Count("id", filter=Q(status="resolved")),
+                    pending=Count("id", filter=Q(status="pending")),
+                )
                 .order_by("y")
             )
-            count_map = {item["y"]: item["count"] for item in year_counts_qs if item["y"]}
+            data_map = {item["y"]: item for item in year_counts_qs if item["y"]}
             trend = []
-            for y in sorted(count_map.keys()):
+            for y in sorted(data_map.keys()):
+                item = data_map[y]
+                c = item["count"]
+                res = item["resolved"]
+                pnd = item["pending"]
+                res_pct = round((res / c * 100), 1) if c > 0 else 0.0
+                pnd_pct = round((pnd / c * 100), 1) if c > 0 else 0.0
                 trend.append({
                     "year": y,
                     "label": str(y),
                     "full_label": f"Year {y}",
-                    "count": count_map[y],
+                    "count": c,
+                    "resolved": res,
+                    "pending": pnd,
+                    "resolved_percentage": res_pct,
+                    "pending_percentage": pnd_pct,
                 })
             return trend
 
@@ -309,44 +347,73 @@ class DashboardAnalyticsService:
         if period["period_type"] == "month" or delta_days <= 31:
             day_counts_qs = (
                 period_qs.values("date")
-                .annotate(count=Count("id"))
+                .annotate(
+                    count=Count("id"),
+                    resolved=Count("id", filter=Q(status="resolved")),
+                    pending=Count("id", filter=Q(status="pending")),
+                )
                 .order_by("date")
             )
-            count_map = {item["date"]: item["count"] for item in day_counts_qs if item["date"]}
+            data_map = {item["date"]: item for item in day_counts_qs if item["date"]}
 
             trend = []
             curr_date = start_date
             while curr_date <= end_date:
-                count = count_map.get(curr_date, 0)
+                item = data_map.get(curr_date)
+                c = item["count"] if item else 0
+                res = item["resolved"] if item else 0
+                pnd = item["pending"] if item else 0
+                res_pct = round((res / c * 100), 1) if c > 0 else 0.0
+                pnd_pct = round((pnd / c * 100), 1) if c > 0 else 0.0
                 trend.append({
                     "date": curr_date.strftime("%Y-%m-%d"),
                     "label": curr_date.strftime("%d"),
-                    "full_label": curr_date.strftime("%d %b"),
-                    "count": count,
+                    "full_label": curr_date.strftime("%d %b %Y"),
+                    "count": c,
+                    "resolved": res,
+                    "pending": pnd,
+                    "resolved_percentage": res_pct,
+                    "pending_percentage": pnd_pct,
                 })
                 curr_date += timedelta(days=1)
             return trend
 
-        # B. MONTHLY BREAKDOWN (Full year or custom > 31 days)
+        # C. MONTHLY BREAKDOWN (Full year or custom > 31 days)
         month_counts_qs = (
             period_qs.annotate(m=ExtractMonth("date"))
             .values("m")
-            .annotate(count=Count("id"))
+            .annotate(
+                count=Count("id"),
+                resolved=Count("id", filter=Q(status="resolved")),
+                pending=Count("id", filter=Q(status="pending")),
+            )
             .order_by("m")
         )
-        count_map = {item["m"]: item["count"] for item in month_counts_qs if item["m"]}
+        data_map = {item["m"]: item for item in month_counts_qs if item["m"]}
 
         month_labels = [
-            (1, "Jan"), (2, "Feb"), (3, "Mar"), (4, "Apr"),
-            (5, "May"), (6, "Jun"), (7, "Jul"), (8, "Aug"),
-            (9, "Sep"), (10, "Oct"), (11, "Nov"), (12, "Dec")
+            (1, "Jan", "January"), (2, "Feb", "February"), (3, "Mar", "March"), (4, "Apr", "April"),
+            (5, "May", "May"), (6, "Jun", "June"), (7, "Jul", "July"), (8, "Aug", "August"),
+            (9, "Sep", "September"), (10, "Oct", "October"), (11, "Nov", "November"), (12, "Dec", "December")
         ]
 
+        year_suffix = f" {period['year']}" if period.get("year") and str(period["year"]).isdigit() else ""
         trend = []
-        for m_num, m_name in month_labels:
+        for m_num, m_name, m_full in month_labels:
+            item = data_map.get(m_num)
+            c = item["count"] if item else 0
+            res = item["resolved"] if item else 0
+            pnd = item["pending"] if item else 0
+            res_pct = round((res / c * 100), 1) if c > 0 else 0.0
+            pnd_pct = round((pnd / c * 100), 1) if c > 0 else 0.0
             trend.append({
                 "month": m_num,
                 "label": m_name,
-                "count": count_map.get(m_num, 0),
+                "full_label": f"{m_full}{year_suffix}",
+                "count": c,
+                "resolved": res,
+                "pending": pnd,
+                "resolved_percentage": res_pct,
+                "pending_percentage": pnd_pct,
             })
         return trend

@@ -19,7 +19,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { AnalyticsFilter } from '../../components/dashboard/AnalyticsFilter';
 import { ComplaintTrendChart } from '../../components/dashboard/ComplaintTrendChart';
-import { StatusDistributionChart } from '../../components/dashboard/StatusDistributionChart';
 import { CategoryDistributionChart } from '../../components/dashboard/CategoryDistributionChart';
 
 interface HomeScreenProps {
@@ -36,7 +35,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   // Default filter: Year 2026, Month 1 (or current reporting period)
   const [filter, setFilter] = useState<{
-    year?: number;
+    year?: number | 'all';
     month?: number;
     start_date?: string;
     end_date?: string;
@@ -45,6 +44,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     month: 1,
   });
 
+  // Zone filter: undefined = All Zones, number = specific location id
+  const [selectedZoneId, setSelectedZoneId] = useState<number | undefined>(undefined);
+
+  // Filter out Head Office from zone chips
+  const zoneOptions = (user?.allowed_locations || []).filter(
+    (loc) => !loc.name.toLowerCase().replace(/\s+/g, '').includes('headoffice')
+  );
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good Morning';
@@ -52,10 +59,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     return 'Good Evening';
   };
 
-  const loadAnalyticsData = async (activeFilter = filter) => {
+  const loadAnalyticsData = async (
+    activeFilter = filter,
+    zoneId: number | undefined = selectedZoneId
+  ) => {
     setError(null);
     try {
-      const data = await ComplaintsApi.getDashboardAnalytics(activeFilter);
+      const data = await ComplaintsApi.getDashboardAnalytics({
+        ...activeFilter,
+        location_id: zoneId,
+      });
       setAnalytics(data);
     } catch (err: any) {
       console.warn('[HomeScreen] Failed to load dashboard analytics:', err);
@@ -67,24 +80,30 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   };
 
   useEffect(() => {
-    loadAnalyticsData(filter);
+    loadAnalyticsData(filter, selectedZoneId);
   }, []);
 
   const handleFilterChange = (newFilter: {
-    year?: number;
+    year?: number | 'all';
     month?: number;
     start_date?: string;
     end_date?: string;
   }) => {
     setFilter(newFilter);
     setLoading(true);
-    loadAnalyticsData(newFilter);
+    loadAnalyticsData(newFilter, selectedZoneId);
+  };
+
+  const handleZoneSelect = (zoneId: number | undefined) => {
+    setSelectedZoneId(zoneId);
+    setLoading(true);
+    loadAnalyticsData(filter, zoneId);
   };
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    loadAnalyticsData(filter);
-  }, [filter]);
+    loadAnalyticsData(filter, selectedZoneId);
+  }, [filter, selectedZoneId]);
 
   const summary = analytics?.summary;
   const isSingleDept = analytics?.scope?.is_single_department ?? false;
@@ -114,6 +133,77 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           />
         </View>
 
+        {/* Zone Selector Chips */}
+        {zoneOptions.length > 1 && (
+          <View style={styles.zoneFilterWrapper}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.zoneScrollContent}
+            >
+              {/* All Zones chip */}
+              <TouchableOpacity
+                style={[
+                  styles.zoneChip,
+                  selectedZoneId === undefined && styles.zoneChipActive,
+                ]}
+                onPress={() => handleZoneSelect(undefined)}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name="layers-outline"
+                  size={13}
+                  color={selectedZoneId === undefined ? '#FFFFFF' : Colors.textMuted}
+                  style={{ marginRight: 4 }}
+                />
+                <Text
+                  style={[
+                    styles.zoneChipText,
+                    selectedZoneId === undefined && styles.zoneChipTextActive,
+                  ]}
+                >
+                  All Zones
+                </Text>
+              </TouchableOpacity>
+
+              {/* Individual zone chips */}
+              {zoneOptions.map((loc) => (
+                <TouchableOpacity
+                  key={loc.id}
+                  style={[
+                    styles.zoneChip,
+                    selectedZoneId === loc.id && styles.zoneChipActive,
+                  ]}
+                  onPress={() => handleZoneSelect(loc.id)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name="location-outline"
+                    size={13}
+                    color={selectedZoneId === loc.id ? '#FFFFFF' : Colors.textMuted}
+                    style={{ marginRight: 4 }}
+                  />
+                  <Text
+                    style={[
+                      styles.zoneChipText,
+                      selectedZoneId === loc.id && styles.zoneChipTextActive,
+                    ]}
+                  >
+                    {loc.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {/* Zone label indicator */}
+            <Text style={styles.zoneActiveLabel}>
+              {selectedZoneId === undefined
+                ? 'Showing data across all zones'
+                : `Showing: ${zoneOptions.find((z) => z.id === selectedZoneId)?.name ?? 'Zone'}`}
+            </Text>
+          </View>
+        )}
+
         {/* Loading Indicator */}
         {loading && (
           <View style={styles.loadingBanner}>
@@ -131,7 +221,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               style={styles.retryBtn}
               onPress={() => {
                 setLoading(true);
-                loadAnalyticsData(filter);
+                loadAnalyticsData(filter, selectedZoneId);
               }}
             >
               <Text style={styles.retryBtnText}>Retry</Text>
@@ -139,45 +229,61 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           </View>
         )}
 
-        {/* 2x2 Metric Summary Cards Grid */}
+        {/* 3 Metric Summary Cards Row */}
         <View style={styles.gridContainer}>
           <View style={styles.gridRow}>
             <StatCard
-              title="Total Complaints"
+              title="Total"
               value={summary?.total ?? (loading ? '...' : 0)}
               icon="layers-outline"
               color={Colors.primary}
               bgColor="#DCFCE7"
-              onPress={() => navigation?.navigate('Complaints')}
+              onPress={() =>
+                navigation?.navigate('Complaints', {
+                  status: 'all',
+                  year: filter.year,
+                  month: filter.month,
+                  start_date: filter.start_date,
+                  end_date: filter.end_date,
+                  location_id: selectedZoneId,
+                })
+              }
             />
-            <View style={{ width: Spacing.md }} />
+            <View style={{ width: Spacing.sm }} />
             <StatCard
-              title="Pending Issues"
+              title="Pending"
               value={summary?.pending ?? (loading ? '...' : 0)}
               icon="time-outline"
               color={Colors.status.pending}
               bgColor={Colors.status.pendingBg}
-              onPress={() => navigation?.navigate('Complaints', { status: 'pending' })}
+              onPress={() =>
+                navigation?.navigate('Complaints', {
+                  status: 'pending',
+                  year: filter.year,
+                  month: filter.month,
+                  start_date: filter.start_date,
+                  end_date: filter.end_date,
+                  location_id: selectedZoneId,
+                })
+              }
             />
-          </View>
-
-          <View style={[styles.gridRow, { marginTop: Spacing.md }]}>
+            <View style={{ width: Spacing.sm }} />
             <StatCard
               title="Resolved"
               value={summary?.resolved ?? (loading ? '...' : 0)}
               icon="checkmark-circle-outline"
               color={Colors.status.resolved}
               bgColor={Colors.status.resolvedBg}
-              onPress={() => navigation?.navigate('Complaints', { status: 'resolved' })}
-            />
-            <View style={{ width: Spacing.md }} />
-            <StatCard
-              title="Registered This Period"
-              value={summary?.registered_this_period ?? (loading ? '...' : 0)}
-              icon="calendar-outline"
-              color={Colors.secondary}
-              bgColor="#E0F2FE"
-              onPress={() => navigation?.navigate('Complaints')}
+              onPress={() =>
+                navigation?.navigate('Complaints', {
+                  status: 'resolved',
+                  year: filter.year,
+                  month: filter.month,
+                  start_date: filter.start_date,
+                  end_date: filter.end_date,
+                  location_id: selectedZoneId,
+                })
+              }
             />
           </View>
         </View>
@@ -203,18 +309,27 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               isMonthlyView={analytics.period.period_type === 'month'}
             />
 
-            {/* Chart 2: Status Distribution (Resolution vs Pending) */}
-            <StatusDistributionChart
-              statusDistribution={analytics.status_distribution}
-              summary={summary}
-            />
 
-            {/* Chart 3: Role-Aware Category / Subtype Distribution */}
+            {/* Chart 3: Role-Aware Category / Subtype Distribution (Interactive: click to open complaints) */}
             <CategoryDistributionChart
               isSingleDepartment={isSingleDept}
               typeDistribution={analytics.type_distribution}
               subtypeDistribution={analytics.subtype_distribution}
               departmentName={analytics.scope.department}
+              onItemPress={(item) => {
+                navigation?.navigate('Complaints', {
+                  category: !item.isSubtype ? item.name : undefined,
+                  subtype: item.isSubtype ? item.name : undefined,
+                  categoryId: !item.isSubtype ? item.id : undefined,
+                  subtypeId: item.isSubtype ? item.id : undefined,
+                  isSubtype: item.isSubtype,
+                  year: filter.year,
+                  month: filter.month,
+                  start_date: filter.start_date,
+                  end_date: filter.end_date,
+                  location_id: selectedZoneId,
+                });
+              }}
             />
           </View>
         )}
@@ -236,6 +351,7 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.lg,
     paddingBottom: Spacing.xs,
   },
+
   greetingText: {
     fontSize: Typography.fontSize.xs,
     fontWeight: '800',
@@ -264,6 +380,48 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     marginTop: Spacing.sm,
   },
+  zoneFilterWrapper: {
+    marginTop: Spacing.xs,
+    marginBottom: 2,
+  },
+  zoneScrollContent: {
+    paddingHorizontal: Spacing.md,
+    gap: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  zoneChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: BorderRadius.full,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 6,
+  },
+  zoneChipActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  zoneChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.textMuted,
+  },
+  zoneChipTextActive: {
+    color: '#FFFFFF',
+  },
+  zoneActiveLabel: {
+    fontSize: 11,
+    color: Colors.textMuted,
+    fontWeight: '500',
+    paddingHorizontal: Spacing.md,
+    marginTop: 4,
+    marginBottom: Spacing.xs,
+  },
+
   loadingBanner: {
     flexDirection: 'row',
     alignItems: 'center',

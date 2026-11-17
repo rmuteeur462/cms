@@ -11,18 +11,28 @@ import {
   Modal,
   TextInput,
   Image,
+  Alert,
 } from 'react-native';
 import { WSSPInput } from '../../components/common/WSSPInput';
 import { useAuth } from '../../store/AuthContext';
+import { LoginSuccessAnimation } from '../../components/common/LoginSuccessAnimation';
 import { Ionicons } from '@expo/vector-icons';
 import { Config, DEFAULT_DEV_MACHINE_IP } from '../../constants/config';
 
-export const LoginScreen: React.FC = () => {
-  const { login, isLoading } = useAuth();
+interface LoginScreenProps {
+  navigation?: any;
+  route?: any;
+}
 
+export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation, route }) => {
+  const { login, loginCitizen, commitSession, isLoading } = useAuth();
+
+  const [loginMode, setLoginMode] = useState<'citizen' | 'staff'>('citizen');
+  const [mobileNumber, setMobileNumber] = useState(route?.params?.prefillMobile || '');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [successSession, setSuccessSession] = useState<{ token: string; user: any } | null>(null);
 
   // Hidden developer server settings modal (accessible via long-press on WSSP Logo)
   const [serverModalVisible, setServerModalVisible] = useState(false);
@@ -30,16 +40,43 @@ export const LoginScreen: React.FC = () => {
 
   const handleLogin = async () => {
     setError(null);
-    if (!username.trim() || !password.trim()) {
-      setError('Please enter both your username and password.');
-      return;
-    }
-
-    const result = await login(username.trim(), password);
-    if (!result.success) {
-      setError(result.error || 'Authentication failed. Please check credentials.');
+    if (loginMode === 'citizen') {
+      if (!mobileNumber.trim() || !password.trim()) {
+        setError('Please enter both your mobile number and password.');
+        return;
+      }
+      const result = await loginCitizen(mobileNumber.trim(), password);
+      if (result.success && result.token && result.user) {
+        setSuccessSession({ token: result.token, user: result.user });
+      } else {
+        setError(result.error || 'Authentication failed. Please check credentials.');
+      }
+    } else {
+      if (!username.trim() || !password.trim()) {
+        setError('Please enter both your staff username and password.');
+        return;
+      }
+      const result = await login(username.trim(), password);
+      if (result.success && result.token && result.user) {
+        setSuccessSession({ token: result.token, user: result.user });
+      } else {
+        setError(result.error || 'Authentication failed. Please check credentials.');
+      }
     }
   };
+
+  if (successSession) {
+    const displayName = successSession.user.full_name || successSession.user.username || username.trim();
+    return (
+      <LoginSuccessAnimation
+        title="WSSP CMS"
+        subtitle={`Welcome, ${displayName}!\nPreparing your workspace...`}
+        onAnimationComplete={() => {
+          commitSession(successSession.token, successSession.user);
+        }}
+      />
+    );
+  }
 
   const handleSaveServer = async () => {
     if (serverInput.trim()) {
@@ -102,11 +139,65 @@ export const LoginScreen: React.FC = () => {
           <View style={styles.centerCardWrapper}>
             <View style={styles.card}>
               <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>Sign In</Text>
+                <Text style={styles.cardTitle}>
+                  {loginMode === 'citizen' ? 'Citizen Sign In' : 'Staff Sign In'}
+                </Text>
                 <View style={styles.titleUnderline} />
               </View>
+
+              {/* Portal Segment Toggle */}
+              <View style={styles.tabToggleRow}>
+                <TouchableOpacity
+                  style={[styles.tabToggleBtn, loginMode === 'citizen' && styles.tabToggleBtnActive]}
+                  onPress={() => {
+                    setLoginMode('citizen');
+                    setError(null);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons
+                    name="person"
+                    size={14}
+                    color={loginMode === 'citizen' ? '#FFFFFF' : '#475569'}
+                  />
+                  <Text
+                    style={[
+                      styles.tabToggleText,
+                      loginMode === 'citizen' && styles.tabToggleTextActive,
+                    ]}
+                  >
+                    Citizen
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.tabToggleBtn, loginMode === 'staff' && styles.tabToggleBtnActive]}
+                  onPress={() => {
+                    setLoginMode('staff');
+                    setError(null);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons
+                    name="shield-checkmark"
+                    size={14}
+                    color={loginMode === 'staff' ? '#FFFFFF' : '#475569'}
+                  />
+                  <Text
+                    style={[
+                      styles.tabToggleText,
+                      loginMode === 'staff' && styles.tabToggleTextActive,
+                    ]}
+                  >
+                    WSSP Staff
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
               <Text style={styles.cardSubtitle}>
-                Enter your credentials to access the complaint portal
+                {loginMode === 'citizen'
+                  ? 'Enter your mobile number and password'
+                  : 'Enter your staff credentials to access CMS dashboard'}
               </Text>
 
               {error ? (
@@ -130,18 +221,33 @@ export const LoginScreen: React.FC = () => {
                 </View>
               ) : null}
 
-              <WSSPInput
-                label="Username"
-                placeholder="Enter your username"
-                value={username}
-                onChangeText={(t) => {
-                  setUsername(t);
-                  if (error) setError(null);
-                }}
-                autoCapitalize="none"
-                autoCorrect={false}
-                leftIcon="person-outline"
-              />
+              {loginMode === 'citizen' ? (
+                <WSSPInput
+                  label="Mobile Number"
+                  placeholder="03001234567"
+                  value={mobileNumber}
+                  onChangeText={(t) => {
+                    setMobileNumber(t);
+                    if (error) setError(null);
+                  }}
+                  keyboardType="phone-pad"
+                  leftIcon="call-outline"
+                  helperText="Standard 11-digit Pakistani mobile number"
+                />
+              ) : (
+                <WSSPInput
+                  label="Staff Username"
+                  placeholder="Enter your username"
+                  value={username}
+                  onChangeText={(t) => {
+                    setUsername(t);
+                    if (error) setError(null);
+                  }}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  leftIcon="person-outline"
+                />
+              )}
 
               <WSSPInput
                 label="Password"
@@ -162,10 +268,38 @@ export const LoginScreen: React.FC = () => {
                 activeOpacity={0.85}
               >
                 <Text style={styles.loginBtnText}>
-                  {isLoading ? 'Signing In...' : 'Sign In'}
+                  {isLoading
+                    ? 'Signing In...'
+                    : loginMode === 'citizen'
+                    ? 'Sign In as Citizen'
+                    : 'Sign In as Staff'}
                 </Text>
                 <Ionicons name="arrow-forward" size={18} color="#FFFFFF" style={{ marginLeft: 8 }} />
               </TouchableOpacity>
+
+              {loginMode === 'citizen' && (
+                <View style={styles.citizenActionLinks}>
+                  <TouchableOpacity
+                    style={styles.registerLinkBox}
+                    onPress={() => navigation?.navigate('CitizenRegister')}
+                  >
+                    <Text style={styles.registerPrompt}>Don't have an account? </Text>
+                    <Text style={styles.registerLink}>Register as Citizen</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.forgotBox}
+                    onPress={() =>
+                      Alert.alert(
+                        'Forgot Password',
+                        'Please call the WSSP Citizen Helpline at 1334 to safely verify and reset your citizen account credentials.'
+                      )
+                    }
+                  >
+                    <Text style={styles.forgotLink}>Forgot password? Call Helpline: 1334</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
           </View>
 
@@ -358,6 +492,67 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF7A00', // Orange accent underline
     borderRadius: 2,
     marginTop: 4,
+  },
+  tabToggleRow: {
+    flexDirection: 'row',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 12,
+    padding: 3,
+    marginTop: 14,
+    marginBottom: 8,
+  },
+  tabToggleBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 9,
+    borderRadius: 10,
+  },
+  tabToggleBtnActive: {
+    backgroundColor: '#0080DF',
+    shadowColor: '#0080DF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  tabToggleText: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  tabToggleTextActive: {
+    color: '#FFFFFF',
+  },
+  citizenActionLinks: {
+    marginTop: 16,
+    alignItems: 'center',
+    gap: 10,
+  },
+  registerLinkBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 4,
+  },
+  registerPrompt: {
+    fontSize: 13,
+    color: '#64748B',
+  },
+  registerLink: {
+    fontSize: 13,
+    color: '#0080DF',
+    fontWeight: '800',
+  },
+  forgotBox: {
+    paddingVertical: 2,
+  },
+  forgotLink: {
+    fontSize: 11.5,
+    color: '#64748B',
+    textDecorationLine: 'underline',
   },
   cardSubtitle: {
     fontSize: 13,

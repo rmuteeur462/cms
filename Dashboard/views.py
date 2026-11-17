@@ -1,4 +1,4 @@
-﻿from django.shortcuts import render,get_object_or_404, redirect
+from django.shortcuts import render,get_object_or_404, redirect
 from dal import autocomplete
 from datetime import datetime
 from datetime import date
@@ -613,31 +613,39 @@ def home_view(request):
     ).count()
     
 # Calculate total fuel issued and total trips for each location
-
+    # Initialize totals to 0 so they are always defined (avoids UnboundLocalError if locations is empty)
+    total_fuel_issued = 0
+    total_primary_trips = 0
+    total_secondary_trips = 0
 
     location_fuel_and_trips = {}
     for location in locations:
-        total_fuel_issued = VehiclePE.objects.filter(
-            attendance_date=selected_date, 
+        loc_fuel = VehiclePE.objects.filter(
+            attendance_date=selected_date,
             location=location
         ).aggregate(Sum('fuel_issued'))['fuel_issued__sum'] or 0
-        
-        total_primary_trips = VehiclePE.objects.filter(
+
+        loc_primary_trips = VehiclePE.objects.filter(
             attendance_date=selected_date,
             location=location,
             vehicle_type="Primary"
         ).aggregate(Sum('vehicle_trips'))['vehicle_trips__sum'] or 0
 
-        total_secondary_trips = VehiclePE.objects.filter(
+        loc_secondary_trips = VehiclePE.objects.filter(
             attendance_date=selected_date,
             location=location,
             vehicle_type="Secondary"
         ).aggregate(Sum('vehicle_trips'))['vehicle_trips__sum'] or 0
 
-        location_fuel_and_trips[location.location_name] = {  # Change 'location.name' to 'location.location_name'
-            'total_fuel_issued': total_fuel_issued,
-            'total_primary_trips': total_primary_trips,
-            'total_secondary_trips': total_secondary_trips
+        # Accumulate into grand totals
+        total_fuel_issued += loc_fuel
+        total_primary_trips += loc_primary_trips
+        total_secondary_trips += loc_secondary_trips
+
+        location_fuel_and_trips[location.location_name] = {
+            'total_fuel_issued': loc_fuel,
+            'total_primary_trips': loc_primary_trips,
+            'total_secondary_trips': loc_secondary_trips
         }
 
 

@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 interface WSSPInputProps extends TextInputProps {
   label: string;
   error?: string;
+  helperText?: string;
   containerStyle?: ViewStyle;
   isPassword?: boolean;
   leftIcon?: keyof typeof Ionicons.glyphMap;
@@ -22,6 +23,7 @@ interface WSSPInputProps extends TextInputProps {
 export const WSSPInput: React.FC<WSSPInputProps> = ({
   label,
   error,
+  helperText,
   containerStyle,
   isPassword = false,
   leftIcon,
@@ -70,7 +72,11 @@ export const WSSPInput: React.FC<WSSPInputProps> = ({
           </TouchableOpacity>
         )}
       </View>
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {error ? (
+        <Text style={styles.errorText}>{error}</Text>
+      ) : helperText ? (
+        <Text style={styles.helperText}>{helperText}</Text>
+      ) : null}
     </View>
   );
 };
@@ -119,5 +125,10 @@ const styles = StyleSheet.create({
     color: Colors.danger,
     marginTop: Spacing.xs,
     fontWeight: '500',
+  },
+  helperText: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.textMuted,
+    marginTop: Spacing.xs,
   },
 });

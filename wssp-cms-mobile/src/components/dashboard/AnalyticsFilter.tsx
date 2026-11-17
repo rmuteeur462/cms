@@ -13,8 +13,12 @@ import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme
 
 interface AnalyticsFilterProps {
   currentPeriodLabel?: string;
+  initialYear?: number | 'all';
+  initialMonth?: number | null;
+  initialStartDate?: string;
+  initialEndDate?: string;
   onFilterChange: (filter: {
-    year?: number;
+    year?: number | 'all';
     month?: number;
     start_date?: string;
     end_date?: string;
@@ -52,19 +56,36 @@ const MONTH_NAMES = [
 
 export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
   currentPeriodLabel,
+  initialYear = 2026,
+  initialMonth = 1,
+  initialStartDate,
+  initialEndDate,
   onFilterChange,
   loading = false,
 }) => {
-  const [selectedYear, setSelectedYear] = useState<number | 'all'>(2026);
-  const [selectedMonth, setSelectedMonth] = useState<number | null>(1); // Default Jan
+  const [selectedYear, setSelectedYear] = useState<number | 'all'>(initialYear);
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(initialMonth);
 
   const [yearDropdownOpen, setYearDropdownOpen] = useState<boolean>(false);
   const [monthDropdownOpen, setMonthDropdownOpen] = useState<boolean>(false);
   const [customModalOpen, setCustomModalOpen] = useState<boolean>(false);
 
-  const [customStartDate, setCustomStartDate] = useState<string>('2026-01-01');
-  const [customEndDate, setCustomEndDate] = useState<string>('2026-01-31');
-  const [isCustomActive, setIsCustomActive] = useState<boolean>(false);
+  const [customStartDate, setCustomStartDate] = useState<string>(initialStartDate || '2026-01-01');
+  const [customEndDate, setCustomEndDate] = useState<string>(initialEndDate || '2026-01-31');
+  const [isCustomActive, setIsCustomActive] = useState<boolean>(Boolean(initialStartDate && initialEndDate));
+
+  // Sync external changes (e.g. navigation from Home Screen)
+  React.useEffect(() => {
+    if (initialStartDate && initialEndDate) {
+      setCustomStartDate(initialStartDate);
+      setCustomEndDate(initialEndDate);
+      setIsCustomActive(true);
+    } else {
+      setIsCustomActive(false);
+      if (initialYear !== undefined) setSelectedYear(initialYear);
+      if (initialMonth !== undefined) setSelectedMonth(initialMonth);
+    }
+  }, [initialYear, initialMonth, initialStartDate, initialEndDate]);
 
   // Visual Calendar states
   const [activeTarget, setActiveTarget] = useState<'from' | 'to'>('from');
@@ -334,10 +355,6 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.modalSubtitle}>
-              Filter all departmental analytics and complaint frequency by fiscal year or all time:
-            </Text>
-
             <View style={styles.optionsList}>
               {AVAILABLE_YEARS.map((yr) => {
                 const isSelected = !isCustomActive && selectedYear === yr.id;
@@ -415,10 +432,6 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
                 <Ionicons name="close" size={20} color={Colors.textMuted} />
               </TouchableOpacity>
             </View>
-
-            <Text style={styles.modalSubtitle}>
-              Select an individual month or evaluate the full year aggregated:
-            </Text>
 
             <ScrollView showsVerticalScrollIndicator={false} style={styles.modalScroll}>
               {MONTH_OPTIONS.map((m) => {
@@ -552,40 +565,6 @@ export const AnalyticsFilter: React.FC<AnalyticsFilterProps> = ({
                 <Text style={[styles.rangeTabValue, activeTarget === 'to' && styles.rangeTabValueActive]}>
                   {customEndDate || 'Select date'}
                 </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Quick Presets */}
-            <View style={styles.presetRow}>
-              <TouchableOpacity
-                style={styles.presetChip}
-                onPress={() => handlePresetSelect('thisMonth')}
-              >
-                <Text style={styles.presetChipText}>This Month</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.presetChip}
-                onPress={() => handlePresetSelect('lastMonth')}
-              >
-                <Text style={styles.presetChipText}>Last Month</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.presetChip}
-                onPress={() => handlePresetSelect('last7Days')}
-              >
-                <Text style={styles.presetChipText}>Last 7 Days</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.presetChip}
-                onPress={() => handlePresetSelect('last30Days')}
-              >
-                <Text style={styles.presetChipText}>Last 30 Days</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.presetChip}
-                onPress={() => handlePresetSelect('year2025')}
-              >
-                <Text style={styles.presetChipText}>2025 Full</Text>
               </TouchableOpacity>
             </View>
 

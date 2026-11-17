@@ -21,8 +21,9 @@ import { ComplaintsApi, ComplaintSummaryItem } from '../../api/complaints';
 import { useAuth } from '../../store/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { Formatters } from '../../utils/formatters';
+import { AnalyticsFilter } from '../../components/dashboard/AnalyticsFilter';
 
-export const ComplaintsScreen: React.FC<{ navigation?: any }> = ({ navigation }) => {
+export const ComplaintsScreen: React.FC<{ navigation?: any; route?: any }> = ({ navigation, route }) => {
   const { user } = useAuth();
 
   const [complaints, setComplaints] = useState<ComplaintSummaryItem[]>([]);
@@ -30,24 +31,100 @@ export const ComplaintsScreen: React.FC<{ navigation?: any }> = ({ navigation })
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'resolved'>('all');
-  const [selectedLocationId, setSelectedLocationId] = useState<number | undefined>(undefined);
+  
+  // Category / Type / Subtype filter passed from Home screen clicks
+  const [selectedCategory, setSelectedCategory] = useState<{
+    id?: number | null;
+    name: string;
+    isSubtype: boolean;
+  } | null>(null);
+
+  // Date period filter (same as Home analytics: 2026, month 1 by default, or all years/custom)
+  const [dateFilter, setDateFilter] = useState<{
+    year?: number | 'all';
+    month?: number;
+    start_date?: string;
+    end_date?: string;
+  }>({
+    year: 2026,
+    month: 1,
+  });
+
+  // Filter out 'Head Office' / 'Headoffice'
+  const filteredLocations = (user?.allowed_locations || []).filter(
+    (loc) => !loc.name.toLowerCase().replace(/\s+/g, '').includes('headoffice')
+  );
+
+  const [selectedLocationId, setSelectedLocationId] = useState<number | undefined>(
+    filteredLocations.length > 1 ? undefined : filteredLocations[0]?.id
+  );
   const [totalCount, setTotalCount] = useState<number>(0);
+  const [resolvedCount, setResolvedCount] = useState<number>(0);
+  const [pendingCount, setPendingCount] = useState<number>(0);
+
+  // Sync route params whenever navigated to with params
+  useEffect(() => {
+    if (route?.params) {
+      const p = route.params;
+      if (p.status && ['all', 'pending', 'resolved'].includes(p.status)) {
+        setStatusFilter(p.status);
+      }
+      if (p.category || p.subtype) {
+        setSelectedCategory({
+          id: p.categoryId ?? p.subtypeId ?? null,
+          name: p.subtype || p.category,
+          isSubtype: Boolean(p.subtype || p.isSubtype),
+        });
+      }
+      if (p.year !== undefined || p.month !== undefined || p.start_date || p.end_date) {
+        setDateFilter({
+          year: p.year ?? 2026,
+          month: p.month,
+          start_date: p.start_date,
+          end_date: p.end_date,
+        });
+      }
+      setSelectedLocationId(p.location_id);
+    }
+  }, [route?.params]);
+
+  // Update selected location if filteredLocations loads or changes
+  useEffect(() => {
+    if (filteredLocations.length === 1 && selectedLocationId === undefined) {
+      setSelectedLocationId(filteredLocations[0].id);
+    }
+  }, [user?.allowed_locations]);
 
   // Detail Modal
   const [selectedComplaint, setSelectedComplaint] = useState<any | null>(null);
   const [detailModalVisible, setDetailModalVisible] = useState<boolean>(false);
   const [loadingDetail, setLoadingDetail] = useState<boolean>(false);
 
-  const fetchComplaints = async () => {
+  const fetchComplaints = async (
+    customDateFilter = dateFilter,
+    locId = selectedLocationId,
+    categoryObj = selectedCategory
+  ) => {
     try {
       const data = await ComplaintsApi.getComplaints({
         search: searchQuery.trim() || undefined,
         status: statusFilter,
-        location_id: selectedLocationId,
+        location_id: locId,
+        year: customDateFilter.year,
+        month: customDateFilter.month,
+        start_date: customDateFilter.start_date,
+        end_date: customDateFilter.end_date,
+        category_id: categoryObj && !categoryObj.isSubtype && categoryObj.id ? categoryObj.id : undefined,
+        subtype_id: categoryObj && categoryObj.isSubtype && categoryObj.id ? categoryObj.id : undefined,
+        category: categoryObj && !categoryObj.isSubtype && !categoryObj.id ? categoryObj.name : undefined,
+        subtype: categoryObj && categoryObj.isSubtype && !categoryObj.id ? categoryObj.name : undefined,
         page: 1,
+        page_size: 100, // Load comprehensive records for the zone
       });
       setComplaints(data.results);
       setTotalCount(data.total_count);
+      if (data.resolved_count !== undefined) setResolvedCount(data.resolved_count);
+      if (data.pending_count !== undefined) setPendingCount(data.pending_count);
     } catch (err) {
       console.warn('[ComplaintsScreen] Load error:', err);
     } finally {
@@ -58,7 +135,18 @@ export const ComplaintsScreen: React.FC<{ navigation?: any }> = ({ navigation })
 
   useEffect(() => {
     fetchComplaints();
-  }, [statusFilter, selectedLocationId]);
+  }, [statusFilter, selectedLocationId, dateFilter, selectedCategory]);
+
+  const handleDateFilterChange = (newDateFilter: {
+    year?: number | 'all';
+    month?: number;
+    start_date?: string;
+    end_date?: string;
+  }) => {
+    setDateFilter(newDateFilter);
+    setLoading(true);
+    fetchComplaints(newDateFilter);
+  };
 
   const handleSearchSubmit = () => {
     setLoading(true);
@@ -68,7 +156,7 @@ export const ComplaintsScreen: React.FC<{ navigation?: any }> = ({ navigation })
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchComplaints();
-  }, [statusFilter, selectedLocationId, searchQuery]);
+  }, [statusFilter, selectedLocationId, searchQuery, dateFilter]);
 
   const handleOpenDetail = async (item: ComplaintSummaryItem) => {
     setDetailModalVisible(true);
@@ -99,11 +187,54 @@ export const ComplaintsScreen: React.FC<{ navigation?: any }> = ({ navigation })
             returnKeyType="search"
           />
           {searchQuery ? (
-            <TouchableOpacity onPress={() => { setSearchQuery(''); fetchComplaints(); }}>
+            <TouchableOpacity onPress={() => { setSearchQuery(''); fetchComplaints(dateFilter); }}>
               <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
             </TouchableOpacity>
           ) : null}
         </View>
+      </View>
+
+      {/* Date & Period Filter (Identical to Home screen) */}
+      <View style={styles.filterSectionWrapper}>
+        <AnalyticsFilter
+          initialYear={dateFilter.year}
+          initialMonth={dateFilter.month}
+          initialStartDate={dateFilter.start_date}
+          initialEndDate={dateFilter.end_date}
+          onFilterChange={handleDateFilterChange}
+          loading={loading}
+        />
+      </View>
+
+      {/* Quick Status Stats Small Boxes */}
+      <View style={styles.statusStatsRow}>
+        <TouchableOpacity
+          style={[styles.smallStatBox, styles.smallStatBoxResolved, statusFilter === 'resolved' && styles.smallStatBoxActiveResolved]}
+          onPress={() => setStatusFilter(statusFilter === 'resolved' ? 'all' : 'resolved')}
+          activeOpacity={0.7}
+        >
+          <View style={styles.smallStatHeader}>
+            <View style={[styles.statDot, { backgroundColor: '#16A34A' }]} />
+            <Text style={styles.smallStatLabel}>Resolved</Text>
+          </View>
+          <Text style={[styles.smallStatValue, { color: '#15803D' }]}>
+            {resolvedCount.toLocaleString()}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.smallStatBox, styles.smallStatBoxPending, statusFilter === 'pending' && styles.smallStatBoxActivePending]}
+          onPress={() => setStatusFilter(statusFilter === 'pending' ? 'all' : 'pending')}
+          activeOpacity={0.7}
+        >
+          <View style={styles.smallStatHeader}>
+            <View style={[styles.statDot, { backgroundColor: '#F59E0B' }]} />
+            <Text style={styles.smallStatLabel}>Pending</Text>
+          </View>
+          <Text style={[styles.smallStatValue, { color: '#B45309' }]}>
+            {pendingCount.toLocaleString()}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Filter Tabs */}
@@ -124,7 +255,7 @@ export const ComplaintsScreen: React.FC<{ navigation?: any }> = ({ navigation })
           activeOpacity={0.7}
         >
           <Text style={[styles.tabText, statusFilter === 'pending' && styles.activeTabTextPending]}>
-            Pending
+            Pending ({pendingCount})
           </Text>
         </TouchableOpacity>
 
@@ -134,13 +265,13 @@ export const ComplaintsScreen: React.FC<{ navigation?: any }> = ({ navigation })
           activeOpacity={0.7}
         >
           <Text style={[styles.tabText, statusFilter === 'resolved' && styles.activeTabTextResolved]}>
-            Resolved
+            Resolved ({resolvedCount})
           </Text>
         </TouchableOpacity>
       </View>
 
       {/* Zone Selector Chips */}
-      {user?.allowed_locations && user.allowed_locations.length > 1 && (
+      {filteredLocations.length > 1 && (
         <View style={styles.zonesContainer}>
           <TouchableOpacity
             style={[styles.zoneChip, selectedLocationId === undefined && styles.zoneChipActive]}
@@ -148,7 +279,7 @@ export const ComplaintsScreen: React.FC<{ navigation?: any }> = ({ navigation })
             activeOpacity={0.7}
           >
             <Ionicons
-              name="globe-outline"
+              name="layers-outline"
               size={13}
               color={selectedLocationId === undefined ? Colors.primary : Colors.textMuted}
               style={{ marginRight: 4 }}
@@ -157,7 +288,7 @@ export const ComplaintsScreen: React.FC<{ navigation?: any }> = ({ navigation })
               All Zones
             </Text>
           </TouchableOpacity>
-          {user.allowed_locations.map((loc) => (
+          {filteredLocations.map((loc) => (
             <TouchableOpacity
               key={loc.id}
               style={[styles.zoneChip, selectedLocationId === loc.id && styles.zoneChipActive]}
@@ -175,6 +306,31 @@ export const ComplaintsScreen: React.FC<{ navigation?: any }> = ({ navigation })
               </Text>
             </TouchableOpacity>
           ))}
+        </View>
+      )}
+
+      {/* Active Category Filter Tag / Breadcrumb */}
+      {selectedCategory && (
+        <View style={styles.categoryFilterBanner}>
+          <View style={styles.categoryPill}>
+            <Ionicons
+              name={selectedCategory.isSubtype ? 'list-outline' : 'business-outline'}
+              size={13}
+              color={Colors.primary}
+              style={{ marginRight: 5 }}
+            />
+            <Text style={styles.categoryPillText} numberOfLines={1}>
+              Filtered by {selectedCategory.isSubtype ? 'Subtype' : 'Department'}:{' '}
+              <Text style={styles.categoryPillBold}>{selectedCategory.name}</Text>
+            </Text>
+            <TouchableOpacity
+              onPress={() => setSelectedCategory(null)}
+              style={styles.categoryPillClose}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="close-circle" size={16} color={Colors.primary} />
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
@@ -202,8 +358,9 @@ export const ComplaintsScreen: React.FC<{ navigation?: any }> = ({ navigation })
               actionTitle="Reset Filters"
               onAction={() => {
                 setStatusFilter('all');
-                setSelectedLocationId(undefined);
+                setSelectedLocationId(filteredLocations[0]?.id);
                 setSearchQuery('');
+                setSelectedCategory(null);
               }}
             />
           }
@@ -300,6 +457,10 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.md,
     paddingBottom: Spacing.xs,
   },
+  filterSectionWrapper: {
+    paddingHorizontal: Spacing.md,
+    marginBottom: Spacing.xs,
+  },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -314,6 +475,58 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: Typography.fontSize.sm,
     color: Colors.textPrimary,
+  },
+  statusStatsRow: {
+    flexDirection: 'row',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 4,
+    gap: 8,
+  },
+  smallStatBox: {
+    flex: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  smallStatBoxResolved: {
+    backgroundColor: '#F0FDF4',
+    borderColor: '#BBF7D0',
+  },
+  smallStatBoxActiveResolved: {
+    borderColor: '#16A34A',
+    backgroundColor: '#DCFCE7',
+  },
+  smallStatBoxPending: {
+    backgroundColor: '#FFFBEB',
+    borderColor: '#FDE68A',
+  },
+  smallStatBoxActivePending: {
+    borderColor: '#F59E0B',
+    backgroundColor: '#FEF3C7',
+  },
+  smallStatHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  statDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  smallStatLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: Colors.textSecondary,
+  },
+  smallStatValue: {
+    fontSize: 14,
+    fontWeight: '900',
+    letterSpacing: -0.3,
   },
   tabBar: {
     flexDirection: 'row',
@@ -363,6 +576,35 @@ const styles = StyleSheet.create({
     paddingTop: 2,
     paddingBottom: Spacing.sm,
     gap: 8,
+  },
+  categoryFilterBanner: {
+    paddingHorizontal: Spacing.md,
+    paddingBottom: Spacing.xs,
+  },
+  categoryPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    borderRadius: BorderRadius.full,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
+  },
+  categoryPillText: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.textSecondary,
+    flexShrink: 1,
+  },
+  categoryPillBold: {
+    fontWeight: '800',
+    color: Colors.primary,
+  },
+  categoryPillClose: {
+    marginLeft: 8,
+    padding: 2,
   },
   zoneChip: {
     flexDirection: 'row',

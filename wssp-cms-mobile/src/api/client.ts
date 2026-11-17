@@ -28,6 +28,13 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+type SessionExpiredHandler = () => void;
+let sessionExpiredHandler: SessionExpiredHandler | null = null;
+
+export const setSessionExpiredHandler = (handler: SessionExpiredHandler | null) => {
+  sessionExpiredHandler = handler;
+};
+
 // Response Interceptor: Handle Errors & Token Expiration
 apiClient.interceptors.response.use(
   (response) => response,
@@ -58,9 +65,14 @@ apiClient.interceptors.response.use(
         }
       } catch (refreshErr) {
         console.warn('[ApiClient] Token refresh failed. Clearing session...');
-        await StorageService.removeItem(Config.STORAGE_KEYS.ACCESS_TOKEN);
-        await StorageService.removeItem(Config.STORAGE_KEYS.REFRESH_TOKEN);
-        await StorageService.removeItem(Config.STORAGE_KEYS.USER_PROFILE);
+      }
+
+      // If refresh failed or was absent, clear local storage and notify auth state
+      await StorageService.removeItem(Config.STORAGE_KEYS.ACCESS_TOKEN);
+      await StorageService.removeItem(Config.STORAGE_KEYS.REFRESH_TOKEN);
+      await StorageService.removeItem(Config.STORAGE_KEYS.USER_PROFILE);
+      if (sessionExpiredHandler) {
+        sessionExpiredHandler();
       }
     }
 

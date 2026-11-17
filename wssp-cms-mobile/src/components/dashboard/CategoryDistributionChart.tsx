@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme';
 import { TypeDistributionItem, SubtypeDistributionItem } from '../../api/complaints';
@@ -9,6 +9,7 @@ interface CategoryDistributionChartProps {
   typeDistribution: TypeDistributionItem[];
   subtypeDistribution: SubtypeDistributionItem[];
   departmentName?: string;
+  onItemPress?: (item: { id?: number | null; name: string; isSubtype: boolean; count: number }) => void;
 }
 
 const PALETTE = [
@@ -26,6 +27,7 @@ export const CategoryDistributionChart: React.FC<CategoryDistributionChartProps>
   typeDistribution,
   subtypeDistribution,
   departmentName,
+  onItemPress,
 }) => {
   // If single department, show subtypes; otherwise show types
   const items = isSingleDepartment
@@ -53,6 +55,10 @@ export const CategoryDistributionChart: React.FC<CategoryDistributionChartProps>
           <Text style={styles.cardTitle}>{title}</Text>
           <Text style={styles.cardSubtitle}>{subtitle}</Text>
         </View>
+        <View style={styles.headerBadge}>
+          <Ionicons name="hand-left-outline" size={11} color={Colors.textMuted} style={{ marginRight: 3 }} />
+          <Text style={styles.headerBadgeText}>Tap to view</Text>
+        </View>
       </View>
 
       {items.length === 0 ? (
@@ -64,7 +70,21 @@ export const CategoryDistributionChart: React.FC<CategoryDistributionChartProps>
           {items.slice(0, 7).map((item, index) => {
             const barColor = PALETTE[index % PALETTE.length];
             return (
-              <View key={item.id ?? index} style={styles.itemRow}>
+              <TouchableOpacity
+                key={item.id ?? index}
+                style={styles.itemRow}
+                activeOpacity={0.7}
+                onPress={() => {
+                  if (onItemPress) {
+                    onItemPress({
+                      id: item.id,
+                      name: item.name,
+                      isSubtype: isSingleDepartment,
+                      count: item.count,
+                    });
+                  }
+                }}
+              >
                 <View style={styles.itemHeader}>
                   <View style={styles.itemTitleRow}>
                     <View style={[styles.bullet, { backgroundColor: barColor }]} />
@@ -72,10 +92,13 @@ export const CategoryDistributionChart: React.FC<CategoryDistributionChartProps>
                       {item.name}
                     </Text>
                   </View>
-                  <Text style={styles.itemMeta}>
-                    <Text style={styles.itemCount}>{item.count.toLocaleString()}</Text>{' '}
-                    <Text style={styles.itemPct}>({item.percentage}%)</Text>
-                  </Text>
+                  <View style={styles.metaRow}>
+                    <Text style={styles.itemMeta}>
+                      <Text style={styles.itemCount}>{item.count.toLocaleString()}</Text>{' '}
+                      <Text style={styles.itemPct}>({item.percentage}%)</Text>
+                    </Text>
+                    <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} style={styles.chevron} />
+                  </View>
                 </View>
 
                 {/* Progress bar */}
@@ -90,7 +113,7 @@ export const CategoryDistributionChart: React.FC<CategoryDistributionChartProps>
                     ]}
                   />
                 </View>
-              </View>
+              </TouchableOpacity>
             );
           })}
         </View>
@@ -144,7 +167,10 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   itemRow: {
-    marginBottom: Spacing.sm + 2,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: BorderRadius.sm,
+    marginBottom: Spacing.xs,
   },
   itemHeader: {
     flexDirection: 'row',
@@ -172,6 +198,30 @@ const styles = StyleSheet.create({
   },
   itemMeta: {
     fontSize: Typography.fontSize.xs,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  chevron: {
+    marginLeft: 2,
+    opacity: 0.6,
+  },
+  headerBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: BorderRadius.full,
+  },
+  headerBadgeText: {
+    fontSize: Typography.fontSize.xs - 2,
+    fontWeight: '700',
+    color: Colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   itemCount: {
     fontWeight: '800',

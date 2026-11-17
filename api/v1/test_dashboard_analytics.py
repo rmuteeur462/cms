@@ -54,6 +54,8 @@ def run_tests():
     assert len(types) == 4, f"Expected 4 complaint types for Head Office, got {len(types)}"
     assert not scope["is_single_department"], "Head Office should not be marked as single department"
     assert len(trend) == 31, f"Expected 31 daily trend points for January, got {len(trend)}"
+    assert "resolved" in trend[0] and "pending" in trend[0], "Trend items must include resolved and pending counts"
+    assert "resolved_percentage" in trend[0] and "pending_percentage" in trend[0], "Trend items must include percentage fields"
     print("  --> PASS [OK]")
 
     # -------------------------------------------------------------

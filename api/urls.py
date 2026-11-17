@@ -31,5 +31,8 @@ urlpatterns = [
 
     # WSSP CMS API v1 Modular Namespace
     path("cms/v1/", include("api.v1.urls")),
-]
 
+    # WSSP Citizen Portal API v1 Modular Namespace
+    path("citizen/v1/", include("api.v1.citizen.urls")),
+    path("cms/v1/citizen/", include("api.v1.citizen.urls")),
+]

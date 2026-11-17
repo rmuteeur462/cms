@@ -110,12 +110,7 @@ class CMSComplaintListView(APIView):
             'location', 'uc', 'complaint_type', 'SubType'
         )
 
-        # 1. Filter by Status
-        status_param = request.GET.get('status', 'all').lower()
-        if status_param in ['pending', 'resolved']:
-            qs = qs.filter(status=status_param)
-
-        # 2. Filter by Location
+        # 1. Filter by Location
         location_param = request.GET.get('location_id')
         if location_param:
             try:
@@ -125,7 +120,69 @@ class CMSComplaintListView(APIView):
             except ValueError:
                 pass
 
-        # 3. Filter by Search Query
+        # 2. Filter by Date / Year / Month / Range (as in Home Analytics)
+        year_param = request.GET.get('year')
+        month_param = request.GET.get('month')
+        start_date_param = request.GET.get('start_date')
+        end_date_param = request.GET.get('end_date')
+        all_param = request.GET.get('all_records') or request.GET.get('all')
+
+        if start_date_param and end_date_param:
+            try:
+                import datetime
+                s_date = datetime.datetime.strptime(start_date_param.strip(), "%Y-%m-%d").date()
+                e_date = datetime.datetime.strptime(end_date_param.strip(), "%Y-%m-%d").date()
+                if s_date > e_date:
+                    s_date, e_date = e_date, s_date
+                qs = qs.filter(date__gte=s_date, date__lte=e_date)
+            except Exception:
+                pass
+        elif str(year_param).lower() in ['all', 'all_years', '-1']:
+            # All years / lifetime: do not restrict date
+            pass
+        elif year_param:
+            try:
+                y = int(year_param)
+                if month_param:
+                    m = int(month_param)
+                    if 1 <= m <= 12:
+                        import calendar
+                        import datetime
+                        _, last_day = calendar.monthrange(y, m)
+                        s_date = datetime.date(y, m, 1)
+                        e_date = datetime.date(y, m, last_day)
+                        qs = qs.filter(date__gte=s_date, date__lte=e_date)
+                else:
+                    import datetime
+                    s_date = datetime.date(y, 1, 1)
+                    e_date = datetime.date(y, 12, 31)
+            except (ValueError, TypeError):
+                pass
+
+        # 3. Filter by Category / Type / Subtype (from Home Screen Breakdown clicks)
+        category_id_param = request.GET.get('category_id')
+        if category_id_param:
+            try:
+                qs = qs.filter(complaint_type_id=int(category_id_param))
+            except (ValueError, TypeError):
+                pass
+
+        subtype_id_param = request.GET.get('subtype_id')
+        if subtype_id_param:
+            try:
+                qs = qs.filter(SubType_id=int(subtype_id_param))
+            except (ValueError, TypeError):
+                pass
+
+        category_name_param = request.GET.get('category')
+        if category_name_param and not category_id_param:
+            qs = qs.filter(complaint_type__type_name__iexact=category_name_param.strip())
+
+        subtype_name_param = request.GET.get('subtype')
+        if subtype_name_param and not subtype_id_param:
+            qs = qs.filter(SubType__type_name__iexact=subtype_name_param.strip())
+
+        # 4. Filter by Search Query
         search_query = request.GET.get('search', '').strip()
         if search_query:
             if search_query.isdigit():
@@ -140,12 +197,33 @@ class CMSComplaintListView(APIView):
                     Q(complaint_detail__icontains=search_query)
                 )
 
+        # Base filtered queryset across all statuses for this filter context
+        counts = qs.aggregate(
+            res=Count('id', filter=Q(status='resolved')),
+            pnd=Count('id', filter=Q(status='pending'))
+        )
+        resolved_count = counts['res'] or 0
+        pending_count = counts['pnd'] or 0
+
+        # 5. Filter by Status (for listing results)
+        status_param = request.GET.get('status', 'all').lower()
+        if status_param in ['pending', 'resolved']:
+            qs = qs.filter(status=status_param)
+
         # Order by newest date & ID
         qs = qs.order_by('-date', '-id')
 
-        # Pagination
+        # Pagination (supports page_size up to 500 or all)
         page = request.GET.get('page', 1)
-        page_size = request.GET.get('page_size', 20)
+        raw_page_size = request.GET.get('page_size', 50)
+        try:
+            page_size = int(raw_page_size)
+            if page_size > 500:
+                page_size = 500
+            elif page_size < 1:
+                page_size = 50
+        except (ValueError, TypeError):
+            page_size = 50
         paginator = Paginator(qs, page_size)
 
         try:
@@ -174,6 +252,8 @@ class CMSComplaintListView(APIView):
 
         return Response({
             "total_count": paginator.count,
+            "resolved_count": resolved_count,
+            "pending_count": pending_count,
             "num_pages": paginator.num_pages,
             "current_page": paginated_page.number,
             "has_next": paginated_page.has_next(),

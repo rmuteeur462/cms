@@ -15,10 +15,10 @@ const Tab = createBottomTabNavigator();
 export const MainTabsNavigator: React.FC = () => {
   return (
     <View style={styles.container}>
-      <AppHeader />
       <Tab.Navigator
         screenOptions={({ route }) => ({
-          headerShown: false,
+          headerShown: true,
+          header: () => <AppHeader />,
           tabBarActiveTintColor: Colors.primary,
           tabBarInactiveTintColor: Colors.textMuted,
           tabBarStyle: styles.tabBar,
@@ -53,7 +53,7 @@ export const MainTabsNavigator: React.FC = () => {
         })}
       >
         <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: 'Home' }} />
-        <Tab.Screen name="Complaints" component={ComplaintsScreen} options={{ tabBarLabel: 'Directory' }} />
+        <Tab.Screen name="Complaints" component={ComplaintsScreen} options={{ tabBarLabel: 'Complaints' }} />
         <Tab.Screen
           name="NewComplaint"
           component={CreateComplaintScreen}

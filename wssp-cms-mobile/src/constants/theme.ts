@@ -38,6 +38,7 @@ export const Colors = {
   // State Overlays
   overlay: 'rgba(10, 54, 99, 0.6)',
   danger: '#EF4444',
+  error: '#EF4444',
   success: '#10B981',
   warning: '#FF7A00',
 };

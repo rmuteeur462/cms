@@ -3,7 +3,7 @@ import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Current machine Wi-Fi IPv4 address
-export const DEFAULT_DEV_MACHINE_IP = '192.168.100.2';
+export const DEFAULT_DEV_MACHINE_IP = '192.168.18.153';
 const CUSTOM_SERVER_STORAGE_KEY = '@wssp_cms_custom_server_url';
 
 let inMemoryCustomBaseUrl: string | null = null;

@@ -86,9 +86,14 @@ export interface SubtypeDistributionItem {
 export interface TrendItem {
   date?: string;
   month?: number;
+  year?: number;
   label: string;
   full_label?: string;
   count: number;
+  resolved?: number;
+  pending?: number;
+  resolved_percentage?: number;
+  pending_percentage?: number;
 }
 
 export interface DashboardAnalyticsResponse {
@@ -104,6 +109,8 @@ export interface DashboardAnalyticsResponse {
 
 export interface ComplaintListResponse {
   total_count: number;
+  resolved_count?: number;
+  pending_count?: number;
   num_pages: number;
   current_page: number;
   has_next: boolean;
@@ -118,10 +125,11 @@ export const ComplaintsApi = {
   },
 
   async getDashboardAnalytics(params?: {
-    year?: number;
+    year?: number | 'all' | string;
     month?: number;
     start_date?: string;
     end_date?: string;
+    location_id?: number;
   }): Promise<DashboardAnalyticsResponse> {
     const response = await apiClient.get<DashboardAnalyticsResponse>('/api/cms/v1/dashboard/analytics/', {
       params,
@@ -129,11 +137,21 @@ export const ComplaintsApi = {
     return response.data;
   },
 
+
   async getComplaints(params?: {
     search?: string;
     status?: string;
     location_id?: number;
+    year?: number | string;
+    month?: number;
+    start_date?: string;
+    end_date?: string;
+    category_id?: number;
+    subtype_id?: number;
+    category?: string;
+    subtype?: string;
     page?: number;
+    page_size?: number;
   }): Promise<ComplaintListResponse> {
     const response = await apiClient.get<ComplaintListResponse>('/api/cms/complaints/', {
       params,
@@ -216,4 +234,210 @@ export interface CreateComplaintResponse {
     before_image: string | null;
   };
 }
+
+export interface CitizenComplaintItem {
+  id: number;
+  complaint_no: string;
+  title: string;
+  category: string;
+  subcategory: string | null;
+  location_name: string;
+  uc_name: string | null;
+  area: string;
+  address: string;
+  complaint_detail: string;
+  status: 'pending' | 'resolved' | string;
+  date: string | null;
+  before_image_url: string | null;
+  created_at: string;
+  has_feedback?: boolean;
+}
+
+export interface CitizenComplaintDetail extends CitizenComplaintItem {
+  updated_at: string;
+  resolution?: {
+    description: string;
+    customer_satisfaction: string;
+    after_image_url: string | null;
+  } | null;
+  feedbacks: {
+    id: number;
+    happy: boolean;
+    complaint_feedback: string;
+    created_at: string;
+  }[];
+  can_give_feedback: boolean;
+}
+
+export interface CitizenTimelineStep {
+  step: number;
+  key: string;
+  title: string;
+  subtitle: string;
+  timestamp: string | null;
+  status: 'completed' | 'in_progress' | 'pending' | 'available' | 'locked';
+  badge: string;
+  description: string;
+  after_image_url?: string | null;
+  feedback_data?: {
+    id: number;
+    happy: boolean;
+    comment: string;
+    submitted_at: string;
+  } | null;
+}
+
+export interface CitizenTrackingResponse {
+  success: boolean;
+  complaint: {
+    id: number;
+    complaint_no: string;
+    title: string;
+    status: string;
+    category: string;
+    subcategory: string | null;
+    location: string;
+    uc: string | null;
+    area: string;
+    address: string;
+    complaint_detail: string;
+    before_image_url: string | null;
+    created_at: string;
+    updated_at: string;
+  };
+  timeline: CitizenTimelineStep[];
+  can_give_feedback: boolean;
+  feedback_given: boolean;
+}
+
+export interface CitizenDashboardData {
+  success: boolean;
+  citizen: {
+    full_name: string;
+    mobile_number: string;
+    email: string;
+    address: string;
+  };
+  metrics: {
+    total: number;
+    pending: number;
+    resolved: number;
+  };
+  recent_complaints: CitizenComplaintItem[];
+  contacts: {
+    helpline: string;
+    landline: string;
+    email: string;
+    website: string;
+  };
+}
+
+export interface CitizenTypeItem {
+  id: number;
+  type_name: string;
+}
+
+export interface CitizenSubtypeItem {
+  id: number;
+  type_name: string;
+  complaint_type: number;
+}
+
+export interface CitizenLocationItem {
+  id: number;
+  location_name: string;
+}
+
+export interface CitizenUCItem {
+  id: number;
+  uc_name: string;
+  location: number;
+}
+
+export const CitizenComplaintsApi = {
+  async getDashboard(): Promise<CitizenDashboardData> {
+    const res = await apiClient.get<CitizenDashboardData>('/api/citizen/v1/dashboard/');
+    return res.data;
+  },
+
+  async getComplaints(params?: { status?: string; q?: string; page?: number }): Promise<{
+    count: number;
+    next: string | null;
+    previous: string | null;
+    results: CitizenComplaintItem[];
+  }> {
+    const res = await apiClient.get('/api/citizen/v1/complaints/', { params });
+    return res.data;
+  },
+
+  async getComplaintDetail(id: number): Promise<CitizenComplaintDetail> {
+    const res = await apiClient.get<{ success: boolean; data: CitizenComplaintDetail }>(
+      `/api/citizen/v1/complaints/${id}/`
+    );
+    return res.data.data;
+  },
+
+  async getComplaintTracking(id: number): Promise<CitizenTrackingResponse> {
+    const res = await apiClient.get<CitizenTrackingResponse>(
+      `/api/citizen/v1/complaints/${id}/tracking/`
+    );
+    return res.data;
+  },
+
+  async submitComplaint(formData: FormData): Promise<{
+    success: boolean;
+    message: string;
+    data: CitizenComplaintItem;
+  }> {
+    const res = await apiClient.post('/api/citizen/v1/complaints/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return res.data;
+  },
+
+  async submitFeedback(
+    complaintId: number,
+    payload: { happy: boolean; complaint_feedback?: string }
+  ): Promise<{ success: boolean; message: string; data: any }> {
+    const res = await apiClient.post(
+      `/api/citizen/v1/complaints/${complaintId}/feedback/`,
+      payload
+    );
+    return res.data;
+  },
+
+  async getComplaintTypes(): Promise<CitizenTypeItem[]> {
+    const res = await apiClient.get<{ success: boolean; data: CitizenTypeItem[] }>(
+      '/api/citizen/v1/complaint-types/'
+    );
+    return res.data.data;
+  },
+
+  async getSubtypes(complaintTypeId?: number): Promise<CitizenSubtypeItem[]> {
+    const params = complaintTypeId ? { complaint_type: complaintTypeId } : {};
+    const res = await apiClient.get<{ success: boolean; data: CitizenSubtypeItem[] }>(
+      '/api/citizen/v1/subtypes/',
+      { params }
+    );
+    return res.data.data;
+  },
+
+  async getLocations(): Promise<CitizenLocationItem[]> {
+    const res = await apiClient.get<{ success: boolean; data: CitizenLocationItem[] }>(
+      '/api/citizen/v1/locations/'
+    );
+    return res.data.data;
+  },
+
+  async getUCs(locationId?: number): Promise<CitizenUCItem[]> {
+    const params = locationId ? { location: locationId } : {};
+    const res = await apiClient.get<{ success: boolean; data: CitizenUCItem[] }>(
+      '/api/citizen/v1/ucs/',
+      { params }
+    );
+    return res.data.data;
+  },
+};
 

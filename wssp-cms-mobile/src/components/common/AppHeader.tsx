@@ -29,20 +29,36 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   const handleProfilePress = () => {
     if (onProfilePress) {
       onProfilePress();
-    } else {
-      try {
+      return;
+    }
+    try {
+      const state = navigation.getState?.();
+      const routeNames = state?.routeNames || [];
+      if (routeNames.includes('Profile')) {
         navigation.navigate('Profile');
-      } catch (e) {}
+      } else {
+        navigation.navigate('Main', { screen: 'Profile' });
+      }
+    } catch (e) {
+      console.warn('[AppHeader] Profile navigation error:', e);
     }
   };
 
   const handleNotificationPress = () => {
     if (onNotificationPress) {
       onNotificationPress();
-    } else {
-      try {
+      return;
+    }
+    try {
+      const state = navigation.getState?.();
+      const routeNames = state?.routeNames || [];
+      if (routeNames.includes('Complaints')) {
         navigation.navigate('Complaints');
-      } catch (e) {}
+      } else {
+        navigation.navigate('Main', { screen: 'Complaints' });
+      }
+    } catch (e) {
+      console.warn('[AppHeader] Complaints navigation error:', e);
     }
   };
 
