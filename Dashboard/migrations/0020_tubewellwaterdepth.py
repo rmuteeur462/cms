@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
             name='TubeWellwaterdepth',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('water_table_depth', models.CharField(blank=True, null=True)),
+                ('water_table_depth', models.CharField(max_length=255, blank=True, null=True)),
                 ('water_table_measurment_date', models.DateField(blank=True, null=True)),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('updated_at', models.DateTimeField(auto_now=True)),

@@ -2081,7 +2081,7 @@ class Fuel(models.Model):
 
 class TubeWellwaterdepth(models.Model):
     tubewell = models.ForeignKey(TubeWell, on_delete=models.CASCADE) 
-    water_table_depth = models.CharField(null=True, blank=True)  
+    water_table_depth = models.CharField(max_length=255, null=True, blank=True)  
     water_table_measurment_date = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
