@@ -14,8 +14,12 @@ SECRET_KEY = os.environ.get(
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('true', '1')
 
 # Allowed Hosts: Environment configurable with wildcard dev fallback
-raw_allowed_hosts = os.environ.get('DJANGO_ALLOWED_HOSTS', '*')
+raw_allowed_hosts = os.environ.get('DJANGO_ALLOWED_HOSTS', '*, .pythonanywhere.com, localhost, 127.0.0.1')
 ALLOWED_HOSTS = [h.strip() for h in raw_allowed_hosts.split(',')] if ',' in raw_allowed_hosts else [raw_allowed_hosts]
+
+# CSRF Trusted Origins for admin and web access
+raw_csrf_trusted = os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', 'https://*.pythonanywhere.com,http://localhost:8000,http://127.0.0.1:8000')
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in raw_csrf_trusted.split(',')] if ',' in raw_csrf_trusted else [raw_csrf_trusted]
 
 # Production Security & HTTPS configuration
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
